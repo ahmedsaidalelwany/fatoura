@@ -11,7 +11,7 @@ class AppSettingsState extends Equatable {
   const AppSettingsState({
     this.themeMode = ThemeMode.system,
     this.locale = const Locale('ar'),
-    this.defaultCurrency = 'SAR',
+    this.defaultCurrency = 'EGP',
   });
 
   AppSettingsState copyWith({
@@ -52,7 +52,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     final langStr = prefs.getString(_keyLanguage) ?? 'ar';
     final locale = Locale(langStr);
 
-    final currency = prefs.getString(_keyCurrency) ?? 'SAR';
+    final currency = prefs.getString(_keyCurrency) ?? 'EGP';
 
     emit(
       AppSettingsState(

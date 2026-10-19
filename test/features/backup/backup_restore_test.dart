@@ -39,9 +39,9 @@ void main() {
       await shopRepo.saveProfile(
         ShopProfile(
           id: 'shop_001',
-          name: 'متجر الرياض التقني',
+          name: 'متجر القاهرة التقني',
           businessType: 'إلكترونيات',
-          defaultCurrency: 'SAR',
+          defaultCurrency: 'EGP',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),

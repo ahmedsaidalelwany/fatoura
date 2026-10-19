@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:fatoura/core/precision/currency.dart';
 
 import 'money.dart';
 
@@ -60,7 +61,7 @@ class FinancialCalculator {
     DiscountType discountType = DiscountType.fixed,
     Decimal? discountValue,
     Decimal? taxRatePercent,
-    String currency = 'SAR',
+    String currency = AppCurrencies.defaultCurrency,
   }) {
     final validTaxRate = taxRatePercent ?? Decimal.zero;
     final validDiscountInput = discountValue ?? Decimal.zero;

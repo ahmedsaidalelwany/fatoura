@@ -63,7 +63,7 @@ class ShopSetupCubit extends Cubit<ShopSetupState> {
     required String businessType,
     String phone = '',
     String address = '',
-    String defaultCurrency = 'SAR',
+    String defaultCurrency = 'EGP',
     String taxNumber = '',
     bool defaultTaxEnabled = false,
     double defaultTaxRate = 15.0,

@@ -142,7 +142,7 @@ class Invoice extends Equatable {
     this.paymentStatus = PaymentStatus.unpaid,
     this.cancelledAt,
     this.cancellationReason,
-    this.currency = 'SAR',
+    this.currency = 'EGP',
     this.notes = '',
     required this.createdAt,
     required this.updatedAt,
@@ -298,7 +298,7 @@ class Invoice extends Equatable {
           ? DateTime.tryParse(map['cancelledAt'] as String)
           : null,
       cancellationReason: map['cancellationReason'] as String?,
-      currency: map['currency'] as String? ?? 'SAR',
+      currency: map['currency'] as String? ?? 'EGP',
       notes: map['notes'] as String? ?? '',
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??

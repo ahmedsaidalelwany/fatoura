@@ -73,7 +73,7 @@ class Payment extends Equatable {
   const Payment({
     required this.id,
     required this.amount,
-    this.currency = 'SAR',
+    this.currency = 'EGP',
     required this.paymentDate,
     this.method = PaymentMethod.cash,
     this.partyId,
@@ -146,7 +146,7 @@ class Payment extends Equatable {
     return Payment(
       id: map['id'] as String? ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
-      currency: map['currency'] as String? ?? 'SAR',
+      currency: map['currency'] as String? ?? 'EGP',
       paymentDate:
           DateTime.tryParse(map['paymentDate'] as String? ?? '') ??
           DateTime.now(),

@@ -11,6 +11,8 @@ class AppColors {
   static const Color lightSurface = Color(0xFFFFFFFF); // Pure white cards
   static const Color lightSurfaceSubtle = Color(0xFFF8FAFC);
   static const Color lightBorder = Color(0xFFE2E8F0);
+  static const Color borderLight = lightBorder;
+  static const Color primaryLight = secondary;
 
   // Dark Palette
   static const Color darkBackground = Color(0xFF0B1220); // #0B1220

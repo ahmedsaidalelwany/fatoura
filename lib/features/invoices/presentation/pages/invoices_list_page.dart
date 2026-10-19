@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
@@ -214,7 +215,11 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
                                           children: [
                                             Text(
                                               invoice.invoiceNumber,
@@ -223,7 +228,6 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                                 fontSize: 15,
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
                                             _buildStatusBadge(context, invoice),
                                           ],
                                         ),
@@ -251,7 +255,11 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        '${invoice.finalTotal.toStringAsFixed(2)} ${invoice.currency}',
+                                        CurrencyFormatter.format(
+                                          invoice.finalTotal,
+                                          currency: invoice.currency,
+                                          isArabic: l10n.isArabic,
+                                        ),
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
@@ -263,7 +271,7 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                       if (!invoice.isCancelled &&
                                           invoice.remainingBalance > 0)
                                         Text(
-                                          '${l10n.remainingBalanceLabel}: ${invoice.remainingBalance.toStringAsFixed(2)}',
+                                          '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(invoice.remainingBalance, currency: invoice.currency, isArabic: l10n.isArabic)}',
                                           style: const TextStyle(
                                             fontSize: 11,
                                             color: AppColors.warning,

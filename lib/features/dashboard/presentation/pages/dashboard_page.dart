@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/dashboard/presentation/cubit/dashboard_cubit.dart';
@@ -255,7 +256,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '${invoice.finalTotal.toStringAsFixed(2)} ${invoice.currency}',
+                                      CurrencyFormatter.format(
+                                        invoice.finalTotal,
+                                        currency: invoice.currency,
+                                        isArabic: l10n.isArabic,
+                                      ),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: invoice.isCancelled
@@ -334,7 +339,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: cardWidth,
               child: _buildMetricCard(
                 title: l10n.dashboardTotalSales,
-                value: '${data.totalSales.toStringAsFixed(2)} ${data.currency}',
+                value: CurrencyFormatter.format(
+                  data.totalSales,
+                  currency: data.currency,
+                  isArabic: l10n.isArabic,
+                ),
                 icon: Icons.trending_up,
                 color: AppColors.primary,
                 bgColor: const Color(0xFFEFF6FF),
@@ -344,8 +353,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: cardWidth,
               child: _buildMetricCard(
                 title: l10n.dashboardCollected,
-                value:
-                    '${data.totalCollected.toStringAsFixed(2)} ${data.currency}',
+                value: CurrencyFormatter.format(
+                  data.totalCollected,
+                  currency: data.currency,
+                  isArabic: l10n.isArabic,
+                ),
                 icon: Icons.check_circle_outline,
                 color: AppColors.success,
                 bgColor: AppColors.successBackground,
@@ -355,8 +367,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: cardWidth,
               child: _buildMetricCard(
                 title: l10n.dashboardReceivables,
-                value:
-                    '${data.customerDebts.toStringAsFixed(2)} ${data.currency}',
+                value: CurrencyFormatter.format(
+                  data.customerDebts,
+                  currency: data.currency,
+                  isArabic: l10n.isArabic,
+                ),
                 icon: Icons.access_time,
                 color: AppColors.warning,
                 bgColor: AppColors.warningBackground,
@@ -366,8 +381,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: cardWidth,
               child: _buildMetricCard(
                 title: l10n.dashboardPayables,
-                value:
-                    '${data.supplierPayables.toStringAsFixed(2)} ${data.currency}',
+                value: CurrencyFormatter.format(
+                  data.supplierPayables,
+                  currency: data.currency,
+                  isArabic: l10n.isArabic,
+                ),
                 icon: Icons.outbox,
                 color: AppColors.error,
                 bgColor: AppColors.errorBackground,
@@ -377,8 +395,11 @@ class _DashboardPageState extends State<DashboardPage> {
               width: cardWidth,
               child: _buildMetricCard(
                 title: l10n.dashboardTotalPurchases,
-                value:
-                    '${data.totalPurchases.toStringAsFixed(2)} ${data.currency}',
+                value: CurrencyFormatter.format(
+                  data.totalPurchases,
+                  currency: data.currency,
+                  isArabic: l10n.isArabic,
+                ),
                 icon: Icons.shopping_bag_outlined,
                 color: const Color(0xFF8B5CF6),
                 bgColor: const Color(0xFFF5F3FF),
@@ -504,37 +525,55 @@ class _DashboardPageState extends State<DashboardPage> {
                 : 0.05;
             final dayName = DateFormat('E').format(p.date);
 
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (p.amount > 0)
-                  Text(
-                    p.amount.toStringAsFixed(0),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+            return SizedBox(
+              height: constraints.maxHeight,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    height: 16,
+                    child: Center(
+                      child: Text(
+                        p.amount > 0 ? p.amount.toStringAsFixed(0) : '',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                const SizedBox(height: 4),
-                Container(
-                  width: barWidth.clamp(16.0, 36.0),
-                  height: (constraints.maxHeight - 36) * ratio,
-                  decoration: BoxDecoration(
-                    color: p.amount > 0
-                        ? AppColors.primary
-                        : AppColors.lightBorder,
-                    borderRadius: BorderRadius.circular(4),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: barWidth.clamp(16.0, 36.0),
+                        height: ((constraints.maxHeight - 48) * ratio)
+                            .clamp(4.0, (constraints.maxHeight - 48).clamp(4.0, double.infinity)),
+                        decoration: BoxDecoration(
+                          color: p.amount > 0
+                              ? AppColors.primary
+                              : AppColors.lightBorder,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  dayName,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondaryLight,
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 16,
+                    child: Center(
+                      child: Text(
+                        dayName,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           }).toList(),
         );

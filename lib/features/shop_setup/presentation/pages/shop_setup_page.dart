@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/core/widgets/app_scaffold.dart';
 import 'package:fatoura/features/shop_setup/presentation/cubit/shop_setup_cubit.dart';
@@ -25,21 +27,10 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
   final _taxNumberController = TextEditingController();
   final _taxRateController = TextEditingController(text: '15.0');
 
-  String _selectedCurrency = 'SAR';
+  String _selectedCurrency = AppCurrencies.defaultCurrency;
   bool _taxEnabled = false;
 
-  final List<String> _currencies = [
-    'SAR',
-    'USD',
-    'EUR',
-    'AED',
-    'KWD',
-    'QAR',
-    'BHD',
-    'OMR',
-    'EGP',
-    'JOD',
-  ];
+  final List<String> _currencies = AppCurrencies.supportedCurrencyCodes;
 
   @override
   void initState() {
@@ -238,14 +229,22 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                       DropdownButtonFormField<String>(
                         initialValue: _currencies.contains(_selectedCurrency)
                             ? _selectedCurrency
-                            : 'SAR',
+                            : AppCurrencies.defaultCurrency,
                         decoration: InputDecoration(
                           labelText: l10n.defaultCurrencyLabel,
                           prefixIcon: const Icon(Icons.attach_money_outlined),
                         ),
                         items: _currencies
                             .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)),
+                              (c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(
+                                  CurrencyFormatter.getLocalizedDisplayName(
+                                    c,
+                                    isArabic: l10n.isArabic,
+                                  ),
+                                ),
+                              ),
                             )
                             .toList(),
                         onChanged: (val) {

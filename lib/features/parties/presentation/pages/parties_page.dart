@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
+import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/parties/domain/entities/party.dart';
 import 'package:fatoura/features/parties/presentation/cubit/parties_cubit.dart';
@@ -239,6 +241,7 @@ class _PartiesPageState extends State<PartiesPage>
 
   Widget _buildCustomersTab(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final currency = context.watch<AppSettingsCubit>().state.defaultCurrency;
 
     return BlocBuilder<PartiesCubit, PartiesState>(
       builder: (context, state) {
@@ -294,7 +297,11 @@ class _PartiesPageState extends State<PartiesPage>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${balance.toStringAsFixed(2)} SAR',
+                        CurrencyFormatter.format(
+                          balance,
+                          currency: currency,
+                          isArabic: l10n.isArabic,
+                        ),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: balance > 0
@@ -332,6 +339,7 @@ class _PartiesPageState extends State<PartiesPage>
 
   Widget _buildSuppliersTab(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final currency = context.watch<AppSettingsCubit>().state.defaultCurrency;
 
     return BlocBuilder<PartiesCubit, PartiesState>(
       builder: (context, state) {
@@ -387,7 +395,11 @@ class _PartiesPageState extends State<PartiesPage>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${balance.toStringAsFixed(2)} SAR',
+                        CurrencyFormatter.format(
+                          balance,
+                          currency: currency,
+                          isArabic: l10n.isArabic,
+                        ),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: balance > 0

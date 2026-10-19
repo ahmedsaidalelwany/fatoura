@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/pdf/invoice_pdf_generator.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
@@ -68,7 +69,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${l10n.remainingBalanceLabel}: ${_invoice!.remainingBalance.toStringAsFixed(2)} ${_invoice!.currency}',
+                  '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(_invoice!.remainingBalance, currency: _invoice!.currency, isArabic: l10n.isArabic)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -417,7 +418,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                                 ),
                               ),
                               Text(
-                                '${item.lineTotal.toStringAsFixed(2)} ${invoice.currency}',
+                                CurrencyFormatter.format(
+                                  item.lineTotal,
+                                  currency: invoice.currency,
+                                  isArabic: l10n.isArabic,
+                                ),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -440,40 +445,60 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     children: [
                       _buildRow(
                         l10n.subtotalLabel,
-                        '${invoice.subtotal.toStringAsFixed(2)} ${invoice.currency}',
+                        CurrencyFormatter.format(
+                          invoice.subtotal,
+                          currency: invoice.currency,
+                          isArabic: l10n.isArabic,
+                        ),
                       ),
                       if (invoice.discountAmount > 0)
                         _buildRow(
                           l10n.discountLabel,
-                          '-${invoice.discountAmount.toStringAsFixed(2)} ${invoice.currency}',
+                          '-${CurrencyFormatter.format(invoice.discountAmount, currency: invoice.currency, isArabic: l10n.isArabic)}',
                           color: AppColors.error,
                         ),
                       if (invoice.taxAmount > 0) ...[
                         _buildRow(
                           l10n.taxableBaseLabel,
-                          '${invoice.taxableBase.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            invoice.taxableBase,
+                            currency: invoice.currency,
+                            isArabic: l10n.isArabic,
+                          ),
                         ),
                         _buildRow(
                           '${l10n.taxAmountLabel} (${invoice.taxRate}%)',
-                          '+${invoice.taxAmount.toStringAsFixed(2)} ${invoice.currency}',
+                          '+${CurrencyFormatter.format(invoice.taxAmount, currency: invoice.currency, isArabic: l10n.isArabic)}',
                         ),
                       ],
                       const Divider(thickness: 1.5),
                       _buildRow(
                         l10n.finalTotalLabel,
-                        '${invoice.finalTotal.toStringAsFixed(2)} ${invoice.currency}',
+                        CurrencyFormatter.format(
+                          invoice.finalTotal,
+                          currency: invoice.currency,
+                          isArabic: l10n.isArabic,
+                        ),
                         isBold: true,
                         fontSize: 16,
                         color: AppColors.primary,
                       ),
                       _buildRow(
                         l10n.amountPaidLabel,
-                        '${invoice.totalPaid.toStringAsFixed(2)} ${invoice.currency}',
+                        CurrencyFormatter.format(
+                          invoice.totalPaid,
+                          currency: invoice.currency,
+                          isArabic: l10n.isArabic,
+                        ),
                         color: AppColors.success,
                       ),
                       _buildRow(
                         l10n.remainingBalanceLabel,
-                        '${invoice.remainingBalance.toStringAsFixed(2)} ${invoice.currency}',
+                        CurrencyFormatter.format(
+                          invoice.remainingBalance,
+                          currency: invoice.currency,
+                          isArabic: l10n.isArabic,
+                        ),
                         isBold: true,
                         color: invoice.remainingBalance > 0
                             ? AppColors.warning

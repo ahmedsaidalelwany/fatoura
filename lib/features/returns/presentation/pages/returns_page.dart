@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/returns/presentation/cubit/returns_cubit.dart';
@@ -84,7 +85,11 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                 ),
                               ),
                               Text(
-                                '${ret.totalRefundAmount.toStringAsFixed(2)} ${ret.currency}',
+                                CurrencyFormatter.format(
+                                  ret.totalRefundAmount,
+                                  currency: ret.currency,
+                                  isArabic: l10n.isArabic,
+                                ),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -132,7 +137,11 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                     '${item.description} (x${item.returnedQuantity})',
                                   ),
                                   Text(
-                                    '${item.refundAmount.toStringAsFixed(2)} ${ret.currency}',
+                                    CurrencyFormatter.format(
+                                      item.refundAmount,
+                                      currency: ret.currency,
+                                      isArabic: l10n.isArabic,
+                                    ),
                                   ),
                                 ],
                               ),

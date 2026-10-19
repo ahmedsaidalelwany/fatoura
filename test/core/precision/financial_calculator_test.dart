@@ -6,21 +6,21 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Money Value Object Tests', () {
     test('Correctly handles decimal additions without floating-point precision drift', () {
-      final m1 = Money.fromString('0.10', 'SAR');
-      final m2 = Money.fromString('0.20', 'SAR');
+      final m1 = Money.fromString('0.10', 'EGP');
+      final m2 = Money.fromString('0.20', 'EGP');
       final sum = m1 + m2;
       expect(sum.toStringAsFixed(2), '0.30');
       expect(sum.value, Decimal.parse('0.3'));
     });
 
     test('Throws on currency mismatch operations', () {
-      final sar = Money.fromNum(100, 'SAR');
+      final egp = Money.fromNum(100, 'EGP');
       final usd = Money.fromNum(100, 'USD');
-      expect(() => sar + usd, throwsArgumentError);
+      expect(() => egp + usd, throwsArgumentError);
     });
 
     test('Correctly scales and rounds division', () {
-      final total = Money.fromNum(100, 'SAR');
+      final total = Money.fromNum(100, 'EGP');
       final third = total / Decimal.fromInt(3);
       expect(third.toStringAsFixed(2), '33.33');
     });
@@ -29,13 +29,13 @@ void main() {
   group('FinancialCalculator Engine Tests', () {
     test('Calculates simple invoice without discount or tax', () {
       final items = [
-        (quantity: Decimal.fromInt(2), unitPrice: Money.fromNum(50, 'SAR')),
-        (quantity: Decimal.fromInt(3), unitPrice: Money.fromNum(10, 'SAR')),
+        (quantity: Decimal.fromInt(2), unitPrice: Money.fromNum(50, 'EGP')),
+        (quantity: Decimal.fromInt(3), unitPrice: Money.fromNum(10, 'EGP')),
       ];
 
       final result = FinancialCalculator.calculateInvoice(
         rawItems: items,
-        currency: 'SAR',
+        currency: 'EGP',
       );
 
       expect(result.subtotal.toStringAsFixed(2), '130.00');
@@ -45,25 +45,25 @@ void main() {
       expect(result.finalTotal.toStringAsFixed(2), '130.00');
     });
 
-    test('Applies fixed discount and calculates 15% tax on discounted taxable base', () {
-      // Subtotal = 200, Fixed discount = 20 -> Taxable base = 180 -> Tax (15%) = 27 -> Final = 207
+    test('Applies fixed discount and calculates 14% tax on discounted taxable base', () {
+      // Subtotal = 200, Fixed discount = 20 -> Taxable base = 180 -> Tax (14% Egyptian VAT) = 25.20 -> Final = 205.20
       final items = [
-        (quantity: Decimal.fromInt(2), unitPrice: Money.fromNum(100, 'SAR')),
+        (quantity: Decimal.fromInt(2), unitPrice: Money.fromNum(100, 'EGP')),
       ];
 
       final result = FinancialCalculator.calculateInvoice(
         rawItems: items,
         discountType: DiscountType.fixed,
         discountValue: Decimal.fromInt(20),
-        taxRatePercent: Decimal.fromInt(15),
-        currency: 'SAR',
+        taxRatePercent: Decimal.fromInt(14),
+        currency: 'EGP',
       );
 
       expect(result.subtotal.toStringAsFixed(2), '200.00');
       expect(result.discountAmount.toStringAsFixed(2), '20.00');
       expect(result.taxableBase.toStringAsFixed(2), '180.00');
-      expect(result.taxAmount.toStringAsFixed(2), '27.00');
-      expect(result.finalTotal.toStringAsFixed(2), '207.00');
+      expect(result.taxAmount.toStringAsFixed(2), '25.20');
+      expect(result.finalTotal.toStringAsFixed(2), '205.20');
     });
 
     test(
@@ -71,14 +71,14 @@ void main() {
       () {
         // Subtotal = 100, Percentage = 10% -> Discount = 10 -> Taxable = 90
         final items = [
-          (quantity: Decimal.fromInt(1), unitPrice: Money.fromNum(100, 'SAR')),
+          (quantity: Decimal.fromInt(1), unitPrice: Money.fromNum(100, 'EGP')),
         ];
 
         final result = FinancialCalculator.calculateInvoice(
           rawItems: items,
           discountType: DiscountType.percentage,
           discountValue: Decimal.fromInt(10),
-          currency: 'SAR',
+          currency: 'EGP',
         );
 
         expect(result.discountAmount.toStringAsFixed(2), '10.00');
@@ -90,7 +90,7 @@ void main() {
           rawItems: items,
           discountType: DiscountType.percentage,
           discountValue: Decimal.fromInt(150),
-          currency: 'SAR',
+          currency: 'EGP',
         );
         expect(cappedResult.discountAmount.toStringAsFixed(2), '100.00');
         expect(cappedResult.taxableBase.toStringAsFixed(2), '0.00');
@@ -101,9 +101,9 @@ void main() {
     test(
       'Calculates remaining balance with partial payments and return credits',
       () {
-        final total = Money.fromNum(500, 'SAR');
-        final paid1 = Money.fromNum(200, 'SAR');
-        final credit = Money.fromNum(50, 'SAR');
+        final total = Money.fromNum(500, 'EGP');
+        final paid1 = Money.fromNum(200, 'EGP');
+        final credit = Money.fromNum(50, 'EGP');
 
         final bal = FinancialCalculator.calculateRemainingBalance(
           finalTotal: total,
@@ -114,7 +114,7 @@ void main() {
         expect(bal.toStringAsFixed(2), '250.00');
 
         // Full payment check
-        final fullPaid = Money.fromNum(450, 'SAR');
+        final fullPaid = Money.fromNum(450, 'EGP');
         final zeroBal = FinancialCalculator.calculateRemainingBalance(
           finalTotal: total,
           totalPaid: fullPaid,
@@ -130,9 +130,9 @@ void main() {
       final refund = FinancialCalculator.calculateReturnRefundAmount(
         returnedQuantity: Decimal.fromInt(1),
         originalSoldQuantity: Decimal.fromInt(4),
-        originalLineTotal: Money.fromNum(200, 'SAR'),
-        originalInvoiceSubtotal: Money.fromNum(200, 'SAR'),
-        originalInvoiceFinalTotal: Money.fromNum(200, 'SAR'),
+        originalLineTotal: Money.fromNum(200, 'EGP'),
+        originalInvoiceSubtotal: Money.fromNum(200, 'EGP'),
+        originalInvoiceFinalTotal: Money.fromNum(200, 'EGP'),
       );
 
       expect(refund.toStringAsFixed(2), '50.00');

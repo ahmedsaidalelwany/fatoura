@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 
 class InvoicePdfGenerator {
@@ -274,11 +275,19 @@ class InvoicePdfGenerator {
                           align: pw.Alignment.center,
                         ),
                         _buildTableCell(
-                          '${item.unitPrice.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            item.unitPrice,
+                            currency: invoice.currency,
+                            isArabic: isArabic,
+                          ),
                           align: pw.Alignment.center,
                         ),
                         _buildTableCell(
-                          '${item.lineTotal.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            item.lineTotal,
+                            currency: invoice.currency,
+                            isArabic: isArabic,
+                          ),
                           align: pw.Alignment.center,
                         ),
                       ],
@@ -348,40 +357,60 @@ class InvoicePdfGenerator {
                       children: [
                         _buildSummaryRow(
                           subtotalLabel,
-                          '${invoice.subtotal.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            invoice.subtotal,
+                            currency: invoice.currency,
+                            isArabic: isArabic,
+                          ),
                         ),
                         if (invoice.discountAmount > 0)
                           _buildSummaryRow(
                             discountLabel,
-                            '-${invoice.discountAmount.toStringAsFixed(2)} ${invoice.currency}',
+                            '-${CurrencyFormatter.format(invoice.discountAmount, currency: invoice.currency, isArabic: isArabic)}',
                             color: PdfColors.red700,
                           ),
                         if (invoice.taxAmount > 0) ...[
                           _buildSummaryRow(
                             taxableBaseLabel,
-                            '${invoice.taxableBase.toStringAsFixed(2)} ${invoice.currency}',
+                            CurrencyFormatter.format(
+                              invoice.taxableBase,
+                              currency: invoice.currency,
+                              isArabic: isArabic,
+                            ),
                           ),
                           _buildSummaryRow(
                             taxLabel,
-                            '+${invoice.taxAmount.toStringAsFixed(2)} ${invoice.currency}',
+                            '+${CurrencyFormatter.format(invoice.taxAmount, currency: invoice.currency, isArabic: isArabic)}',
                           ),
                         ],
                         pw.Divider(color: PdfColors.blue800, thickness: 1),
                         _buildSummaryRow(
                           finalTotalLabel,
-                          '${invoice.finalTotal.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            invoice.finalTotal,
+                            currency: invoice.currency,
+                            isArabic: isArabic,
+                          ),
                           isBold: true,
                           fontSize: 12,
                           color: PdfColors.blue900,
                         ),
                         _buildSummaryRow(
                           paidLabel,
-                          '${invoice.totalPaid.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            invoice.totalPaid,
+                            currency: invoice.currency,
+                            isArabic: isArabic,
+                          ),
                           color: PdfColors.green800,
                         ),
                         _buildSummaryRow(
                           balanceLabel,
-                          '${invoice.remainingBalance.toStringAsFixed(2)} ${invoice.currency}',
+                          CurrencyFormatter.format(
+                            invoice.remainingBalance,
+                            currency: invoice.currency,
+                            isArabic: isArabic,
+                          ),
                           isBold: true,
                           color: invoice.remainingBalance > 0
                               ? PdfColors.red800

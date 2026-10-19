@@ -53,7 +53,7 @@ void main() {
         id: 'test_shop',
         name: 'مؤسسة فاتورة التجريبية',
         businessType: 'تجارة عامة',
-        defaultCurrency: 'SAR',
+        defaultCurrency: 'EGP',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),

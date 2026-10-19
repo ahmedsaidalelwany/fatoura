@@ -54,7 +54,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _taxRateController = TextEditingController(text: '0.0');
   final _notesController = TextEditingController();
 
-  String _currency = 'SAR';
+  String _currency = 'EGP';
 
   @override
   void initState() {

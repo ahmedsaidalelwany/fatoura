@@ -114,7 +114,7 @@ class InvoicesCubit extends Cubit<InvoicesState> {
     emit(InvoicesLoading());
     try {
       final shopProfile = await shopProfileRepository.getProfile();
-      final currency = shopProfile?.defaultCurrency ?? 'SAR';
+      final currency = shopProfile?.defaultCurrency ?? 'EGP';
 
       // 1. Authoritative calculation via FinancialCalculator
       final calcItems = rawItems

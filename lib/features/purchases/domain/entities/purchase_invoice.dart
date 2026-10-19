@@ -84,7 +84,7 @@ class PurchaseInvoice extends Equatable {
     required this.finalTotal,
     this.amountPaid = 0.0,
     required this.remainingPayable,
-    this.currency = 'SAR',
+    this.currency = 'EGP',
     this.notes = '',
     this.documentStatus = DocumentStatus.issued,
     this.paymentStatus = PaymentStatus.unpaid,
@@ -201,7 +201,7 @@ class PurchaseInvoice extends Equatable {
       finalTotal: (map['finalTotal'] as num?)?.toDouble() ?? 0.0,
       amountPaid: (map['amountPaid'] as num?)?.toDouble() ?? 0.0,
       remainingPayable: (map['remainingPayable'] as num?)?.toDouble() ?? 0.0,
-      currency: map['currency'] as String? ?? 'SAR',
+      currency: map['currency'] as String? ?? 'EGP',
       notes: map['notes'] as String? ?? '',
       documentStatus: DocumentStatus.values.firstWhere(
         (e) => e.name == map['documentStatus'],

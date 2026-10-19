@@ -83,7 +83,7 @@ class ReportData extends Equatable {
     this.returns = const [],
     this.statementEntries = const [],
     this.selectedParty,
-    this.currency = 'SAR',
+    this.currency = 'EGP',
   });
 
   @override
@@ -152,7 +152,7 @@ class ReportsCubit extends Cubit<ReportsState> {
     required DateTime fromDate,
     required DateTime toDate,
     String? partyId,
-    String defaultCurrency = 'SAR',
+    String defaultCurrency = 'EGP',
   }) async {
     emit(ReportsLoading());
     try {

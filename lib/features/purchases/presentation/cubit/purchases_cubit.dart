@@ -107,7 +107,7 @@ class PurchasesCubit extends Cubit<PurchasesState> {
     emit(PurchasesLoading());
     try {
       final shopProfile = await shopProfileRepository.getProfile();
-      final currency = shopProfile?.defaultCurrency ?? 'SAR';
+      final currency = shopProfile?.defaultCurrency ?? 'EGP';
 
       final calcItems = rawItems
           .map(

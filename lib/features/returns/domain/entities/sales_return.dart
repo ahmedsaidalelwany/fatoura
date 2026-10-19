@@ -82,7 +82,7 @@ class SalesReturn extends Equatable {
     required this.returnReason,
     this.refundMethod = RefundMethod.cash,
     this.notes = '',
-    this.currency = 'SAR',
+    this.currency = 'EGP',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -134,7 +134,7 @@ class SalesReturn extends Equatable {
         orElse: () => RefundMethod.cash,
       ),
       notes: map['notes'] as String? ?? '',
-      currency: map['currency'] as String? ?? 'SAR',
+      currency: map['currency'] as String? ?? 'EGP',
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??
           DateTime.now(),

@@ -86,7 +86,7 @@ class PaymentsCubit extends Cubit<PaymentsState> {
     String invoiceNumber = '',
     String referenceNumber = '',
     String notes = '',
-    String currency = 'SAR',
+    String currency = 'EGP',
   }) async {
     if (amount <= 0.0) {
       emit(const PaymentsError('Payment amount must be greater than zero.'));

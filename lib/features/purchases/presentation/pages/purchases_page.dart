@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/purchases/presentation/cubit/purchases_cubit.dart';
@@ -175,7 +176,11 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '${pur.finalTotal.toStringAsFixed(2)} ${pur.currency}',
+                                      CurrencyFormatter.format(
+                                        pur.finalTotal,
+                                        currency: pur.currency,
+                                        isArabic: l10n.isArabic,
+                                      ),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
@@ -183,7 +188,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                     ),
                                     if (pur.remainingPayable > 0)
                                       Text(
-                                        '${l10n.remainingBalanceLabel}: ${pur.remainingPayable.toStringAsFixed(2)}',
+                                        '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(pur.remainingPayable, currency: pur.currency, isArabic: l10n.isArabic)}',
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: AppColors.error,

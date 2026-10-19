@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
+import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
@@ -90,6 +92,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final currency = context.watch<AppSettingsCubit>().state.defaultCurrency;
     final party = widget.party;
 
     return Scaffold(
@@ -184,7 +187,7 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    '${l10n.currentBalanceLabel}: ${_balance.toStringAsFixed(2)} SAR',
+                                    '${l10n.currentBalanceLabel}: ${CurrencyFormatter.format(_balance, currency: currency, isArabic: l10n.isArabic)}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: _balance > 0

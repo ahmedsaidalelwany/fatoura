@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
+import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
 import 'package:fatoura/features/products/presentation/cubit/products_cubit.dart';
@@ -109,6 +111,7 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final currency = context.watch<AppSettingsCubit>().state.defaultCurrency;
 
     return Scaffold(
       appBar: AppBar(
@@ -215,7 +218,11 @@ class _ProductsPageState extends State<ProductsPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  '${p.defaultUnitPrice.toStringAsFixed(2)} SAR',
+                                  CurrencyFormatter.format(
+                                    p.defaultUnitPrice,
+                                    currency: currency,
+                                    isArabic: l10n.isArabic,
+                                  ),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,

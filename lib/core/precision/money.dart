@@ -1,22 +1,35 @@
 import 'package:decimal/decimal.dart';
+import 'package:fatoura/core/precision/currency.dart';
+import 'package:fatoura/core/precision/currency_formatter.dart';
 
 /// Immutable high-precision Money value object.
 /// Eliminates binary floating-point representation bugs (e.g. 0.1 + 0.2 = 0.30000000000000004).
+///
+/// **Default Currency:** Egyptian Pound (`EGP`), where `1 EGP = 100 piastres`.
 class Money implements Comparable<Money> {
   final Decimal value;
   final String currency;
 
   const Money._(this.value, this.currency);
 
-  factory Money.fromDecimal(Decimal value, [String currency = 'SAR']) {
+  factory Money.fromDecimal(
+    Decimal value, [
+    String currency = AppCurrencies.defaultCurrency,
+  ]) {
     return Money._(value, currency);
   }
 
-  factory Money.fromNum(num amount, [String currency = 'SAR']) {
+  factory Money.fromNum(
+    num amount, [
+    String currency = AppCurrencies.defaultCurrency,
+  ]) {
     return Money._(Decimal.parse(amount.toString()), currency);
   }
 
-  factory Money.fromString(String amount, [String currency = 'SAR']) {
+  factory Money.fromString(
+    String amount, [
+    String currency = AppCurrencies.defaultCurrency,
+  ]) {
     try {
       final sanitized = amount.trim().replaceAll(',', '');
       if (sanitized.isEmpty) {
@@ -28,7 +41,21 @@ class Money implements Comparable<Money> {
     }
   }
 
-  static Money zero([String currency = 'SAR']) =>
+  /// Instantiates a Money object from integer minor units (e.g. 10000 piastres -> 100.00 EGP).
+  factory Money.fromMinorUnits(
+    int minorUnits, [
+    String currency = AppCurrencies.defaultCurrency,
+  ]) {
+    final info = AppCurrencies.get(currency);
+    return Money._(info.fromMinorUnits(minorUnits), currency);
+  }
+
+  /// Instantiates a Money object specifically from Egyptian piastres (1 EGP = 100 piastres).
+  factory Money.fromPiastres(int piastres) {
+    return Money.fromMinorUnits(piastres, 'EGP');
+  }
+
+  static Money zero([String currency = AppCurrencies.defaultCurrency]) =>
       Money._(Decimal.zero, currency);
 
   Money copyWith({Decimal? value, String? currency}) {
@@ -53,8 +80,10 @@ class Money implements Comparable<Money> {
     if (divisor == Decimal.zero) {
       throw ArgumentError('Division by zero in Money calculation.');
     }
-    // Round to 4 decimal places internally
-    final res = (value / divisor).toDecimal(scaleOnInfinitePrecision: 4);
+    final info = AppCurrencies.get(currency);
+    final res = (value / divisor).toDecimal(
+      scaleOnInfinitePrecision: info.decimalDigits + 2,
+    );
     return Money._(res, currency);
   }
 
@@ -64,15 +93,35 @@ class Money implements Comparable<Money> {
 
   double toDouble() => value.toDouble();
 
-  /// Formats the money to fixed decimal places (default 2)
-  String toStringAsFixed([int fractionDigits = 2]) {
-    return value.toStringAsFixed(fractionDigits);
+  /// Converts this amount into integer minor units (e.g. 100.00 EGP -> 10000 piastres).
+  int toMinorUnits() {
+    final info = AppCurrencies.get(currency);
+    return info.toMinorUnits(value);
   }
 
-  /// User-facing display with currency symbol or code
-  String formatDisplay([int fractionDigits = 2]) {
-    final formattedNumber = toStringAsFixed(fractionDigits);
-    return '$formattedNumber $currency';
+  /// Converts this amount into Egyptian piastres if currency is EGP.
+  int toPiastres() {
+    return toMinorUnits();
+  }
+
+  /// Formats the money to fixed decimal places (default based on currency)
+  String toStringAsFixed([int? fractionDigits]) {
+    final digits = fractionDigits ?? AppCurrencies.get(currency).decimalDigits;
+    return value.toStringAsFixed(digits);
+  }
+
+  /// Formats according to centralized currency standards.
+  String format({bool isArabic = false, bool useFullName = false}) {
+    return CurrencyFormatter.formatMoney(
+      this,
+      isArabic: isArabic,
+      useFullName: useFullName,
+    );
+  }
+
+  /// Legacy display with symbol/code
+  String formatDisplay([int? fractionDigits]) {
+    return format();
   }
 
   void _assertSameCurrency(Money other) {

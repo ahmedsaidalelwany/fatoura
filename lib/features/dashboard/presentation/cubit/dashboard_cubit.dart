@@ -91,7 +91,7 @@ class DashboardCubit extends Cubit<DashboardState> {
     required this.partyRepository,
   }) : super(DashboardInitial());
 
-  Future<void> loadDashboardMetrics([String defaultCurrency = 'SAR']) async {
+  Future<void> loadDashboardMetrics([String defaultCurrency = 'EGP']) async {
     emit(DashboardLoading());
     try {
       // 1. Fetch issued sales invoices
