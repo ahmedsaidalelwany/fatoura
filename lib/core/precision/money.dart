@@ -30,14 +30,17 @@ class Money implements Comparable<Money> {
     String amount, [
     String currency = AppCurrencies.defaultCurrency,
   ]) {
+    final sanitized = amount.trim().replaceAll(',', '');
+    if (sanitized.isEmpty) {
+      return Money._(Decimal.zero, currency);
+    }
     try {
-      final sanitized = amount.trim().replaceAll(',', '');
-      if (sanitized.isEmpty) {
-        return Money._(Decimal.zero, currency);
-      }
       return Money._(Decimal.parse(sanitized), currency);
     } catch (_) {
-      return Money._(Decimal.zero, currency);
+      throw ArgumentError(
+        'Invalid monetary string: "$amount". '
+        'Cannot silently convert non-numeric input to zero.',
+      );
     }
   }
 

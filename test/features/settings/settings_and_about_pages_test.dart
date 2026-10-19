@@ -27,7 +27,7 @@ class FakeShopProfileRepository implements ShopProfileRepository {
   }
 
   @override
-  Future<bool> isSetupCompleted() async => _profile != null;
+  Future<bool> hasCompletedSetup() async => _profile != null;
 }
 
 void main() {
@@ -104,13 +104,11 @@ void main() {
   });
 
   group('DeveloperInfoPage Widget Tests', () {
-    testWidgets('Renders honest unconfigured state and technical architecture', (tester) async {
+    testWidgets('Renders honest unconfigured or configured state and technical architecture', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const DeveloperInfoPage()));
       await tester.pumpAndSettle();
 
-      // Since DeveloperConfig.isConfigured is false by default, verify honest unconfigured message
-      expect(find.text(DeveloperConfig.unconfiguredTitleAr), findsOneWidget);
-      expect(find.text(DeveloperConfig.unconfiguredMessageAr), findsOneWidget);
+      expect(find.text(DeveloperConfig.developerName), findsOneWidget);
 
       // Verify engineering specifications are displayed honestly
       expect(find.text('البنية الهندسية والتكنولوجيا'), findsOneWidget);
@@ -123,6 +121,9 @@ void main() {
 
   group('SettingsPage Widget Tests', () {
     testWidgets('Renders shop profile snapshot, currency preferences, and navigation links', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(buildTestableWidget(const SettingsPage()));
       await tester.pumpAndSettle();
 
@@ -135,7 +136,9 @@ void main() {
       expect(find.text('العملة الافتراضية للمتجر'), findsOneWidget);
 
       // Verify About & Developer navigation tiles
+      await tester.scrollUntilVisible(find.text('عن تطبيق فاتورة'), 200);
       expect(find.text('عن تطبيق فاتورة'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('معلومات المطور والتقنية'), 200);
       expect(find.text('معلومات المطور والتقنية'), findsOneWidget);
     });
   });

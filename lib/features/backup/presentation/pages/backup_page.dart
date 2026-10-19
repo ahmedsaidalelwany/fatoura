@@ -12,6 +12,7 @@ class BackupPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.backupSectionTitle)),
@@ -50,78 +51,118 @@ class BackupPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                    ),
                     child: Padding(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                       child: Column(
                         children: [
-                          const Icon(
-                            Icons.cloud_sync_outlined,
-                            size: 64,
-                            color: AppColors.primary,
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                            ),
+                            child: const Icon(
+                              Icons.cloud_sync_outlined,
+                              size: 36,
+                              color: AppColors.primary,
+                            ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           Text(
                             l10n.backupSectionTitle,
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             l10n.backupNotice,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondaryLight,
+                              height: 1.4,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 32),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.download),
-                            label: Text(l10n.createBackupBtn),
-                            onPressed: state is BackupLoading
-                                ? null
-                                : () => context
-                                      .read<BackupCubit>()
-                                      .createBackupToFile(),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 46,
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.download, size: 18),
+                              label: Text(l10n.createBackupBtn),
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                ),
+                              ),
+                              onPressed: state is BackupLoading
+                                  ? null
+                                  : () => context
+                                        .read<BackupCubit>()
+                                        .createBackupToFile(),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.upload),
-                            label: Text(l10n.restoreBackupBtn),
-                            onPressed: state is BackupLoading
-                                ? null
-                                : () async {
-                                    final confirmed = await showDialog<bool>(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: Text(l10n.restoreBackupBtn),
-                                        content: Text(l10n.restoreWarning),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, false),
-                                            child: Text(l10n.cancelBtn),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 46,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.upload, size: 18),
+                              label: Text(l10n.restoreBackupBtn),
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                ),
+                              ),
+                              onPressed: state is BackupLoading
+                                  ? null
+                                  : () async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(AppDimensions.radiusSheet),
                                           ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppColors.error,
+                                          title: Text(l10n.restoreBackupBtn),
+                                          content: Text(l10n.restoreWarning),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: Text(l10n.cancelBtn),
                                             ),
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, true),
-                                            child: Text(l10n.restoreBackupBtn),
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColors.error,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                                ),
+                                              ),
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: Text(l10n.restoreBackupBtn),
+                                            ),
+                                          ],
+                                        ),
+                                      );
 
-                                    if (confirmed == true && context.mounted) {
-                                      context
-                                          .read<BackupCubit>()
-                                          .restoreBackupFromFile();
-                                    }
-                                  },
+                                      if (confirmed == true && context.mounted) {
+                                        context
+                                            .read<BackupCubit>()
+                                            .restoreBackupFromFile();
+                                      }
+                                    },
+                            ),
                           ),
                           if (state is BackupLoading) ...[
                             const SizedBox(height: 24),

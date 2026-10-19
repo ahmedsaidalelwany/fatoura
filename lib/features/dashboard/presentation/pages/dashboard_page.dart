@@ -222,34 +222,64 @@ class _DashboardPageState extends State<DashboardPage> {
                                 const Divider(),
                             itemBuilder: (context, index) {
                               final invoice = data.recentInvoices[index];
+                              final isDark = Theme.of(context).brightness == Brightness.dark;
                               final dateStr = DateFormat('yyyy/MM/dd')
                                   .format(invoice.issueDate);
+
+                              final Color statusColor;
+                              final Color statusBg;
+                              final String statusLabel;
+
+                              if (invoice.isCancelled) {
+                                statusColor = AppColors.errorMuted;
+                                statusBg = isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground;
+                                statusLabel = l10n.statusCancelled;
+                              } else if (invoice.remainingBalance == 0) {
+                                statusColor = AppColors.successMuted;
+                                statusBg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
+                                statusLabel = l10n.paymentStatusPaid;
+                              } else {
+                                statusColor = AppColors.warningMuted;
+                                statusBg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
+                                statusLabel = l10n.paymentStatusPartial;
+                              }
+
                               return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                 leading: Container(
-                                  padding: const EdgeInsets.all(8),
+                                  width: 38,
+                                  height: 38,
                                   decoration: BoxDecoration(
                                     color: invoice.isCancelled
-                                        ? AppColors.errorBackground
-                                        : AppColors.infoBackground,
-                                    borderRadius: BorderRadius.circular(8),
+                                        ? (isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground)
+                                        : (isDark ? AppColors.infoBackgroundDark : AppColors.infoBackground),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
                                     invoice.isCancelled
                                         ? Icons.cancel_outlined
                                         : Icons.receipt_long,
                                     color: invoice.isCancelled
-                                        ? AppColors.error
+                                        ? AppColors.errorMuted
                                         : AppColors.primary,
+                                    size: 20,
                                   ),
                                 ),
                                 title: Text(
                                   invoice.invoiceNumber,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: -0.2,
+                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                   ),
                                 ),
                                 subtitle: Text(
                                   '${invoice.customerName.isNotEmpty ? invoice.customerName : l10n.cashCustomer} • $dateStr',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                  ),
                                 ),
                                 trailing: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -262,25 +292,28 @@ class _DashboardPageState extends State<DashboardPage> {
                                         isArabic: l10n.isArabic,
                                       ),
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: -0.2,
                                         color: invoice.isCancelled
-                                            ? AppColors.error
-                                            : AppColors.textPrimaryLight,
+                                            ? AppColors.errorMuted
+                                            : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
                                       ),
                                     ),
-                                    Text(
-                                      invoice.isCancelled
-                                          ? l10n.statusCancelled
-                                          : invoice.remainingBalance == 0
-                                          ? l10n.paymentStatusPaid
-                                          : l10n.paymentStatusPartial,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: invoice.isCancelled
-                                            ? AppColors.error
-                                            : invoice.remainingBalance == 0
-                                            ? AppColors.success
-                                            : AppColors.warning,
+                                    const SizedBox(height: 3),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: statusBg,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        statusLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: statusColor,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -338,6 +371,7 @@ class _DashboardPageState extends State<DashboardPage> {
             SizedBox(
               width: cardWidth,
               child: _buildMetricCard(
+                context: context,
                 title: l10n.dashboardTotalSales,
                 value: CurrencyFormatter.format(
                   data.totalSales,
@@ -346,12 +380,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 icon: Icons.trending_up,
                 color: AppColors.primary,
-                bgColor: const Color(0xFFEFF6FF),
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _buildMetricCard(
+                context: context,
                 title: l10n.dashboardCollected,
                 value: CurrencyFormatter.format(
                   data.totalCollected,
@@ -359,13 +393,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   isArabic: l10n.isArabic,
                 ),
                 icon: Icons.check_circle_outline,
-                color: AppColors.success,
-                bgColor: AppColors.successBackground,
+                color: AppColors.successMuted,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _buildMetricCard(
+                context: context,
                 title: l10n.dashboardReceivables,
                 value: CurrencyFormatter.format(
                   data.customerDebts,
@@ -373,13 +407,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   isArabic: l10n.isArabic,
                 ),
                 icon: Icons.access_time,
-                color: AppColors.warning,
-                bgColor: AppColors.warningBackground,
+                color: AppColors.warningMuted,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _buildMetricCard(
+                context: context,
                 title: l10n.dashboardPayables,
                 value: CurrencyFormatter.format(
                   data.supplierPayables,
@@ -387,13 +421,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   isArabic: l10n.isArabic,
                 ),
                 icon: Icons.outbox,
-                color: AppColors.error,
-                bgColor: AppColors.errorBackground,
+                color: AppColors.errorMuted,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _buildMetricCard(
+                context: context,
                 title: l10n.dashboardTotalPurchases,
                 value: CurrencyFormatter.format(
                   data.totalPurchases,
@@ -401,8 +435,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   isArabic: l10n.isArabic,
                 ),
                 icon: Icons.shopping_bag_outlined,
-                color: const Color(0xFF8B5CF6),
-                bgColor: const Color(0xFFF5F3FF),
+                color: AppColors.secondary,
               ),
             ),
           ],
@@ -412,42 +445,54 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildMetricCard({
+    required BuildContext context,
     required String title,
     required String value,
     required IconData icon,
     required Color color,
-    required Color bgColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondaryLight,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
               ),
             ),
             const SizedBox(height: 4),
             FittedBox(
               fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
               child: Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                 ),
               ),
             ),
@@ -464,9 +509,11 @@ class _DashboardPageState extends State<DashboardPage> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        ActionChip(
-          avatar: const Icon(Icons.add, size: 16),
-          label: Text(l10n.actionNewInvoice),
+        _buildCupertinoActionChip(
+          context: context,
+          icon: Icons.add,
+          label: l10n.actionNewInvoice,
+          isPrimary: true,
           onPressed: () {
             final cubit = context.read<DashboardCubit>();
             Navigator.push(
@@ -477,14 +524,16 @@ class _DashboardPageState extends State<DashboardPage> {
             });
           },
         ),
-        ActionChip(
-          avatar: const Icon(Icons.person_add_outlined, size: 16),
-          label: Text(l10n.actionAddCustomer),
+        _buildCupertinoActionChip(
+          context: context,
+          icon: Icons.person_add_outlined,
+          label: l10n.actionAddCustomer,
           onPressed: () => _showAddPartyDialog(context, true),
         ),
-        ActionChip(
-          avatar: const Icon(Icons.add_shopping_cart, size: 16),
-          label: Text(l10n.actionNewPurchase),
+        _buildCupertinoActionChip(
+          context: context,
+          icon: Icons.add_shopping_cart,
+          label: l10n.actionNewPurchase,
           onPressed: () {
             final cubit = context.read<DashboardCubit>();
             Navigator.push(
@@ -495,12 +544,69 @@ class _DashboardPageState extends State<DashboardPage> {
             });
           },
         ),
-        ActionChip(
-          avatar: const Icon(Icons.business_outlined, size: 16),
-          label: Text(l10n.actionAddSupplier),
+        _buildCupertinoActionChip(
+          context: context,
+          icon: Icons.business_outlined,
+          label: l10n.actionAddSupplier,
           onPressed: () => _showAddPartyDialog(context, false),
         ),
       ],
+    );
+  }
+
+  Widget _buildCupertinoActionChip({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    bool isPrimary = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: isPrimary
+          ? AppColors.primary
+          : (isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: isPrimary
+                ? null
+                : Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 0.8,
+                  ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isPrimary
+                    ? Colors.white
+                    : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isPrimary
+                      ? Colors.white
+                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -514,15 +620,16 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final barWidth = (constraints.maxWidth / points.length) * 0.5;
+        final barWidth = (constraints.maxWidth / points.length) * 0.45;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: points.map((p) {
             final ratio = maxVal > 0
-                ? (p.amount / maxVal).clamp(0.05, 1.0)
-                : 0.05;
+                ? (p.amount / maxVal).clamp(0.04, 1.0)
+                : 0.04;
             final dayName = DateFormat('E').format(p.date);
 
             return SizedBox(
@@ -535,39 +642,41 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Center(
                       child: Text(
                         p.amount > 0 ? p.amount.toStringAsFixed(0) : '',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        width: barWidth.clamp(16.0, 36.0),
-                        height: ((constraints.maxHeight - 48) * ratio)
-                            .clamp(4.0, (constraints.maxHeight - 48).clamp(4.0, double.infinity)),
-                        decoration: BoxDecoration(
-                          color: p.amount > 0
-                              ? AppColors.primary
-                              : AppColors.lightBorder,
-                          borderRadius: BorderRadius.circular(4),
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 6),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: barWidth.clamp(14.0, 32.0),
+                        height: ((constraints.maxHeight - 48) * ratio)
+                            .clamp(6.0, (constraints.maxHeight - 48).clamp(6.0, double.infinity)),
+                        decoration: BoxDecoration(
+                          color: p.amount > 0
+                              ? AppColors.primary
+                              : (isDark ? AppColors.darkBorder : AppColors.lightSurfaceSubtle),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   SizedBox(
                     height: 16,
                     child: Center(
                       child: Text(
                         dayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),

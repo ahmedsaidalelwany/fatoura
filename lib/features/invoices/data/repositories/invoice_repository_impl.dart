@@ -166,18 +166,18 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final invoice = await getInvoiceById(invoiceId);
     if (invoice == null) return;
 
-    final credit = Money.fromNum(creditAmount, invoice.currency);
-    final finalTotal = Money.fromNum(invoice.finalTotal, invoice.currency);
-    final totalPaid = Money.fromNum(invoice.totalPaid, invoice.currency);
+    if (creditAmount <= 0.0) return;
 
-    final newRemaining = FinancialCalculator.calculateRemainingBalance(
-      finalTotal: finalTotal,
-      totalPaid: totalPaid,
-      totalReturnCredits: credit,
-    );
+    // Deduct from current remaining balance directly to support cumulative returns
+    final currentRemaining = Decimal.parse(invoice.remainingBalance.toString());
+    final credit = Decimal.parse(creditAmount.toString());
+
+    final newRemainingDecimal =
+        currentRemaining > credit ? currentRemaining - credit : Decimal.zero;
+    final newRemaining = newRemainingDecimal.toDouble();
 
     final PaymentStatus newPaymentStatus;
-    if (newRemaining.isZero && (invoice.totalPaid > 0 || creditAmount > 0)) {
+    if (newRemaining == 0.0 && (invoice.totalPaid > 0 || creditAmount > 0)) {
       newPaymentStatus = PaymentStatus.refunded;
     } else if (invoice.totalPaid > 0) {
       newPaymentStatus = PaymentStatus.partiallyPaid;
@@ -186,7 +186,7 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     }
 
     final updated = invoice.copyWith(
-      remainingBalance: newRemaining.toDouble(),
+      remainingBalance: newRemaining,
       paymentStatus: newPaymentStatus,
       updatedAt: DateTime.now(),
     );

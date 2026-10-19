@@ -83,6 +83,7 @@ Future<AppDependencies> bootstrap() async {
   final returnRepository = SalesReturnRepositoryImpl(
     database: hiveDatabase,
     invoiceRepository: invoiceRepository,
+    productRepository: productRepository,
   );
   final purchaseRepository = PurchaseRepositoryImpl(hiveDatabase);
 

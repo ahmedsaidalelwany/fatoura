@@ -26,6 +26,8 @@ class _ReturnsPageState extends State<ReturnsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navReturns)),
       body: ResponsiveContentContainer(
@@ -42,16 +44,17 @@ class _ReturnsPageState extends State<ReturnsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.assignment_return_outlined,
                         size: 56,
-                        color: AppColors.textSecondaryLight,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         l10n.noDataFound,
-                        style: const TextStyle(
-                          color: AppColors.textSecondaryLight,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -61,7 +64,7 @@ class _ReturnsPageState extends State<ReturnsPage> {
 
               return ListView.separated(
                 itemCount: returns.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final ret = returns[index];
                   final dateStr = DateFormat('yyyy/MM/dd HH:mm')
@@ -78,10 +81,11 @@ class _ReturnsPageState extends State<ReturnsPage> {
                             children: [
                               Text(
                                 ret.returnNumber,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 15,
-                                  color: AppColors.primary,
+                                  letterSpacing: -0.2,
+                                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                 ),
                               ),
                               Text(
@@ -91,9 +95,10 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                   isArabic: l10n.isArabic,
                                 ),
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  letterSpacing: -0.2,
+                                  color: AppColors.errorMuted,
                                 ),
                               ),
                             ],
@@ -101,25 +106,26 @@ class _ReturnsPageState extends State<ReturnsPage> {
                           const SizedBox(height: 4),
                           Text(
                             '${l10n.originalInvoiceLabel}: ${ret.originalInvoiceNumber} • ${ret.customerName.isNotEmpty ? ret.customerName : l10n.cashCustomer}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondaryLight,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
                           ),
                           Text(
                             dateStr,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondaryLight,
+                              color: isDark ? AppColors.textSecondaryDark.withOpacity(0.8) : AppColors.textSecondaryLight.withOpacity(0.8),
                             ),
                           ),
                           if (ret.returnReason.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(
                               '${l10n.returnReasonLabel}: ${ret.returnReason}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -135,12 +141,21 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                 children: [
                                   Text(
                                     '${item.description} (x${item.returnedQuantity})',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                    ),
                                   ),
                                   Text(
                                     CurrencyFormatter.format(
                                       item.refundAmount,
                                       currency: ret.currency,
                                       isArabic: l10n.isArabic,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                     ),
                                   ),
                                 ],

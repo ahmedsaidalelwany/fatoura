@@ -45,6 +45,7 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,10 +75,10 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: l10n.searchHint,
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search, size: 20),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear),
+                              icon: const Icon(Icons.clear, size: 18),
                               onPressed: () {
                                 _searchController.clear();
                                 _onFilterChanged();
@@ -88,29 +89,50 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                     onChanged: (_) => _onFilterChanged(),
                   ),
                 ),
-                const SizedBox(width: 12),
-                DropdownButton<DocumentStatus?>(
-                  value: _selectedStatus,
-                  hint: Text(l10n.allLabel),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text(l10n.allLabel)),
-                    DropdownMenuItem(
-                      value: DocumentStatus.issued,
-                      child: Text(l10n.statusIssued),
+                const SizedBox(width: 10),
+                Container(
+                  height: AppDimensions.buttonHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.8,
                     ),
-                    DropdownMenuItem(
-                      value: DocumentStatus.draft,
-                      child: Text(l10n.statusDraft),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<DocumentStatus?>(
+                      value: _selectedStatus,
+                      hint: Text(
+                        l10n.allLabel,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                      icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                      items: [
+                        DropdownMenuItem(value: null, child: Text(l10n.allLabel)),
+                        DropdownMenuItem(
+                          value: DocumentStatus.issued,
+                          child: Text(l10n.statusIssued),
+                        ),
+                        DropdownMenuItem(
+                          value: DocumentStatus.draft,
+                          child: Text(l10n.statusDraft),
+                        ),
+                        DropdownMenuItem(
+                          value: DocumentStatus.cancelled,
+                          child: Text(l10n.statusCancelled),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        setState(() => _selectedStatus = val);
+                        _onFilterChanged();
+                      },
                     ),
-                    DropdownMenuItem(
-                      value: DocumentStatus.cancelled,
-                      child: Text(l10n.statusCancelled),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    setState(() => _selectedStatus = val);
-                    _onFilterChanged();
-                  },
+                  ),
                 ),
               ],
             ),
@@ -133,21 +155,22 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.receipt_outlined,
                               size: 56,
-                              color: AppColors.textSecondaryLight,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               l10n.noDataFound,
-                              style: const TextStyle(
-                                color: AppColors.textSecondaryLight,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
-                              icon: const Icon(Icons.add),
+                              icon: const Icon(Icons.add, size: 18),
                               label: Text(l10n.actionNewInvoice),
                               onPressed: () {
                                 Navigator.push(
@@ -166,7 +189,7 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                     return ListView.separated(
                       itemCount: invoices.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final invoice = invoices[index];
                         final dateStr = DateFormat('yyyy/MM/dd HH:mm')
@@ -174,7 +197,7 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
 
                         return Card(
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -189,27 +212,29 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                               child: Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(10),
+                                    width: 42,
+                                    height: 42,
                                     decoration: BoxDecoration(
                                       color: invoice.isCancelled
-                                          ? AppColors.errorBackground
+                                          ? (isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground)
                                           : invoice.remainingBalance == 0
-                                          ? AppColors.successBackground
-                                          : const Color(0xFFEFF6FF),
-                                      borderRadius: BorderRadius.circular(8),
+                                          ? (isDark ? AppColors.successBackgroundDark : AppColors.successBackground)
+                                          : (isDark ? AppColors.infoBackgroundDark : AppColors.infoBackground),
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(
                                       invoice.isCancelled
                                           ? Icons.cancel_outlined
-                                          : Icons.receipt,
+                                          : Icons.receipt_long,
                                       color: invoice.isCancelled
-                                          ? AppColors.error
+                                          ? AppColors.errorMuted
                                           : invoice.remainingBalance == 0
-                                          ? AppColors.success
+                                          ? AppColors.successMuted
                                           : AppColors.primary,
+                                      size: 22,
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -223,9 +248,11 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                           children: [
                                             Text(
                                               invoice.invoiceNumber,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
                                                 fontSize: 15,
+                                                letterSpacing: -0.2,
+                                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                               ),
                                             ),
                                             _buildStatusBadge(context, invoice),
@@ -236,15 +263,15 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                           invoice.customerName.isNotEmpty
                                               ? invoice.customerName
                                               : l10n.cashCustomer,
-                                          style: const TextStyle(
-                                            color: AppColors.textSecondaryLight,
+                                          style: TextStyle(
+                                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                             fontSize: 13,
                                           ),
                                         ),
                                         Text(
                                           dateStr,
-                                          style: const TextStyle(
-                                            color: AppColors.textSecondaryLight,
+                                          style: TextStyle(
+                                            color: isDark ? AppColors.textSecondaryDark.withOpacity(0.8) : AppColors.textSecondaryLight.withOpacity(0.8),
                                             fontSize: 11,
                                           ),
                                         ),
@@ -261,20 +288,25 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                           isArabic: l10n.isArabic,
                                         ),
                                         style: TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w700,
                                           fontSize: 15,
+                                          letterSpacing: -0.2,
                                           color: invoice.isCancelled
-                                              ? AppColors.error
-                                              : AppColors.textPrimaryLight,
+                                              ? AppColors.errorMuted
+                                              : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
                                         ),
                                       ),
                                       if (!invoice.isCancelled &&
                                           invoice.remainingBalance > 0)
-                                        Text(
-                                          '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(invoice.remainingBalance, currency: invoice.currency, isArabic: l10n.isArabic)}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.warning,
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(invoice.remainingBalance, currency: invoice.currency, isArabic: l10n.isArabic)}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.warningMuted,
+                                            ),
                                           ),
                                         ),
                                     ],
@@ -299,44 +331,45 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
 
   Widget _buildStatusBadge(BuildContext context, Invoice invoice) {
     final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final String label;
     final Color color;
     final Color bg;
 
     if (invoice.isCancelled) {
       label = l10n.statusCancelled;
-      color = AppColors.error;
-      bg = AppColors.errorBackground;
+      color = AppColors.errorMuted;
+      bg = isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground;
     } else if (invoice.isDraft) {
       label = l10n.statusDraft;
-      color = AppColors.textSecondaryLight;
-      bg = const Color(0xFFF1F5F9);
+      color = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+      bg = isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle;
     } else if (invoice.remainingBalance == 0) {
       label = l10n.paymentStatusPaid;
-      color = AppColors.success;
-      bg = AppColors.successBackground;
+      color = AppColors.successMuted;
+      bg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
     } else if (invoice.totalPaid > 0) {
       label = l10n.paymentStatusPartial;
-      color = AppColors.warning;
-      bg = AppColors.warningBackground;
+      color = AppColors.warningMuted;
+      bg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
     } else {
       label = l10n.paymentStatusUnpaid;
       color = AppColors.primary;
-      bg = const Color(0xFFEFF6FF);
+      bg = isDark ? AppColors.infoBackgroundDark : AppColors.infoBackground;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

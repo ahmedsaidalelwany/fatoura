@@ -5,7 +5,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.47+-blue.svg)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.13+-blue.svg)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Android-green.svg)]()
-[![License](https://img.shields.io/badge/License-Proprietary-orange.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
@@ -155,6 +155,10 @@ The signed/unsigned APK will be located in:
 
 ---
 
-## 📄 License & Attribution
+## 👨‍💻 Developer & Attribution (المطور والترخيص)
 
-Designed and engineered for business owners seeking a dependable, local-first financial recordkeeping tool. All rights reserved.
+- **Developer:** Ahmed Said Khaled
+- **Email:** [ahmedsaidalelwany1@gmail.com](mailto:ahmedsaidalelwany1@gmail.com)
+- **Telegram:** [@asx_03](https://t.me/asx_03)
+- **Repository:** [https://github.com/ahmedsaidalelwany/fatoura](https://github.com/ahmedsaidalelwany/fatoura)
+- **License:** [MIT License](LICENSE) — Copyright (c) 2024 Ahmed Said Khaled

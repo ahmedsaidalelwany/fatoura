@@ -35,75 +35,169 @@ class _ProductsPageState extends State<ProductsPage> {
     final l10n = AppLocalizations.of(context);
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final skuCtrl = TextEditingController(text: existing?.sku ?? '');
+    final barcodeCtrl = TextEditingController(text: existing?.barcode ?? '');
     final descCtrl = TextEditingController(text: existing?.description ?? '');
     final priceCtrl = TextEditingController(
       text: existing != null ? existing.defaultUnitPrice.toString() : '0.0',
     );
+    final costCtrl = TextEditingController(
+      text: existing != null ? existing.costPrice.toString() : '0.0',
+    );
+    final stockCtrl = TextEditingController(
+      text: existing != null ? existing.stockQuantity.toString() : '0.0',
+    );
+    final reorderCtrl = TextEditingController(
+      text: existing != null ? existing.reorderLevel.toString() : '0.0',
+    );
     final catCtrl = TextEditingController(text: existing?.category ?? '');
+    bool trackInventory = existing?.trackInventory ?? false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(existing != null ? l10n.editBtn : l10n.addProductBtn),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(labelText: l10n.itemDescription),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: skuCtrl,
-                decoration: InputDecoration(labelText: l10n.skuLabel),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: priceCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: Text(existing != null ? l10n.editBtn : l10n.addProductBtn),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(labelText: l10n.itemDescription),
                 ),
-                decoration: InputDecoration(labelText: l10n.defaultPriceLabel),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: catCtrl,
-                decoration: InputDecoration(labelText: l10n.categoryLabel),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descCtrl,
-                decoration: InputDecoration(labelText: l10n.notesLabel),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: skuCtrl,
+                        decoration: InputDecoration(labelText: l10n.skuLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: barcodeCtrl,
+                        decoration: InputDecoration(labelText: l10n.barcodeLabel),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: priceCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration:
+                            InputDecoration(labelText: l10n.defaultPriceLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: costCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration:
+                            InputDecoration(labelText: l10n.costPriceLabel),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: catCtrl,
+                  decoration: InputDecoration(labelText: l10n.categoryLabel),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  decoration: InputDecoration(labelText: l10n.notesLabel),
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.trackInventoryLabel),
+                  value: trackInventory,
+                  onChanged: (val) {
+                    setState(() {
+                      trackInventory = val;
+                    });
+                  },
+                ),
+                if (trackInventory) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: stockCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: l10n.stockQuantityLabel,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: reorderCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: l10n.reorderLevelLabel,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.cancelBtn),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+
+                final price = double.tryParse(priceCtrl.text.trim()) ?? 0.0;
+                final cost = double.tryParse(costCtrl.text.trim()) ?? 0.0;
+                final stock = double.tryParse(stockCtrl.text.trim()) ?? 0.0;
+                final reorder = double.tryParse(reorderCtrl.text.trim()) ?? 0.0;
+
+                context.read<ProductsCubit>().saveProduct(
+                  id: existing?.id,
+                  name: name,
+                  sku: skuCtrl.text.trim(),
+                  barcode: barcodeCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  defaultUnitPrice: price,
+                  costPrice: cost,
+                  category: catCtrl.text.trim(),
+                  stockQuantity: stock,
+                  reorderLevel: reorder,
+                  trackInventory: trackInventory,
+                );
+                Navigator.pop(ctx);
+              },
+              child: Text(l10n.saveBtn),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancelBtn),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-
-              final price = double.tryParse(priceCtrl.text.trim()) ?? 0.0;
-
-              context.read<ProductsCubit>().saveProduct(
-                id: existing?.id,
-                name: name,
-                sku: skuCtrl.text.trim(),
-                description: descCtrl.text.trim(),
-                defaultUnitPrice: price,
-                category: catCtrl.text.trim(),
-              );
-              Navigator.pop(ctx);
-            },
-            child: Text(l10n.saveBtn),
-          ),
-        ],
       ),
     );
   }
@@ -112,6 +206,7 @@ class _ProductsPageState extends State<ProductsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final currency = context.watch<AppSettingsCubit>().state.defaultCurrency;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -132,10 +227,10 @@ class _ProductsPageState extends State<ProductsPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: l10n.searchHint,
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, size: 18),
                         onPressed: () {
                           _searchController.clear();
                           context.read<ProductsCubit>().loadProducts();
@@ -160,21 +255,22 @@ class _ProductsPageState extends State<ProductsPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.inventory_2_outlined,
                               size: 56,
-                              color: AppColors.textSecondaryLight,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               l10n.noDataFound,
-                              style: const TextStyle(
-                                color: AppColors.textSecondaryLight,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
-                              icon: const Icon(Icons.add),
+                              icon: const Icon(Icons.add, size: 18),
                               label: Text(l10n.addProductBtn),
                               onPressed: () =>
                                   _showAddEditProductDialog(context),
@@ -187,61 +283,145 @@ class _ProductsPageState extends State<ProductsPage> {
                     return ListView.separated(
                       itemCount: products.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final p = products[index];
+
+                        final Color stockBadgeColor;
+                        final Color stockBadgeBg;
+                        final String stockLabel;
+
+                        if (p.isOutOfStock) {
+                          stockBadgeColor = AppColors.errorMuted;
+                          stockBadgeBg = isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground;
+                          stockLabel = l10n.outOfStockLabel;
+                        } else if (p.isLowStock) {
+                          stockBadgeColor = AppColors.warningMuted;
+                          stockBadgeBg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
+                          stockLabel = '${l10n.lowStockLabel} (${p.stockQuantity})';
+                        } else {
+                          stockBadgeColor = AppColors.successMuted;
+                          stockBadgeBg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
+                          stockLabel = '${l10n.stockQuantityLabel}: ${p.stockQuantity}';
+                        }
+
                         return Card(
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEFF6FF),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.inventory_2,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            title: Text(
-                              p.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              p.sku.isNotEmpty
-                                  ? 'SKU: ${p.sku} • ${p.category}'
-                                  : (p.category.isNotEmpty ? p.category : '-'),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
+                          child: Padding(
+                            padding: const EdgeInsets.all(14.0),
+                            child: Row(
                               children: [
-                                Text(
-                                  CurrencyFormatter.format(
-                                    p.defaultUnitPrice,
-                                    currency: currency,
-                                    isArabic: l10n.isArabic,
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1E2838)
+                                        : const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
+                                  child: const Icon(
+                                    Icons.inventory_2_outlined,
                                     color: AppColors.primary,
+                                    size: 22,
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined),
-                                  onPressed: () =>
-                                      _showAddEditProductDialog(context, p),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.archive_outlined,
-                                    color: AppColors.error,
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        p.name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                          letterSpacing: -0.2,
+                                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        [
+                                          if (p.sku.isNotEmpty) 'SKU: ${p.sku}',
+                                          if (p.barcode.isNotEmpty) 'Barcode: ${p.barcode}',
+                                          if (p.category.isNotEmpty) p.category,
+                                        ].join(' • '),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        ),
+                                      ),
+                                      if (p.trackInventory) ...[
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 7,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: stockBadgeBg,
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                stockLabel,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: stockBadgeColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
                                   ),
-                                  onPressed: () => context
-                                      .read<ProductsCubit>()
-                                      .archiveProduct(p.id),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      CurrencyFormatter.format(
+                                        p.defaultUnitPrice,
+                                        currency: currency,
+                                        isArabic: l10n.isArabic,
+                                      ),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                        letterSpacing: -0.2,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined, size: 18),
+                                          constraints: const BoxConstraints(),
+                                          padding: const EdgeInsets.all(6),
+                                          onPressed: () =>
+                                              _showAddEditProductDialog(context, p),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.archive_outlined,
+                                            size: 18,
+                                            color: AppColors.errorMuted,
+                                          ),
+                                          constraints: const BoxConstraints(),
+                                          padding: const EdgeInsets.all(6),
+                                          onPressed: () => context
+                                              .read<ProductsCubit>()
+                                              .archiveProduct(p.id),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

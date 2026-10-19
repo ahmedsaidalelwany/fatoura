@@ -71,9 +71,10 @@ void main() {
       expect(val1.isValid, isTrue);
 
       // 4. Tampering test: modify 1 character inside tables without updating checksum
+      // Use the actual seeded name that exists in the backup JSON
       final tamperedJson = backup.backupJson!.replaceFirst(
-        'متجر الرياض التقني',
-        'متجر الرياض المزور',
+        'متجر القاهرة التقني',
+        'متجر الإسكندرية المزور',
       );
       final valTampered = backupService.validateBackup(tamperedJson);
       expect(valTampered.isValid, isFalse);
@@ -91,7 +92,7 @@ void main() {
       // 7. Verify restored records
       final restoredProfile = await shopRepo.getProfile();
       expect(restoredProfile, isNotNull);
-      expect(restoredProfile!.name, 'متجر الرياض التقني');
+      expect(restoredProfile!.name, 'متجر القاهرة التقني');
 
       final restoredParty = await partyRepo.getPartyById('cust_001');
       expect(restoredParty, isNotNull);

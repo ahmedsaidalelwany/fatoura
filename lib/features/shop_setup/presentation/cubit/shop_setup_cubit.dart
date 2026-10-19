@@ -67,6 +67,8 @@ class ShopSetupCubit extends Cubit<ShopSetupState> {
     String taxNumber = '',
     bool defaultTaxEnabled = false,
     double defaultTaxRate = 15.0,
+    String? logoPath,
+    String? signaturePath,
   }) async {
     if (name.trim().isEmpty) {
       emit(const ShopSetupError('Shop name cannot be empty.'));
@@ -92,6 +94,8 @@ class ShopSetupCubit extends Cubit<ShopSetupState> {
         taxNumber: taxNumber.trim(),
         defaultTaxEnabled: defaultTaxEnabled,
         defaultTaxRate: defaultTaxRate,
+        logoPath: logoPath ?? existing?.logoPath ?? '',
+        signaturePath: signaturePath ?? existing?.signaturePath ?? '',
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );

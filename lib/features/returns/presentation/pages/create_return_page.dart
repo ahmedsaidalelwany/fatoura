@@ -270,6 +270,7 @@ class _CreateReturnPageState extends State<CreateReturnPage> {
                             children: [
                               DropdownButtonFormField<RefundMethod>(
                                 initialValue: _refundMethod,
+                                isExpanded: true,
                                 decoration: InputDecoration(
                                   labelText: l10n.refundMethodLabel,
                                 ),

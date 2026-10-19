@@ -270,27 +270,46 @@ class _PartiesPageState extends State<PartiesPage>
             );
           }
 
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return ListView.separated(
             itemCount: customers.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final c = customers[index];
               final balance = state.balances[c.id] ?? 0.0;
 
               return Card(
                 child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFEFF6FF),
-                    child: Icon(Icons.person, color: AppColors.primary),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E2838)
+                          : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.person_outline, color: AppColors.primary, size: 22),
                   ),
                   title: Text(
                     c.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      letterSpacing: -0.2,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    ),
                   ),
                   subtitle: Text(
                     c.phone.isNotEmpty
                         ? c.phone
                         : (c.address.isNotEmpty ? c.address : '-'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -303,17 +322,21 @@ class _PartiesPageState extends State<PartiesPage>
                           isArabic: l10n.isArabic,
                         ),
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          letterSpacing: -0.2,
                           color: balance > 0
-                              ? AppColors.warning
-                              : AppColors.success,
+                              ? AppColors.warningMuted
+                              : AppColors.successMuted,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         l10n.currentBalanceLabel,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondaryLight,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -368,27 +391,46 @@ class _PartiesPageState extends State<PartiesPage>
             );
           }
 
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return ListView.separated(
             itemCount: suppliers.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final s = suppliers[index];
               final balance = state.balances[s.id] ?? 0.0;
 
               return Card(
                 child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFF5F3FF),
-                    child: Icon(Icons.business, color: Color(0xFF8B5CF6)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF221A33)
+                          : const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.business_outlined, color: AppColors.secondary, size: 22),
                   ),
                   title: Text(
                     s.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      letterSpacing: -0.2,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    ),
                   ),
                   subtitle: Text(
                     s.phone.isNotEmpty
                         ? s.phone
                         : (s.address.isNotEmpty ? s.address : '-'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -401,17 +443,21 @@ class _PartiesPageState extends State<PartiesPage>
                           isArabic: l10n.isArabic,
                         ),
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          letterSpacing: -0.2,
                           color: balance > 0
-                              ? AppColors.error
-                              : AppColors.success,
+                              ? AppColors.errorMuted
+                              : AppColors.successMuted,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         l10n.currentBalanceLabel,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondaryLight,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],

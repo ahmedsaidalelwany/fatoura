@@ -4,6 +4,7 @@ import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 
 class PurchaseInvoiceItem extends Equatable {
   final String id;
+  final String? productId;
   final String description;
   final double quantity;
   final double unitPrice;
@@ -11,6 +12,7 @@ class PurchaseInvoiceItem extends Equatable {
 
   const PurchaseInvoiceItem({
     required this.id,
+    this.productId,
     required this.description,
     required this.quantity,
     required this.unitPrice,
@@ -20,6 +22,7 @@ class PurchaseInvoiceItem extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'productId': productId,
       'description': description,
       'quantity': quantity,
       'unitPrice': unitPrice,
@@ -30,6 +33,7 @@ class PurchaseInvoiceItem extends Equatable {
   factory PurchaseInvoiceItem.fromMap(Map<String, dynamic> map) {
     return PurchaseInvoiceItem(
       id: map['id'] as String? ?? '',
+      productId: map['productId'] as String?,
       description: map['description'] as String? ?? '',
       quantity: (map['quantity'] as num?)?.toDouble() ?? 1.0,
       unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0.0,
@@ -38,7 +42,14 @@ class PurchaseInvoiceItem extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, description, quantity, unitPrice, lineTotal];
+  List<Object?> get props => [
+    id,
+    productId,
+    description,
+    quantity,
+    unitPrice,
+    lineTotal,
+  ];
 }
 
 class PurchaseInvoice extends Equatable {
@@ -63,6 +74,7 @@ class PurchaseInvoice extends Equatable {
   final String notes;
   final DocumentStatus documentStatus;
   final PaymentStatus paymentStatus;
+  final bool isStockReceived;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -88,9 +100,14 @@ class PurchaseInvoice extends Equatable {
     this.notes = '',
     this.documentStatus = DocumentStatus.issued,
     this.paymentStatus = PaymentStatus.unpaid,
+    this.isStockReceived = false,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  bool get isDraft => documentStatus == DocumentStatus.draft;
+  bool get isIssued => documentStatus == DocumentStatus.issued;
+  bool get isCancelled => documentStatus == DocumentStatus.cancelled;
 
   PurchaseInvoice copyWith({
     String? id,
@@ -114,6 +131,7 @@ class PurchaseInvoice extends Equatable {
     String? notes,
     DocumentStatus? documentStatus,
     PaymentStatus? paymentStatus,
+    bool? isStockReceived,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -139,6 +157,7 @@ class PurchaseInvoice extends Equatable {
       notes: notes ?? this.notes,
       documentStatus: documentStatus ?? this.documentStatus,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      isStockReceived: isStockReceived ?? this.isStockReceived,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -167,6 +186,7 @@ class PurchaseInvoice extends Equatable {
       'notes': notes,
       'documentStatus': documentStatus.name,
       'paymentStatus': paymentStatus.name,
+      'isStockReceived': isStockReceived,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -211,6 +231,7 @@ class PurchaseInvoice extends Equatable {
         (e) => e.name == map['paymentStatus'],
         orElse: () => PaymentStatus.unpaid,
       ),
+      isStockReceived: map['isStockReceived'] as bool? ?? false,
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??
           DateTime.now(),
@@ -231,6 +252,7 @@ class PurchaseInvoice extends Equatable {
     remainingPayable,
     documentStatus,
     paymentStatus,
+    isStockReceived,
     createdAt,
   ];
 }

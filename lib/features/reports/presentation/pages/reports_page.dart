@@ -87,6 +87,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           flex: 3,
                           child: DropdownButtonFormField<ReportType>(
                             initialValue: _selectedReport,
+                            isExpanded: true,
                             decoration: InputDecoration(
                               labelText: l10n.navReports,
                               isDense: true,
@@ -161,6 +162,7 @@ class _ReportsPageState extends State<ReportsPage> {
 
                           return DropdownButtonFormField<String?>(
                             initialValue: _selectedPartyId,
+                            isExpanded: true,
                             decoration: InputDecoration(
                               labelText:
                                   _selectedReport ==
@@ -217,6 +219,7 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Widget _buildReportContent(BuildContext context, ReportData data) {
     final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (data.type == ReportType.customerStatement ||
         data.type == ReportType.supplierStatement) {
@@ -232,19 +235,22 @@ class _ReportsPageState extends State<ReportsPage> {
                 children: [
                   Text(
                     '${l10n.statementTitle}: ${data.selectedParty?.name ?? ''}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
                       fontSize: 16,
+                      letterSpacing: -0.2,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                     ),
                   ),
                   Text(
                     '${l10n.currentBalanceLabel}: ${data.totalNet.toStringAsFixed(2)} ${data.currency}',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       fontSize: 16,
+                      letterSpacing: -0.2,
                       color: data.totalNet > 0
-                          ? AppColors.warning
-                          : AppColors.success,
+                          ? AppColors.warningMuted
+                          : AppColors.successMuted,
                     ),
                   ),
                 ],
@@ -264,8 +270,19 @@ class _ReportsPageState extends State<ReportsPage> {
                           return ListTile(
                             title: Text(
                               '${entry.documentType} #${entry.documentNumber}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              ),
                             ),
-                            subtitle: Text(dateStr),
+                            subtitle: Text(
+                              dateStr,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
+                            ),
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
@@ -275,17 +292,21 @@ class _ReportsPageState extends State<ReportsPage> {
                                       ? '+${entry.debit.toStringAsFixed(2)}'
                                       : '-${entry.credit.toStringAsFixed(2)}',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    letterSpacing: -0.2,
                                     color: entry.debit > 0
-                                        ? AppColors.error
-                                        : AppColors.success,
+                                        ? AppColors.errorMuted
+                                        : AppColors.successMuted,
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
                                   'الرصيد: ${entry.runningBalance.toStringAsFixed(2)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: AppColors.textSecondaryLight,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                   ),
                                 ),
                               ],
@@ -312,25 +333,31 @@ class _ReportsPageState extends State<ReportsPage> {
               children: [
                 Text(
                   '${l10n.dashboardTotalSales}: ${data.totalGross.toStringAsFixed(2)} ${data.currency}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
                     fontSize: 15,
+                    letterSpacing: -0.2,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                   ),
                 ),
                 if (data.totalCollected > 0)
                   Text(
                     '${l10n.dashboardCollected}: ${data.totalCollected.toStringAsFixed(2)} ${data.currency}',
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.success,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      letterSpacing: -0.2,
+                      color: AppColors.successMuted,
                     ),
                   ),
                 if (data.totalRefunded > 0)
                   Text(
                     'المسترد: ${data.totalRefunded.toStringAsFixed(2)} ${data.currency}',
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.error,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      letterSpacing: -0.2,
+                      color: AppColors.errorMuted,
                     ),
                   ),
               ],
@@ -353,43 +380,84 @@ class _ReportsPageState extends State<ReportsPage> {
                         if (data.invoices.isNotEmpty) {
                           final inv = data.invoices[index];
                           return ListTile(
-                            title: Text(inv.invoiceNumber),
+                            title: Text(
+                              inv.invoiceNumber,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              ),
+                            ),
                             subtitle: Text(
                               DateFormat('yyyy/MM/dd').format(inv.issueDate),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
                             ),
                             trailing: Text(
                               '${inv.finalTotal.toStringAsFixed(2)} ${inv.currency}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                letterSpacing: -0.2,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                               ),
                             ),
                           );
                         } else if (data.purchases.isNotEmpty) {
                           final pur = data.purchases[index];
                           return ListTile(
-                            title: Text(pur.purchaseNumber),
+                            title: Text(
+                              pur.purchaseNumber,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              ),
+                            ),
                             subtitle: Text(
                               '${pur.supplierName} • ${DateFormat('yyyy/MM/dd').format(pur.issueDate)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
                             ),
                             trailing: Text(
                               '${pur.finalTotal.toStringAsFixed(2)} ${pur.currency}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                letterSpacing: -0.2,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                               ),
                             ),
                           );
                         } else {
                           final ret = data.returns[index];
                           return ListTile(
-                            title: Text(ret.returnNumber),
+                            title: Text(
+                              ret.returnNumber,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              ),
+                            ),
                             subtitle: Text(
                               '${ret.customerName} • ${DateFormat('yyyy/MM/dd').format(ret.returnDate)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
                             ),
                             trailing: Text(
                               '${ret.totalRefundAmount.toStringAsFixed(2)} ${ret.currency}',
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.error,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                letterSpacing: -0.2,
+                                color: AppColors.errorMuted,
                               ),
                             ),
                           );

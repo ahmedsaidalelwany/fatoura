@@ -79,6 +79,7 @@ class AppLocalizations {
       isArabic ? 'فاتورة شراء جديدة' : 'New Purchase';
   String get actionAddCustomer => isArabic ? 'إضافة عميل' : 'Add Customer';
   String get actionAddSupplier => isArabic ? 'إضافة مورد' : 'Add Supplier';
+  String get actionAddProduct => isArabic ? 'إضافة منتج جديد' : 'Add New Product';
   String get actionRecordPayment => isArabic ? 'تسجيل دفعة' : 'Record Payment';
   String get actionNewReturn => isArabic ? 'تسجيل مرتجع' : 'New Return';
 
@@ -189,6 +190,8 @@ class AppLocalizations {
       isArabic ? 'إجمالي الذمم المدينة' : 'Total Receivables';
   String get totalPayable =>
       isArabic ? 'إجمالي الذمم الدائنة' : 'Total Payables';
+  String get selectSupplierBtn =>
+      isArabic ? 'اختر المورد' : 'Select Supplier';
 
   // Products
   String get productCatalogTitle =>
@@ -197,7 +200,25 @@ class AppLocalizations {
   String get skuLabel => isArabic ? 'رمز الصنف (SKU)' : 'SKU / Barcode';
   String get defaultPriceLabel =>
       isArabic ? 'سعر البيع الافتراضي' : 'Default Unit Price';
+  String get sellingPriceLabel =>
+      isArabic ? 'سعر البيع' : 'Selling Price';
   String get categoryLabel => isArabic ? 'التصنيف' : 'Category';
+  String get barcodeLabel => isArabic ? 'الباركود (Barcode)' : 'Barcode';
+  String get costPriceLabel => isArabic ? 'سعر التكلفة' : 'Cost Price';
+  String get stockQuantityLabel =>
+      isArabic ? 'كمية المخزون' : 'Stock Quantity';
+  String get reorderLevelLabel =>
+      isArabic ? 'حد إعادة الطلب' : 'Reorder Level';
+  String get trackInventoryLabel =>
+      isArabic ? 'تتبع المخزون' : 'Track Inventory';
+  String get inStockLabel => isArabic ? 'متوفر' : 'In Stock';
+  String get lowStockLabel => isArabic ? 'مخزون منخفض' : 'Low Stock';
+  String get outOfStockLabel => isArabic ? 'نفد المخزون' : 'Out of Stock';
+  String get scanBarcodeBtn => isArabic ? 'مسح الباركود' : 'Scan Barcode';
+  String get selectProductBtn =>
+      isArabic ? 'إضافة من المنتجات' : 'Select from Catalog';
+  String get productNotFound =>
+      isArabic ? 'لم يتم العثور على المنتج' : 'Product not found';
 
   // Reports
   String get reportPeriodSales =>
@@ -272,6 +293,44 @@ class AppLocalizations {
   String get numberingRuleDesc => isArabic
       ? 'تنسيق الترقيم اليومي المتسلسل: Ftr-DD.MM.YYYY-NNNN'
       : 'Daily sequential numbering format: Ftr-DD.MM.YYYY-NNNN';
+
+  // Shop Identity & Signatures
+  String get shopLogoLabel => isArabic ? 'شعار المتجر' : 'Shop Logo';
+  String get pickLogoBtn => isArabic ? 'اختيار شعار' : 'Choose Logo';
+  String get changeLogoBtn => isArabic ? 'تغيير الشعار' : 'Change Logo';
+  String get removeLogoBtn => isArabic ? 'حذف الشعار' : 'Remove Logo';
+  String get shopSignatureLabel =>
+      isArabic ? 'التوقيع الإلكتروني والختم' : 'Electronic Signature & Stamp';
+  String get pickSignatureBtn =>
+      isArabic ? 'اختيار التوقيع / الختم' : 'Choose Signature / Stamp';
+  String get changeSignatureBtn =>
+      isArabic ? 'تغيير التوقيع' : 'Change Signature';
+  String get removeSignatureBtn =>
+      isArabic ? 'حذف التوقيع' : 'Remove Signature';
+  String get authorizedSignatureLabel =>
+      isArabic ? 'التوقيع والختم المعتمد' : 'Authorized Signature & Stamp';
+
+  // Customer Selection & Payments in Invoices
+  String get customerTypeLabel => isArabic ? 'نوع العميل' : 'Customer Type';
+  String get walkInCustomer =>
+      isArabic ? 'عميل عام (نقدي)' : 'Walk-in (Cash)';
+  String get existingCustomer =>
+      isArabic ? 'عميل مسجل' : 'Existing Customer';
+  String get newCustomer => isArabic ? 'عميل جديد' : 'New Customer';
+  String get walkInCustomerSubtitle => isArabic
+      ? 'مبيعات نقدية مباشرة دون فتح حساب مديونية أو تسجيل اسم العميل'
+      : 'Direct cash sale with no debt account or customer record';
+  String get paymentOptionsTitle =>
+      isArabic ? 'حالة السداد والدفع' : 'Payment & Settlement';
+  String get paymentOptionFullyPaid =>
+      isArabic ? 'تم الدفع بالكامل' : 'Fully Paid';
+  String get paymentOptionPartiallyPaid =>
+      isArabic ? 'دفع جزء من المبلغ' : 'Partially Paid';
+  String get paymentOptionUnpaid =>
+      isArabic ? 'آجل (لم يدفع بعد)' : 'Unpaid (On Credit)';
+  String get amountReceivedLabel =>
+      isArabic ? 'المبلغ المستلم' : 'Amount Received';
+  String get serviceItemLabel => isArabic ? 'خدمة' : 'Service';
 
   // Common Actions
   String get saveBtn => isArabic ? 'حفظ' : 'Save';

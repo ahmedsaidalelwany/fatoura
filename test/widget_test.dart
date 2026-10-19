@@ -14,7 +14,6 @@ import 'package:fatoura/features/products/data/repositories/product_repository_i
 import 'package:fatoura/features/purchases/data/repositories/purchase_repository_impl.dart';
 import 'package:fatoura/features/returns/data/repositories/sales_return_repository_impl.dart';
 import 'package:fatoura/features/shop_setup/data/repositories/shop_profile_repository_impl.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

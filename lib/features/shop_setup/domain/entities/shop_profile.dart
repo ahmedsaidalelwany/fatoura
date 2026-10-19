@@ -10,6 +10,8 @@ class ShopProfile extends Equatable {
   final String taxNumber;
   final bool defaultTaxEnabled;
   final double defaultTaxRate;
+  final String logoPath;
+  final String signaturePath;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,6 +25,8 @@ class ShopProfile extends Equatable {
     this.taxNumber = '',
     this.defaultTaxEnabled = false,
     this.defaultTaxRate = 15.0,
+    this.logoPath = '',
+    this.signaturePath = '',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -37,6 +41,8 @@ class ShopProfile extends Equatable {
     String? taxNumber,
     bool? defaultTaxEnabled,
     double? defaultTaxRate,
+    String? logoPath,
+    String? signaturePath,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -50,6 +56,8 @@ class ShopProfile extends Equatable {
       taxNumber: taxNumber ?? this.taxNumber,
       defaultTaxEnabled: defaultTaxEnabled ?? this.defaultTaxEnabled,
       defaultTaxRate: defaultTaxRate ?? this.defaultTaxRate,
+      logoPath: logoPath ?? this.logoPath,
+      signaturePath: signaturePath ?? this.signaturePath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -66,6 +74,8 @@ class ShopProfile extends Equatable {
       'taxNumber': taxNumber,
       'defaultTaxEnabled': defaultTaxEnabled,
       'defaultTaxRate': defaultTaxRate,
+      'logoPath': logoPath,
+      'signaturePath': signaturePath,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -82,6 +92,8 @@ class ShopProfile extends Equatable {
       taxNumber: map['taxNumber'] as String? ?? '',
       defaultTaxEnabled: map['defaultTaxEnabled'] as bool? ?? false,
       defaultTaxRate: (map['defaultTaxRate'] as num?)?.toDouble() ?? 15.0,
+      logoPath: map['logoPath'] as String? ?? '',
+      signaturePath: map['signaturePath'] as String? ?? '',
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??
           DateTime.now(),
@@ -102,6 +114,8 @@ class ShopProfile extends Equatable {
     taxNumber,
     defaultTaxEnabled,
     defaultTaxRate,
+    logoPath,
+    signaturePath,
     createdAt,
     updatedAt,
   ];

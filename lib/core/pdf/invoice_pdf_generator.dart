@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -28,6 +29,28 @@ class InvoicePdfGenerator {
   }) async {
     await _loadFonts();
 
+    pw.MemoryImage? logoImage;
+    if (invoice.shopLogoPath.isNotEmpty) {
+      try {
+        final file = File(invoice.shopLogoPath);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          logoImage = pw.MemoryImage(bytes);
+        }
+      } catch (_) {}
+    }
+
+    pw.MemoryImage? signatureImage;
+    if (invoice.shopSignaturePath.isNotEmpty) {
+      try {
+        final file = File(invoice.shopSignaturePath);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          signatureImage = pw.MemoryImage(bytes);
+        }
+      } catch (_) {}
+    }
+
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(base: _regularFont!, bold: _boldFont!),
     );
@@ -39,8 +62,35 @@ class InvoicePdfGenerator {
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
     final formattedDate = dateFormat.format(invoice.issueDate);
 
-    // Labels
-    final title = isArabic ? 'فاتورة مبيعات' : 'SALES INVOICE';
+    // Labels based on template
+    final String title;
+    final String descHeader;
+    final String qtyHeader;
+    final String priceHeader;
+    final isMixed = invoice.template == InvoiceTemplate.mixed;
+    final typeHeader = isArabic ? 'النوع' : 'Type';
+
+    switch (invoice.template) {
+      case InvoiceTemplate.service:
+        title = isArabic ? 'فاتورة خدمات مهنية' : 'PROFESSIONAL SERVICES INVOICE';
+        descHeader = isArabic ? 'بيان الخدمة / نطاق العمل' : 'Service Description / Scope';
+        qtyHeader = isArabic ? 'الوحدات / الساعات' : 'Units / Hours';
+        priceHeader = isArabic ? 'معدل الوحدة' : 'Rate';
+        break;
+      case InvoiceTemplate.mixed:
+        title = isArabic ? 'فاتورة مبيعات وخدمات' : 'PRODUCTS & SERVICES INVOICE';
+        descHeader = isArabic ? 'البيان' : 'Description';
+        qtyHeader = isArabic ? 'الكمية' : 'Qty';
+        priceHeader = isArabic ? 'سعر الوحدة' : 'Unit Price';
+        break;
+      case InvoiceTemplate.product:
+        title = isArabic ? 'فاتورة مبيعات منتجات' : 'PRODUCT SALES INVOICE';
+        descHeader = isArabic ? 'المنتج / الصنف' : 'Product / Item';
+        qtyHeader = isArabic ? 'الكمية' : 'Qty';
+        priceHeader = isArabic ? 'سعر الوحدة' : 'Unit Price';
+        break;
+    }
+
     final invNumLabel = isArabic ? 'رقم الفاتورة:' : 'Invoice No:';
     final dateLabel = isArabic ? 'تاريخ الإصدار:' : 'Date:';
     final billToLabel = isArabic ? 'بيانات العميل:' : 'Bill To:';
@@ -48,9 +98,6 @@ class InvoicePdfGenerator {
         ? 'عميل نقدي / مبيعات عامة'
         : 'Cash / Anonymous Sale';
     final taxNoLabel = isArabic ? 'الرقم الضريبي:' : 'Tax No:';
-    final descHeader = isArabic ? 'البيان / الصنف' : 'Description';
-    final qtyHeader = isArabic ? 'الكمية' : 'Qty';
-    final priceHeader = isArabic ? 'سعر الوحدة' : 'Unit Price';
     final totalHeader = isArabic ? 'الإجمالي' : 'Total';
     final subtotalLabel = isArabic ? 'المجموع الفرعي:' : 'Subtotal:';
     final discountLabel = isArabic ? 'الخصم:' : 'Discount:';
@@ -77,45 +124,58 @@ class InvoicePdfGenerator {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: isArabic
-                        ? pw.CrossAxisAlignment.start
-                        : pw.CrossAxisAlignment.start,
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Text(
-                        invoice.shopName.isNotEmpty
-                            ? invoice.shopName
-                            : (isArabic ? 'متجر فاتورة' : 'Fatoura Shop'),
-                        style: pw.TextStyle(
-                          fontSize: 20,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.blue800,
+                      if (logoImage != null)
+                        pw.Container(
+                          width: 48,
+                          height: 48,
+                          margin: pw.EdgeInsets.only(
+                            right: isArabic ? 0 : 12,
+                            left: isArabic ? 12 : 0,
+                          ),
+                          child: pw.Image(logoImage, fit: pw.BoxFit.contain),
                         ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            invoice.shopName.isNotEmpty
+                                ? invoice.shopName
+                                : (isArabic ? 'متجر فاتورة' : 'Fatoura Shop'),
+                            style: pw.TextStyle(
+                              fontSize: 18,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blue800,
+                            ),
+                          ),
+                          if (invoice.shopPhone.isNotEmpty)
+                            pw.Text(
+                              invoice.shopPhone,
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                          if (invoice.shopAddress.isNotEmpty)
+                            pw.Text(
+                              invoice.shopAddress,
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                          if (invoice.shopTaxNumber.isNotEmpty)
+                            pw.Text(
+                              '$taxNoLabel ${invoice.shopTaxNumber}',
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                        ],
                       ),
-                      if (invoice.shopPhone.isNotEmpty)
-                        pw.Text(
-                          invoice.shopPhone,
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
-                      if (invoice.shopAddress.isNotEmpty)
-                        pw.Text(
-                          invoice.shopAddress,
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
-                      if (invoice.shopTaxNumber.isNotEmpty)
-                        pw.Text(
-                          '$taxNoLabel ${invoice.shopTaxNumber}',
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
                     ],
                   ),
                   pw.Column(
@@ -227,74 +287,156 @@ class InvoicePdfGenerator {
               pw.SizedBox(height: 16),
 
               // Line Items Table
-              pw.Table(
-                border: pw.TableBorder.all(
-                  color: PdfColors.grey300,
-                  width: 0.5,
-                ),
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(4),
-                  1: const pw.FlexColumnWidth(1.2),
-                  2: const pw.FlexColumnWidth(2),
-                  3: const pw.FlexColumnWidth(2),
-                },
-                children: [
-                  // Table Header
-                  pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.blue50),
-                    children: [
-                      _buildTableCell(
-                        descHeader,
-                        isHeader: true,
-                        align: alignment,
-                      ),
-                      _buildTableCell(
-                        qtyHeader,
-                        isHeader: true,
-                        align: pw.Alignment.center,
-                      ),
-                      _buildTableCell(
-                        priceHeader,
-                        isHeader: true,
-                        align: pw.Alignment.center,
-                      ),
-                      _buildTableCell(
-                        totalHeader,
-                        isHeader: true,
-                        align: pw.Alignment.center,
-                      ),
-                    ],
+              if (isMixed)
+                pw.Table(
+                  border: pw.TableBorder.all(
+                    color: PdfColors.grey300,
+                    width: 0.5,
                   ),
-                  // Items
-                  ...invoice.items.map(
-                    (item) => pw.TableRow(
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(3.5),
+                    1: const pw.FlexColumnWidth(1.5),
+                    2: const pw.FlexColumnWidth(1.2),
+                    3: const pw.FlexColumnWidth(2),
+                    4: const pw.FlexColumnWidth(2),
+                  },
+                  children: [
+                    // Table Header
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.blue50),
                       children: [
-                        _buildTableCell(item.description, align: alignment),
                         _buildTableCell(
-                          item.quantity.toString(),
+                          descHeader,
+                          isHeader: true,
+                          align: alignment,
+                        ),
+                        _buildTableCell(
+                          typeHeader,
+                          isHeader: true,
                           align: pw.Alignment.center,
                         ),
                         _buildTableCell(
-                          CurrencyFormatter.format(
-                            item.unitPrice,
-                            currency: invoice.currency,
-                            isArabic: isArabic,
-                          ),
+                          qtyHeader,
+                          isHeader: true,
                           align: pw.Alignment.center,
                         ),
                         _buildTableCell(
-                          CurrencyFormatter.format(
-                            item.lineTotal,
-                            currency: invoice.currency,
-                            isArabic: isArabic,
-                          ),
+                          priceHeader,
+                          isHeader: true,
+                          align: pw.Alignment.center,
+                        ),
+                        _buildTableCell(
+                          totalHeader,
+                          isHeader: true,
                           align: pw.Alignment.center,
                         ),
                       ],
                     ),
+                    // Items
+                    ...invoice.items.map(
+                      (item) => pw.TableRow(
+                        children: [
+                          _buildTableCell(item.description, align: alignment),
+                          _buildTableCell(
+                            item.isService
+                                ? (isArabic ? 'خدمة' : 'Service')
+                                : (isArabic ? 'منتج' : 'Product'),
+                            align: pw.Alignment.center,
+                          ),
+                          _buildTableCell(
+                            item.quantity.toString(),
+                            align: pw.Alignment.center,
+                          ),
+                          _buildTableCell(
+                            CurrencyFormatter.format(
+                              item.unitPrice,
+                              currency: invoice.currency,
+                              isArabic: isArabic,
+                            ),
+                            align: pw.Alignment.center,
+                          ),
+                          _buildTableCell(
+                            CurrencyFormatter.format(
+                              item.lineTotal,
+                              currency: invoice.currency,
+                              isArabic: isArabic,
+                            ),
+                            align: pw.Alignment.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              else
+                pw.Table(
+                  border: pw.TableBorder.all(
+                    color: PdfColors.grey300,
+                    width: 0.5,
                   ),
-                ],
-              ),
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(4),
+                    1: const pw.FlexColumnWidth(1.2),
+                    2: const pw.FlexColumnWidth(2),
+                    3: const pw.FlexColumnWidth(2),
+                  },
+                  children: [
+                    // Table Header
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.blue50),
+                      children: [
+                        _buildTableCell(
+                          descHeader,
+                          isHeader: true,
+                          align: alignment,
+                        ),
+                        _buildTableCell(
+                          qtyHeader,
+                          isHeader: true,
+                          align: pw.Alignment.center,
+                        ),
+                        _buildTableCell(
+                          priceHeader,
+                          isHeader: true,
+                          align: pw.Alignment.center,
+                        ),
+                        _buildTableCell(
+                          totalHeader,
+                          isHeader: true,
+                          align: pw.Alignment.center,
+                        ),
+                      ],
+                    ),
+                    // Items
+                    ...invoice.items.map(
+                      (item) => pw.TableRow(
+                        children: [
+                          _buildTableCell(item.description, align: alignment),
+                          _buildTableCell(
+                            item.quantity.toString(),
+                            align: pw.Alignment.center,
+                          ),
+                          _buildTableCell(
+                            CurrencyFormatter.format(
+                              item.unitPrice,
+                              currency: invoice.currency,
+                              isArabic: isArabic,
+                            ),
+                            align: pw.Alignment.center,
+                          ),
+                          _buildTableCell(
+                            CurrencyFormatter.format(
+                              item.lineTotal,
+                              currency: invoice.currency,
+                              isArabic: isArabic,
+                            ),
+                            align: pw.Alignment.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               pw.SizedBox(height: 16),
 
               // Summary Calculations Box
@@ -421,6 +563,43 @@ class InvoicePdfGenerator {
                   ),
                 ],
               ),
+              if (signatureImage != null) ...[
+                pw.SizedBox(height: 16),
+                pw.Row(
+                  mainAxisAlignment: isArabic
+                      ? pw.MainAxisAlignment.start
+                      : pw.MainAxisAlignment.end,
+                  children: [
+                    pw.Container(
+                      width: 140,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        children: [
+                          pw.Text(
+                            isArabic
+                                ? 'التوقيع والختم المعتمد'
+                                : 'Authorized Signature & Stamp',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.grey800,
+                            ),
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Container(
+                            height: 44,
+                            child: pw.Image(
+                              signatureImage,
+                              fit: pw.BoxFit.contain,
+                            ),
+                          ),
+                          pw.Divider(color: PdfColors.grey400, thickness: 0.5),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               pw.Spacer(),
 
               // Footer Note
@@ -489,6 +668,287 @@ class InvoicePdfGenerator {
               fontSize: fontSize,
               fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
               color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Generates standard A4 PDF (alias for generateInvoicePdf)
+  static Future<Uint8List> generateA4Pdf({
+    required Invoice invoice,
+    required bool isArabic,
+  }) async {
+    return generateInvoicePdf(invoice: invoice, isArabic: isArabic);
+  }
+
+  /// Generates a dedicated narrow thermal receipt layout (standard 80mm roll)
+  static Future<Uint8List> generateThermalReceiptPdf({
+    required Invoice invoice,
+    required bool isArabic,
+    double paperWidthMm = 80.0,
+  }) async {
+    await _loadFonts();
+
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(base: _regularFont!, bold: _boldFont!),
+    );
+
+    final textDirection = isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr;
+    final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
+    final formattedDate = dateFormat.format(invoice.issueDate);
+
+    final title = switch (invoice.template) {
+      InvoiceTemplate.service => (isArabic ? 'إيصال خدمات مهنية' : 'SERVICE RECEIPT'),
+      InvoiceTemplate.product => (isArabic ? 'إيصال مبيعات' : 'SALES RECEIPT'),
+      InvoiceTemplate.mixed => (isArabic ? 'إيصال مبيعات وخدمات' : 'SALES RECEIPT'),
+    };
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(
+          paperWidthMm * PdfPageFormat.mm,
+          double.infinity,
+          marginAll: 4 * PdfPageFormat.mm,
+        ),
+        textDirection: textDirection,
+        build: (context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              // Header Center
+              pw.Center(
+                child: pw.Text(
+                  invoice.shopName.isNotEmpty
+                      ? invoice.shopName
+                      : (isArabic ? 'متجر فاتورة' : 'Fatoura Shop'),
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              if (invoice.shopPhone.isNotEmpty)
+                pw.Center(
+                  child: pw.Text(
+                    invoice.shopPhone,
+                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                  ),
+                ),
+              if (invoice.shopTaxNumber.isNotEmpty)
+                pw.Center(
+                  child: pw.Text(
+                    '${isArabic ? 'الرقم الضريبي:' : 'Tax No:'} ${invoice.shopTaxNumber}',
+                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                  ),
+                ),
+              pw.SizedBox(height: 4),
+              _buildThermalDashedLine(),
+              pw.SizedBox(height: 4),
+
+              // Title & Info
+              pw.Center(
+                child: pw.Text(
+                  title,
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 2),
+              _buildThermalRow(
+                isArabic ? 'رقم الفاتورة:' : 'Invoice No:',
+                invoice.invoiceNumber,
+              ),
+              _buildThermalRow(
+                isArabic ? 'التاريخ:' : 'Date:',
+                formattedDate,
+              ),
+              if (invoice.customerName.isNotEmpty)
+                _buildThermalRow(
+                  isArabic ? 'العميل:' : 'Customer:',
+                  invoice.customerName,
+                ),
+              pw.SizedBox(height: 4),
+              _buildThermalDashedLine(),
+              pw.SizedBox(height: 4),
+
+              // Items Header
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    isArabic ? 'الصنف / الكمية × السعر' : 'Item / Qty x Price',
+                    style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                  ),
+                  pw.Text(
+                    isArabic ? 'الإجمالي' : 'Total',
+                    style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 2),
+              _buildThermalDashedLine(),
+              pw.SizedBox(height: 2),
+
+              // Items List
+              ...invoice.items.map((item) {
+                final typeTag = invoice.template == InvoiceTemplate.mixed
+                    ? (item.isService ? (isArabic ? ' [خدمة]' : ' [Service]') : (isArabic ? ' [منتج]' : ' [Product]'))
+                    : '';
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                    children: [
+                      pw.Text(
+                        '${item.description}$typeTag',
+                        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currency: invoice.currency, isArabic: isArabic)}',
+                            style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
+                          ),
+                          pw.Text(
+                            CurrencyFormatter.format(item.lineTotal, currency: invoice.currency, isArabic: isArabic),
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+
+              pw.SizedBox(height: 4),
+              _buildThermalDashedLine(),
+              pw.SizedBox(height: 4),
+
+              // Totals
+              _buildThermalRow(
+                isArabic ? 'المجموع الفرعي:' : 'Subtotal:',
+                CurrencyFormatter.format(invoice.subtotal, currency: invoice.currency, isArabic: isArabic),
+              ),
+              if (invoice.discountAmount > 0)
+                _buildThermalRow(
+                  isArabic ? 'الخصم:' : 'Discount:',
+                  '-${CurrencyFormatter.format(invoice.discountAmount, currency: invoice.currency, isArabic: isArabic)}',
+                ),
+              if (invoice.taxAmount > 0)
+                _buildThermalRow(
+                  '${isArabic ? 'الضريبة' : 'Tax'} (${invoice.taxRate}%):',
+                  '+${CurrencyFormatter.format(invoice.taxAmount, currency: invoice.currency, isArabic: isArabic)}',
+                ),
+              pw.SizedBox(height: 2),
+              _buildThermalDashedLine(),
+              pw.SizedBox(height: 2),
+
+              // Final Total (Prominent)
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    isArabic ? 'الإجمالي النهائي:' : 'TOTAL:',
+                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                  ),
+                  pw.Text(
+                    CurrencyFormatter.format(invoice.finalTotal, currency: invoice.currency, isArabic: isArabic),
+                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                  ),
+                ],
+              ),
+              _buildThermalRow(
+                isArabic ? 'المدفوع:' : 'Paid:',
+                CurrencyFormatter.format(invoice.totalPaid, currency: invoice.currency, isArabic: isArabic),
+              ),
+              if (invoice.remainingBalance > 0)
+                _buildThermalRow(
+                  isArabic ? 'المتبقي:' : 'Balance:',
+                  CurrencyFormatter.format(invoice.remainingBalance, currency: invoice.currency, isArabic: isArabic),
+                  isBold: true,
+                ),
+
+              pw.SizedBox(height: 6),
+              _buildThermalDashedLine(),
+              pw.SizedBox(height: 6),
+
+              // Footer Note
+              pw.Center(
+                child: pw.Text(
+                  isArabic ? 'شكراً لتعاملكم معنا' : 'Thank you for your business!',
+                  style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.Center(
+                child: pw.Text(
+                  'فاتورة • Fatoura',
+                  style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  static pw.Widget _buildThermalDashedLine() {
+    return pw.Container(
+      height: 1,
+      child: pw.LayoutBuilder(
+        builder: (context, constraints) {
+          final boxWidth = constraints?.maxWidth ?? 200;
+          const dashWidth = 3.0;
+          const dashSpace = 2.0;
+          final dashCount = (boxWidth / (dashWidth + dashSpace)).floor();
+          return pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: List.generate(
+              dashCount,
+              (_) => pw.SizedBox(
+                width: dashWidth,
+                height: 0.5,
+                child: pw.DecoratedBox(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey500),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static pw.Widget _buildThermalRow(
+    String label,
+    String value, {
+    bool isBold = false,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+              fontSize: 7.5,
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 7.5,
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
             ),
           ),
         ],

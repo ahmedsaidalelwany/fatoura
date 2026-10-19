@@ -60,6 +60,33 @@ void main() {
       expect(fromPiastres.toStringAsFixed(2), '100.00');
     });
 
+    test('Money.fromString throws ArgumentError on invalid non-numeric strings', () {
+      // Empty string parses safely as zero
+      expect(Money.fromString('').isZero, isTrue);
+      expect(Money.fromString('   ').isZero, isTrue);
+
+      // Valid decimal string parses exactly
+      expect(Money.fromString('123.45').value, Decimal.parse('123.45'));
+
+      // Non-numeric strings must throw ArgumentError and NEVER convert silently to zero
+      expect(() => Money.fromString('invalid'), throwsArgumentError);
+      expect(() => Money.fromString('abc123'), throwsArgumentError);
+      expect(() => Money.fromString('NaN'), throwsArgumentError);
+    });
+
+    test('Supports 3-decimal digit currencies such as KWD', () {
+      final kwd = AppCurrencies.get('KWD');
+      expect(kwd.decimalDigits, 3);
+      expect(kwd.minorUnitFactor, 1000);
+
+      final moneyKwd = Money.fromNum(12.345, 'KWD');
+      expect(moneyKwd.toStringAsFixed(3), '12.345');
+      expect(moneyKwd.toMinorUnits(), 12345);
+
+      final formatted = CurrencyFormatter.format(12.345, currency: 'KWD', isArabic: false);
+      expect(formatted, 'KWD 12.345');
+    });
+
     test('New shop profile defaults to EGP', () {
       final now = DateTime.now();
       final shop = ShopProfile(

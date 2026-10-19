@@ -175,132 +175,190 @@ class AppScaffoldState extends State<AppScaffold> {
     }
 
     // Mobile Layout: Bottom navigation for primary 5 actions + drawer for secondary
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final dividerColor = Theme.of(context).dividerColor;
+
     return Scaffold(
       drawer: Drawer(
+        backgroundColor: surfaceColor,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: AppColors.primary),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 52, 20, 24),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle,
+                border: Border(bottom: BorderSide(color: dividerColor, width: 0.8)),
+              ),
+              child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
                       'assets/images/logo.png',
                       width: 48,
                       height: 48,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.receipt_long,
-                        color: Colors.white,
-                        size: 40,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.appName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.appName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          l10n.appTagline,
+                          style: TextStyle(
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    l10n.appTagline,
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.dashboard_outlined),
-              title: Text(l10n.navDashboard),
+            const SizedBox(height: 8),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.dashboard_outlined,
+              activeIcon: Icons.dashboard,
+              title: l10n.navDashboard,
               selected: _currentIndex == 0,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 0);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long_outlined),
-              title: Text(l10n.navInvoices),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.receipt_long_outlined,
+              activeIcon: Icons.receipt_long,
+              title: l10n.navInvoices,
               selected: _currentIndex == 1,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 1);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.shopping_cart_outlined),
-              title: Text(l10n.navPurchases),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.shopping_cart_outlined,
+              activeIcon: Icons.shopping_cart,
+              title: l10n.navPurchases,
               selected: _currentIndex == 2,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 2);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: Text(l10n.navCustomers),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.people_outline,
+              activeIcon: Icons.people,
+              title: l10n.navCustomers,
               selected: _currentIndex == 3,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 3);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.inventory_2_outlined),
-              title: Text(l10n.navProducts),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.inventory_2_outlined,
+              activeIcon: Icons.inventory_2,
+              title: l10n.navProducts,
               selected: _currentIndex == 4,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 4);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.assignment_return_outlined),
-              title: Text(l10n.navReturns),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.assignment_return_outlined,
+              activeIcon: Icons.assignment_return,
+              title: l10n.navReturns,
               selected: _currentIndex == 5,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 5);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart_outlined),
-              title: Text(l10n.navReports),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.bar_chart_outlined,
+              activeIcon: Icons.bar_chart,
+              title: l10n.navReports,
               selected: _currentIndex == 6,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 6);
               },
             ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.cloud_sync_outlined),
-              title: Text(l10n.navBackup),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Divider(color: dividerColor, thickness: 0.8),
+            ),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.cloud_sync_outlined,
+              activeIcon: Icons.cloud_sync,
+              title: l10n.navBackup,
               selected: _currentIndex == 7,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 7);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: Text(l10n.navSettings),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.settings_outlined,
+              activeIcon: Icons.settings,
+              title: l10n.navSettings,
               selected: _currentIndex == 8,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 8);
               },
             ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.verified_outlined, color: AppColors.primary),
-              title: Text(l10n.isArabic ? 'عن فاتورة' : 'About Fatoura'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Divider(color: dividerColor, thickness: 0.8),
+            ),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.verified_outlined,
+              activeIcon: Icons.verified,
+              title: l10n.isArabic ? 'عن فاتورة' : 'About Fatoura',
+              selected: false,
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -309,9 +367,12 @@ class AppScaffoldState extends State<AppScaffold> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.code_outlined, color: AppColors.primary),
-              title: Text(l10n.isArabic ? 'معلومات المطور' : 'Developer Information'),
+            _buildDrawerTile(
+              context: context,
+              icon: Icons.code_outlined,
+              activeIcon: Icons.code,
+              title: l10n.isArabic ? 'معلومات المطور' : 'Developer Information',
+              selected: false,
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -320,45 +381,110 @@ class AppScaffoldState extends State<AppScaffold> {
                 );
               },
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
       body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex >= 4 ? 4 : _currentIndex,
-        onTap: (idx) {
-          if (idx == 4) {
-            _showMoreMenu(context);
-          } else {
-            setState(() => _currentIndex = idx);
-          }
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.dashboard_outlined),
-            activeIcon: const Icon(Icons.dashboard),
-            label: l10n.navDashboard,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          border: Border(
+            top: BorderSide(color: dividerColor, width: 0.8),
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.receipt_long_outlined),
-            activeIcon: const Icon(Icons.receipt_long),
-            label: l10n.navInvoices,
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex >= 4 ? 4 : _currentIndex,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          onTap: (idx) {
+            if (idx == 4) {
+              _showMoreMenu(context);
+            } else {
+              setState(() => _currentIndex = idx);
+            }
+          },
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.dashboard_outlined),
+              activeIcon: const Icon(Icons.dashboard),
+              label: l10n.navDashboard,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.receipt_long_outlined),
+              activeIcon: const Icon(Icons.receipt_long),
+              label: l10n.navInvoices,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.shopping_cart_outlined),
+              activeIcon: const Icon(Icons.shopping_cart),
+              label: l10n.navPurchases,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.people_outline),
+              activeIcon: const Icon(Icons.people),
+              label: l10n.navCustomers,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.more_horiz),
+              activeIcon: const Icon(Icons.more_horiz),
+              label: l10n.allLabel,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerTile({
+    required BuildContext context,
+    required IconData icon,
+    required IconData activeIcon,
+    required String title,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      child: Material(
+        color: selected
+            ? primaryColor.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  selected ? activeIcon : icon,
+                  size: 22,
+                  color: selected
+                      ? primaryColor
+                      : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected
+                          ? primaryColor
+                          : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.shopping_cart_outlined),
-            activeIcon: const Icon(Icons.shopping_cart),
-            label: l10n.navPurchases,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.people_outline),
-            activeIcon: const Icon(Icons.people),
-            label: l10n.navCustomers,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.more_horiz),
-            label: l10n.allLabel,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -370,99 +496,156 @@ class AppScaffoldState extends State<AppScaffold> {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.inventory_2_outlined,
-                      color: AppColors.primary),
-                  title: Text(l10n.navProducts),
-                  selected: _currentIndex == 4,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentIndex = 4);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.assignment_return_outlined,
-                      color: AppColors.primary),
-                  title: Text(l10n.navReturns),
-                  selected: _currentIndex == 5,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentIndex = 5);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.bar_chart_outlined,
-                      color: AppColors.primary),
-                  title: Text(l10n.navReports),
-                  selected: _currentIndex == 6,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentIndex = 6);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.cloud_sync_outlined,
-                      color: AppColors.primary),
-                  title: Text(l10n.navBackup),
-                  selected: _currentIndex == 7,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentIndex = 7);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.settings_outlined,
-                      color: AppColors.primary),
-                  title: Text(l10n.navSettings),
-                  selected: _currentIndex == 8,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentIndex = 8);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.verified_outlined,
-                      color: AppColors.primary),
-                  title: Text(isAr ? 'عن فاتورة' : 'About Fatoura'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AboutPage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.code_outlined,
-                      color: AppColors.primary),
-                  title: Text(
-                    isAr ? 'معلومات المطور' : 'Developer Information',
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.inventory_2_outlined,
+                    iconBg: const Color(0xFF5856D6),
+                    title: l10n.navProducts,
+                    isSelected: _currentIndex == 4,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _currentIndex = 4);
+                    },
                   ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DeveloperInfoPage(),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.assignment_return_outlined,
+                    iconBg: const Color(0xFFFF9500),
+                    title: l10n.navReturns,
+                    isSelected: _currentIndex == 5,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _currentIndex = 5);
+                    },
+                  ),
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.bar_chart_outlined,
+                    iconBg: const Color(0xFF34C759),
+                    title: l10n.navReports,
+                    isSelected: _currentIndex == 6,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _currentIndex = 6);
+                    },
+                  ),
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.cloud_sync_outlined,
+                    iconBg: const Color(0xFF007AFF),
+                    title: l10n.navBackup,
+                    isSelected: _currentIndex == 7,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _currentIndex = 7);
+                    },
+                  ),
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.settings_outlined,
+                    iconBg: const Color(0xFF8E8E93),
+                    title: l10n.navSettings,
+                    isSelected: _currentIndex == 8,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _currentIndex = 8);
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Divider(
+                      color: Theme.of(context).dividerColor,
+                      thickness: 0.8,
+                    ),
+                  ),
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.verified_outlined,
+                    iconBg: AppColors.primary,
+                    title: isAr ? 'عن فاتورة' : 'About Fatoura',
+                    isSelected: false,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AboutPage()),
+                      );
+                    },
+                  ),
+                  _buildMoreMenuItem(
+                    ctx: ctx,
+                    icon: Icons.code_outlined,
+                    iconBg: const Color(0xFF32ADE6),
+                    title: isAr ? 'معلومات المطور' : 'Developer Information',
+                    isSelected: false,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DeveloperInfoPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMoreMenuItem({
+    required BuildContext ctx,
+    required IconData icon,
+    required Color iconBg,
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      leading: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: iconBg.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Icon(icon, color: iconBg, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+        ),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        size: 18,
+        color: Colors.black26,
+      ),
+      onTap: onTap,
     );
   }
 }

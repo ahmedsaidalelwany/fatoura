@@ -4,6 +4,8 @@ enum DocumentStatus { draft, issued, cancelled }
 
 enum PaymentStatus { unpaid, partiallyPaid, fullyPaid, refunded }
 
+enum InvoiceTemplate { product, service, mixed }
+
 class InvoiceItem extends Equatable {
   final String id;
   final String? productId;
@@ -11,6 +13,7 @@ class InvoiceItem extends Equatable {
   final double quantity;
   final double unitPrice;
   final double lineTotal;
+  final bool isService;
 
   const InvoiceItem({
     required this.id,
@@ -19,6 +22,7 @@ class InvoiceItem extends Equatable {
     required this.quantity,
     required this.unitPrice,
     required this.lineTotal,
+    this.isService = false,
   });
 
   InvoiceItem copyWith({
@@ -28,6 +32,7 @@ class InvoiceItem extends Equatable {
     double? quantity,
     double? unitPrice,
     double? lineTotal,
+    bool? isService,
   }) {
     return InvoiceItem(
       id: id ?? this.id,
@@ -36,6 +41,7 @@ class InvoiceItem extends Equatable {
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       lineTotal: lineTotal ?? this.lineTotal,
+      isService: isService ?? this.isService,
     );
   }
 
@@ -47,6 +53,7 @@ class InvoiceItem extends Equatable {
       'quantity': quantity,
       'unitPrice': unitPrice,
       'lineTotal': lineTotal,
+      'isService': isService,
     };
   }
 
@@ -58,6 +65,7 @@ class InvoiceItem extends Equatable {
       quantity: (map['quantity'] as num?)?.toDouble() ?? 1.0,
       unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0.0,
       lineTotal: (map['lineTotal'] as num?)?.toDouble() ?? 0.0,
+      isService: map['isService'] as bool? ?? false,
     );
   }
 
@@ -69,6 +77,7 @@ class InvoiceItem extends Equatable {
     quantity,
     unitPrice,
     lineTotal,
+    isService,
   ];
 }
 
@@ -82,6 +91,8 @@ class Invoice extends Equatable {
   final String shopPhone;
   final String shopAddress;
   final String shopTaxNumber;
+  final String shopLogoPath;
+  final String shopSignaturePath;
 
   // Customer snapshot (Optional for cash sales)
   final String? customerId;
@@ -110,6 +121,7 @@ class Invoice extends Equatable {
   final DateTime? cancelledAt;
   final String? cancellationReason;
 
+  final InvoiceTemplate template;
   final String currency;
   final String notes;
   final DateTime createdAt;
@@ -123,6 +135,8 @@ class Invoice extends Equatable {
     this.shopPhone = '',
     this.shopAddress = '',
     this.shopTaxNumber = '',
+    this.shopLogoPath = '',
+    this.shopSignaturePath = '',
     this.customerId,
     this.customerName = '',
     this.customerPhone = '',
@@ -140,6 +154,7 @@ class Invoice extends Equatable {
     required this.remainingBalance,
     this.documentStatus = DocumentStatus.issued,
     this.paymentStatus = PaymentStatus.unpaid,
+    this.template = InvoiceTemplate.product,
     this.cancelledAt,
     this.cancellationReason,
     this.currency = 'EGP',
@@ -161,6 +176,8 @@ class Invoice extends Equatable {
     String? shopPhone,
     String? shopAddress,
     String? shopTaxNumber,
+    String? shopLogoPath,
+    String? shopSignaturePath,
     String? customerId,
     String? customerName,
     String? customerPhone,
@@ -178,6 +195,7 @@ class Invoice extends Equatable {
     double? remainingBalance,
     DocumentStatus? documentStatus,
     PaymentStatus? paymentStatus,
+    InvoiceTemplate? template,
     DateTime? cancelledAt,
     String? cancellationReason,
     String? currency,
@@ -193,6 +211,8 @@ class Invoice extends Equatable {
       shopPhone: shopPhone ?? this.shopPhone,
       shopAddress: shopAddress ?? this.shopAddress,
       shopTaxNumber: shopTaxNumber ?? this.shopTaxNumber,
+      shopLogoPath: shopLogoPath ?? this.shopLogoPath,
+      shopSignaturePath: shopSignaturePath ?? this.shopSignaturePath,
       customerId: customerId ?? this.customerId,
       customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone,
@@ -210,6 +230,7 @@ class Invoice extends Equatable {
       remainingBalance: remainingBalance ?? this.remainingBalance,
       documentStatus: documentStatus ?? this.documentStatus,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      template: template ?? this.template,
       cancelledAt: cancelledAt ?? this.cancelledAt,
       cancellationReason: cancellationReason ?? this.cancellationReason,
       currency: currency ?? this.currency,
@@ -228,6 +249,8 @@ class Invoice extends Equatable {
       'shopPhone': shopPhone,
       'shopAddress': shopAddress,
       'shopTaxNumber': shopTaxNumber,
+      'shopLogoPath': shopLogoPath,
+      'shopSignaturePath': shopSignaturePath,
       'customerId': customerId,
       'customerName': customerName,
       'customerPhone': customerPhone,
@@ -245,6 +268,7 @@ class Invoice extends Equatable {
       'remainingBalance': remainingBalance,
       'documentStatus': documentStatus.name,
       'paymentStatus': paymentStatus.name,
+      'template': template.name,
       'cancelledAt': cancelledAt?.toIso8601String(),
       'cancellationReason': cancellationReason,
       'currency': currency,
@@ -255,6 +279,31 @@ class Invoice extends Equatable {
   }
 
   factory Invoice.fromMap(Map<String, dynamic> map) {
+    final parsedItems =
+        (map['items'] as List<dynamic>?)
+            ?.map(
+              (x) => InvoiceItem.fromMap(Map<String, dynamic>.from(x as Map)),
+            )
+            .toList() ??
+        [];
+
+    final templateName = map['template'] as String?;
+    final InvoiceTemplate resolvedTemplate;
+    if (templateName != null) {
+      resolvedTemplate = InvoiceTemplate.values.firstWhere(
+        (e) => e.name == templateName,
+        orElse: () => InvoiceTemplate.product,
+      );
+    } else {
+      if (parsedItems.isNotEmpty && parsedItems.every((it) => it.isService)) {
+        resolvedTemplate = InvoiceTemplate.service;
+      } else if (parsedItems.isNotEmpty && parsedItems.every((it) => !it.isService)) {
+        resolvedTemplate = InvoiceTemplate.product;
+      } else {
+        resolvedTemplate = InvoiceTemplate.mixed;
+      }
+    }
+
     return Invoice(
       id: map['id'] as String? ?? '',
       invoiceNumber: map['invoiceNumber'] as String? ?? '',
@@ -265,17 +314,13 @@ class Invoice extends Equatable {
       shopPhone: map['shopPhone'] as String? ?? '',
       shopAddress: map['shopAddress'] as String? ?? '',
       shopTaxNumber: map['shopTaxNumber'] as String? ?? '',
+      shopLogoPath: map['shopLogoPath'] as String? ?? '',
+      shopSignaturePath: map['shopSignaturePath'] as String? ?? '',
       customerId: map['customerId'] as String?,
       customerName: map['customerName'] as String? ?? '',
       customerPhone: map['customerPhone'] as String? ?? '',
       customerAddress: map['customerAddress'] as String? ?? '',
-      items:
-          (map['items'] as List<dynamic>?)
-              ?.map(
-                (x) => InvoiceItem.fromMap(Map<String, dynamic>.from(x as Map)),
-              )
-              .toList() ??
-          [],
+      items: parsedItems,
       subtotal: (map['subtotal'] as num?)?.toDouble() ?? 0.0,
       discountType: map['discountType'] as String? ?? 'fixed',
       discountInput: (map['discountInput'] as num?)?.toDouble() ?? 0.0,
@@ -294,6 +339,7 @@ class Invoice extends Equatable {
         (e) => e.name == map['paymentStatus'],
         orElse: () => PaymentStatus.unpaid,
       ),
+      template: resolvedTemplate,
       cancelledAt: map['cancelledAt'] != null
           ? DateTime.tryParse(map['cancelledAt'] as String)
           : null,
@@ -322,6 +368,7 @@ class Invoice extends Equatable {
     remainingBalance,
     documentStatus,
     paymentStatus,
+    template,
     cancelledAt,
     createdAt,
   ];

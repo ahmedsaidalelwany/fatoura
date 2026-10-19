@@ -27,11 +27,12 @@ class ProductsLoaded extends ProductsState {
 
 class ProductOperationSuccess extends ProductsState {
   final String message;
+  final Product? product;
 
-  const ProductOperationSuccess(this.message);
+  const ProductOperationSuccess(this.message, {this.product});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, product];
 }
 
 class ProductsError extends ProductsState {
@@ -66,9 +67,14 @@ class ProductsCubit extends Cubit<ProductsState> {
     String? id,
     required String name,
     String sku = '',
+    String barcode = '',
     String description = '',
     required double defaultUnitPrice,
+    double costPrice = 0.0,
     String category = '',
+    double stockQuantity = 0.0,
+    double reorderLevel = 0.0,
+    bool trackInventory = false,
   }) async {
     if (name.trim().isEmpty) {
       emit(const ProductsError('Product name cannot be empty.'));
@@ -79,24 +85,79 @@ class ProductsCubit extends Cubit<ProductsState> {
       return;
     }
 
+    // Validate barcode uniqueness if a barcode is provided
+    if (barcode.trim().isNotEmpty) {
+      final isUnique = await repository.isBarcodeUnique(
+        barcode.trim(),
+        excludeProductId: id,
+      );
+      if (!isUnique) {
+        emit(
+          ProductsError(
+            'Barcode "${barcode.trim()}" is already assigned to another product.',
+          ),
+        );
+        return;
+      }
+    }
+
     emit(ProductsLoading());
     try {
-      final productId = id ?? const Uuid().v4();
+      final isNew = id == null || id.isEmpty;
+      final productId = isNew ? const Uuid().v4() : id;
       final now = DateTime.now();
+
+      // Preserve existing data when editing
+      Product? existing;
+      if (!isNew) {
+        existing = await repository.getProductById(productId);
+      }
 
       final product = Product(
         id: productId,
         name: name.trim(),
         sku: sku.trim(),
+        barcode: barcode.trim(),
         description: description.trim(),
         defaultUnitPrice: defaultUnitPrice,
+        costPrice: costPrice,
         category: category.trim(),
-        createdAt: now,
+        isArchived: existing?.isArchived ?? false,
+        stockQuantity: existing?.stockQuantity ?? stockQuantity,
+        reorderLevel: reorderLevel,
+        trackInventory: trackInventory,
+        createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );
 
       await repository.saveProduct(product);
-      emit(const ProductOperationSuccess('Product saved successfully'));
+      emit(ProductOperationSuccess('Product saved successfully', product: product));
+      await loadProducts();
+    } catch (e) {
+      emit(ProductsError(e.toString()));
+    }
+  }
+
+  /// Looks up a product by barcode. Returns the product or null.
+  Future<Product?> findByBarcode(String barcode) async {
+    if (barcode.trim().isEmpty) return null;
+    try {
+      return await repository.getProductByBarcode(barcode.trim());
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Adjusts stock quantity for a product.
+  Future<void> adjustStock(
+    String productId, {
+    required double delta,
+    required String reason,
+  }) async {
+    emit(ProductsLoading());
+    try {
+      await repository.adjustStock(productId, delta: delta, reason: reason);
+      emit(const ProductOperationSuccess('Stock adjusted successfully'));
       await loadProducts();
     } catch (e) {
       emit(ProductsError(e.toString()));

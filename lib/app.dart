@@ -59,6 +59,8 @@ class FatouraApp extends StatelessWidget {
               shopProfileRepository: dependencies.shopProfileRepository,
               sequenceManager: dependencies.sequenceManager,
               auditRepository: dependencies.auditRepository,
+              productRepository: dependencies.productRepository,
+              paymentRepository: dependencies.paymentRepository,
             ),
           ),
           BlocProvider(
@@ -80,6 +82,9 @@ class FatouraApp extends StatelessWidget {
               shopProfileRepository: dependencies.shopProfileRepository,
               sequenceManager: dependencies.sequenceManager,
               auditRepository: dependencies.auditRepository,
+              productRepository: dependencies.productRepository,
+              paymentRepository: dependencies.paymentRepository,
+              partyRepository: dependencies.partyRepository,
             ),
           ),
           BlocProvider(

@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fatoura/core/constants/developer_config.dart';
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/precision/currency.dart';
-import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
@@ -32,6 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isAr = l10n.isArabic;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navSettings)),
@@ -51,12 +51,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSectionHeader(
                       icon: Icons.storefront_outlined,
                       title: isAr ? 'ملف المتجر والنشاط' : 'Shop & Business Profile',
+                      isDark: isDark,
                     ),
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -79,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                                 : 'Fatoura Shop'),
                                         style: const TextStyle(
                                           fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                       if (profile?.businessType.isNotEmpty ==
@@ -87,9 +88,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                         const SizedBox(height: 2),
                                         Text(
                                           profile!.businessType,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 13,
-                                            color: AppColors.textSecondaryLight,
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
                                           ),
                                         ),
                                       ],
@@ -98,13 +101,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                                 OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size(80, 36),
+                                    minimumSize: const Size(80, 34),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
-                                      vertical: 6,
+                                      vertical: 4,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
-                                  icon: const Icon(Icons.edit_outlined, size: 16),
+                                  icon: const Icon(Icons.edit_outlined, size: 15),
                                   label: Text(isAr ? 'تعديل' : 'Edit'),
                                   onPressed: () {
                                     Navigator.push(
@@ -115,34 +121,55 @@ class _SettingsPageState extends State<SettingsPage> {
                                         ),
                                       ),
                                     ).then((_) {
-                                      context
-                                          .read<ShopSetupCubit>()
-                                          .loadProfile();
+                                      if (context.mounted) {
+                                        context
+                                            .read<ShopSetupCubit>()
+                                            .loadProfile();
+                                      }
                                     });
                                   },
                                 ),
                               ],
                             ),
-                            const Divider(height: 24),
+                            const Divider(height: 24, thickness: 0.8),
                             _buildInfoRow(
                               isAr ? 'رقم الهاتف' : 'Phone',
                               profile?.phone.isNotEmpty == true
                                   ? profile!.phone
                                   : (isAr ? 'غير محدد' : 'Not set'),
+                              isDark,
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 8),
                             _buildInfoRow(
                               isAr ? 'العنوان' : 'Address',
                               profile?.address.isNotEmpty == true
                                   ? profile!.address
                                   : (isAr ? 'غير محدد' : 'Not set'),
+                              isDark,
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 8),
                             _buildInfoRow(
                               isAr ? 'الرقم الضريبي' : 'Tax Number',
                               profile?.taxNumber.isNotEmpty == true
                                   ? profile!.taxNumber
                                   : (isAr ? 'غير مسجل' : 'None'),
+                              isDark,
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              isAr ? 'شعار المتجر' : 'Shop Logo',
+                              profile?.logoPath.isNotEmpty == true
+                                  ? (isAr ? 'محدد ✓' : 'Configured ✓')
+                                  : (isAr ? 'غير محدد' : 'Not set'),
+                              isDark,
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              isAr ? 'التوقيع والختم' : 'Signature & Stamp',
+                              profile?.signaturePath.isNotEmpty == true
+                                  ? (isAr ? 'محدد ✓' : 'Configured ✓')
+                                  : (isAr ? 'غير محدد' : 'Not set'),
+                              isDark,
                             ),
                           ],
                         ),
@@ -156,12 +183,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       title: isAr
                           ? 'تفضيلات العملة والمالية'
                           : 'Currency & Financial Preferences',
+                      isDark: isDark,
                     ),
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -171,7 +199,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             Text(
                               isAr ? 'العملة الافتراضية للمتجر' : 'Default Shop Currency',
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
@@ -180,18 +208,21 @@ class _SettingsPageState extends State<SettingsPage> {
                               isAr
                                   ? 'تطبق العملة المختارة على المستندات الجديدة. المستندات السابقة تحتفظ بعملتها التاريخية.'
                                   : 'Selected currency applies to new documents. Historical documents preserve their saved currency.',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
                               initialValue: appSettings.defaultCurrency,
+                              isExpanded: true,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.monetization_on_outlined),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -222,6 +253,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                           address: profile.address,
                                           defaultCurrency: newCurrency,
                                           taxNumber: profile.taxNumber,
+                                          logoPath: profile.logoPath,
+                                          signaturePath: profile.signaturePath,
                                           defaultTaxEnabled:
                                               profile.defaultTaxEnabled,
                                           defaultTaxRate:
@@ -232,21 +265,23 @@ class _SettingsPageState extends State<SettingsPage> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            const Divider(height: 1),
+                            const Divider(height: 1, thickness: 0.8),
                             const SizedBox(height: 12),
                             Text(
                               l10n.settingsInvoicePrefix,
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               l10n.numberingRuleDesc,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -259,12 +294,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSectionHeader(
                       icon: Icons.palette_outlined,
                       title: isAr ? 'المظهر والسمة' : 'Appearance',
+                      isDark: isDark,
                     ),
                     Card(
                       elevation: 0,
+                      clipBehavior: Clip.antiAlias,
                       shape: RoundedRectangleBorder(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                       ),
                       child: Column(
                         children: [
@@ -281,6 +318,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               }
                             },
                           ),
+                          const Divider(height: 1, thickness: 0.8),
                           RadioListTile<ThemeMode>(
                             title: Text(l10n.themeLight),
                             secondary: const Icon(Icons.light_mode_outlined),
@@ -294,6 +332,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               }
                             },
                           ),
+                          const Divider(height: 1, thickness: 0.8),
                           RadioListTile<ThemeMode>(
                             title: Text(l10n.themeDark),
                             secondary: const Icon(Icons.dark_mode_outlined),
@@ -316,23 +355,34 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSectionHeader(
                       icon: Icons.language_outlined,
                       title: isAr ? 'اللغة' : 'Language',
+                      isDark: isDark,
                     ),
                     Card(
                       elevation: 0,
+                      clipBehavior: Clip.antiAlias,
                       shape: RoundedRectangleBorder(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                       ),
                       child: Column(
                         children: [
                           RadioListTile<String>(
                             title: const Text('العربية (Arabic)'),
-                            secondary: const Text(
-                              'ع',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                            secondary: Container(
+                              width: 30,
+                              height: 30,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'ع',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                             value: 'ar',
@@ -345,14 +395,24 @@ class _SettingsPageState extends State<SettingsPage> {
                               }
                             },
                           ),
+                          const Divider(height: 1, thickness: 0.8),
                           RadioListTile<String>(
                             title: const Text('English (الإنجليزية)'),
-                            secondary: const Text(
-                              'En',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                            secondary: Container(
+                              width: 30,
+                              height: 30,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'En',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                             value: 'en',
@@ -374,24 +434,46 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSectionHeader(
                       icon: Icons.cloud_sync_outlined,
                       title: isAr ? 'النسخ الاحتياطي والبيانات' : 'Backup & Data',
+                      isDark: isDark,
                     ),
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                       ),
                       child: ListTile(
-                        leading: const Icon(Icons.backup_outlined,
-                            color: AppColors.primary),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.backup_outlined,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                        ),
                         title: Text(l10n.navBackup),
                         subtitle: Text(
                           isAr
                               ? 'تصدير نسخة احتياطية كاملة أو استعادة بيانات متجرك'
                               : 'Export full JSON backup or restore shop data',
-                          style: const TextStyle(fontSize: 12),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
                         ),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -408,26 +490,48 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildSectionHeader(
                       icon: Icons.info_outline,
                       title: isAr ? 'حول التطبيق' : 'About & Developer',
+                      isDark: isDark,
                     ),
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        side: const BorderSide(color: AppColors.borderLight),
-                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                       ),
                       child: Column(
                         children: [
                           ListTile(
-                            leading: const Icon(Icons.verified_outlined,
-                                color: AppColors.primary),
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.verified_outlined,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
                             title: Text(isAr ? 'عن تطبيق فاتورة' : 'About Fatoura'),
                             subtitle: Text(
                               isAr
                                   ? 'رؤية التطبيق، الميزات، والخصوصية المحلية'
                                   : 'App vision, capabilities, and offline privacy',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
                             ),
-                            trailing: const Icon(Icons.chevron_right),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -437,10 +541,20 @@ class _SettingsPageState extends State<SettingsPage> {
                               );
                             },
                           ),
-                          const Divider(height: 1),
+                          const Divider(height: 1, thickness: 0.8),
                           ListTile(
-                            leading: const Icon(Icons.code_outlined,
-                                color: AppColors.primary),
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.code_outlined,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
                             title: Text(
                               isAr ? 'معلومات المطور والتقنية' : 'Developer Information',
                             ),
@@ -448,9 +562,20 @@ class _SettingsPageState extends State<SettingsPage> {
                               isAr
                                   ? 'معلومات الناشر والهندسة البرمجية للتطبيق'
                                   : 'Publisher info and engineering architecture',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
                             ),
-                            trailing: const Icon(Icons.chevron_right),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -471,17 +596,21 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             '${DeveloperConfig.appName} • ${DeveloperConfig.appVersion}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             l10n.appTagline,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -501,19 +630,34 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSectionHeader({
     required IconData icon,
     required String title,
+    required bool isDark,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, left: 4.0, right: 4.0),
+      padding: const EdgeInsets.only(bottom: 8.0, left: 4.0, right: 4.0, top: 4.0),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.primary),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            ),
+          ),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
             ),
           ),
         ],
@@ -521,22 +665,26 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: AppColors.textSecondaryLight,
+            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],

@@ -1,15 +1,18 @@
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
+import 'package:fatoura/features/products/domain/repositories/product_repository.dart';
 import 'package:fatoura/features/returns/domain/entities/sales_return.dart';
 import 'package:fatoura/features/returns/domain/repositories/sales_return_repository.dart';
 
 class SalesReturnRepositoryImpl implements SalesReturnRepository {
   final HiveDatabase database;
   final InvoiceRepository invoiceRepository;
+  final ProductRepository? productRepository;
 
   SalesReturnRepositoryImpl({
     required this.database,
     required this.invoiceRepository,
+    this.productRepository,
   });
 
   @override
@@ -91,6 +94,29 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
         invoiceId: salesReturn.originalInvoiceId,
         creditAmount: salesReturn.totalRefundAmount,
       );
+    }
+
+    // Restore stock for returned products
+    if (productRepository != null) {
+      final originalInvoice = await invoiceRepository.getInvoiceById(
+        salesReturn.originalInvoiceId,
+      );
+      if (originalInvoice != null) {
+        for (final retItem in salesReturn.items) {
+          final matchedItem = originalInvoice.items
+              .where((i) => i.id == retItem.invoiceItemId)
+              .firstOrNull;
+          if (matchedItem != null &&
+              matchedItem.productId != null &&
+              matchedItem.productId!.isNotEmpty) {
+            await productRepository!.adjustStock(
+              matchedItem.productId!,
+              delta: retItem.returnedQuantity,
+              reason: 'Return received: ${salesReturn.returnNumber}',
+            );
+          }
+        }
+      }
     }
 
     final box = database.salesReturnsBox;

@@ -117,4 +117,18 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
     );
     await savePurchase(updated);
   }
+
+  @override
+  Future<void> updateStockReceiptStatus(
+    String purchaseId,
+    bool isReceived,
+  ) async {
+    final purchase = await getPurchaseById(purchaseId);
+    if (purchase == null) return;
+    final updated = purchase.copyWith(
+      isStockReceived: isReceived,
+      updatedAt: DateTime.now(),
+    );
+    await savePurchase(updated);
+  }
 }
