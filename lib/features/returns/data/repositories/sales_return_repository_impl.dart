@@ -96,7 +96,7 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
       );
     }
 
-    // Restore stock for returned products
+    // Restore stock for returned products (physical goods only, not services)
     if (productRepository != null) {
       final originalInvoice = await invoiceRepository.getInvoiceById(
         salesReturn.originalInvoiceId,
@@ -107,6 +107,7 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
               .where((i) => i.id == retItem.invoiceItemId)
               .firstOrNull;
           if (matchedItem != null &&
+              !matchedItem.isService &&
               matchedItem.productId != null &&
               matchedItem.productId!.isNotEmpty) {
             await productRepository!.adjustStock(

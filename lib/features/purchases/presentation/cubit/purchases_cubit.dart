@@ -180,15 +180,22 @@ class PurchasesCubit extends Cubit<PurchasesState> {
           actualPaid = initialPaidAmount.clamp(0.0, finalTotal);
           paymentStatus = actualPaid >= finalTotal
               ? PaymentStatus.fullyPaid
-              : (actualPaid > 0 ? PaymentStatus.partiallyPaid : PaymentStatus.unpaid);
+              : (actualPaid > 0
+                    ? PaymentStatus.partiallyPaid
+                    : PaymentStatus.unpaid);
         } else {
           actualPaid = 0.0;
           paymentStatus = PaymentStatus.unpaid;
         }
       }
 
-      final remainingPayable = (finalTotal - actualPaid).clamp(0.0, double.infinity);
+      final remainingPayable = (finalTotal - actualPaid).clamp(
+        0.0,
+        double.infinity,
+      );
       final isStockReceived = !isDraft;
+      final shouldRecordRepoPayment =
+          !isDraft && actualPaid > 0 && paymentRepository != null;
 
       final purchase = PurchaseInvoice(
         id: purchaseId,
@@ -199,19 +206,25 @@ class PurchasesCubit extends Cubit<PurchasesState> {
         issueDate: now,
         items: items,
         subtotal: calcResult.subtotal.toDouble(),
-        discountType: discountType == DiscountType.fixed ? 'fixed' : 'percentage',
+        discountType: discountType == DiscountType.fixed
+            ? 'fixed'
+            : 'percentage',
         discountInput: discountValue,
         discountAmount: calcResult.discountAmount.toDouble(),
         taxableBase: calcResult.taxableBase.toDouble(),
         taxRate: taxRate,
         taxAmount: calcResult.taxAmount.toDouble(),
         finalTotal: finalTotal,
-        amountPaid: actualPaid,
-        remainingPayable: remainingPayable,
+        amountPaid: shouldRecordRepoPayment ? 0.0 : actualPaid,
+        remainingPayable: shouldRecordRepoPayment
+            ? finalTotal
+            : remainingPayable,
         currency: currency,
         notes: notes.trim(),
         documentStatus: isDraft ? DocumentStatus.draft : DocumentStatus.issued,
-        paymentStatus: paymentStatus,
+        paymentStatus: shouldRecordRepoPayment
+            ? PaymentStatus.unpaid
+            : paymentStatus,
         isStockReceived: isStockReceived,
         createdAt: now,
         updatedAt: now,
@@ -230,13 +243,12 @@ class PurchasesCubit extends Cubit<PurchasesState> {
               reason: 'Purchase receipt: $purchaseNumber',
             );
             // Update cost price on the product
-            final prod = await productRepository!.getProductById(item.productId!);
+            final prod = await productRepository!.getProductById(
+              item.productId!,
+            );
             if (prod != null) {
               await productRepository!.saveProduct(
-                prod.copyWith(
-                  costPrice: item.unitPrice,
-                  updatedAt: now,
-                ),
+                prod.copyWith(costPrice: item.unitPrice, updatedAt: now),
               );
             }
           }
@@ -244,7 +256,7 @@ class PurchasesCubit extends Cubit<PurchasesState> {
       }
 
       // 2. Payment recording integration: If payment is made, log in PaymentRepository
-      if (!isDraft && actualPaid > 0 && paymentRepository != null) {
+      if (shouldRecordRepoPayment) {
         final paymentId = const Uuid().v4();
         final payment = Payment(
           id: paymentId,
@@ -273,26 +285,31 @@ class PurchasesCubit extends Cubit<PurchasesState> {
         await paymentRepository!.savePayment(payment);
       }
 
+      final finalPurchase =
+          await purchaseRepository.getPurchaseById(purchase.id) ?? purchase;
+
       await auditRepository.logAction(
         AuditLog(
           id: const Uuid().v4(),
           action: isDraft ? 'create_purchase_draft' : 'create_purchase',
           documentType: 'purchase_invoice',
-          documentId: purchase.id,
+          documentId: finalPurchase.id,
           description:
-              'Recorded purchase ${purchase.purchaseNumber} from $supplierName for ${purchase.finalTotal} $currency (Stock received: $isStockReceived, Paid: $actualPaid)',
+              'Recorded purchase ${finalPurchase.purchaseNumber} from $supplierName for ${finalPurchase.finalTotal} $currency (Stock received: $isStockReceived, Paid: ${finalPurchase.amountPaid})',
           timestamp: now,
         ),
       );
 
       emit(
         PurchaseOperationSuccess(
-          isDraft ? 'Purchase draft saved' : 'Purchase confirmed and stock received',
-          purchase: purchase,
+          isDraft
+              ? 'Purchase draft saved'
+              : 'Purchase confirmed and stock received',
+          purchase: finalPurchase,
         ),
       );
       await loadPurchases();
-      return purchase;
+      return finalPurchase;
     } catch (e) {
       emit(PurchasesError(e.toString()));
       return null;
@@ -331,13 +348,12 @@ class PurchasesCubit extends Cubit<PurchasesState> {
               delta: item.quantity,
               reason: 'Confirmed purchase receipt: ${purchase.purchaseNumber}',
             );
-            final prod = await productRepository!.getProductById(item.productId!);
+            final prod = await productRepository!.getProductById(
+              item.productId!,
+            );
             if (prod != null) {
               await productRepository!.saveProduct(
-                prod.copyWith(
-                  costPrice: item.unitPrice,
-                  updatedAt: now,
-                ),
+                prod.copyWith(costPrice: item.unitPrice, updatedAt: now),
               );
             }
           }
@@ -403,7 +419,9 @@ class PurchasesCubit extends Cubit<PurchasesState> {
       // Validate available sellable stock
       if (productRepository != null) {
         final prod = await productRepository!.getProductById(productId);
-        if (prod != null && prod.trackInventory && prod.stockQuantity < returnQuantity) {
+        if (prod != null &&
+            prod.trackInventory &&
+            prod.stockQuantity < returnQuantity) {
           emit(
             PurchasesError(
               'Available stock (${prod.stockQuantity}) is insufficient to return $returnQuantity units.',
@@ -416,7 +434,8 @@ class PurchasesCubit extends Cubit<PurchasesState> {
         await productRepository!.adjustStock(
           productId,
           delta: -returnQuantity,
-          reason: 'Supplier return for purchase ${purchase.purchaseNumber}: $reason',
+          reason:
+              'Supplier return for purchase ${purchase.purchaseNumber}: $reason',
         );
       }
 
@@ -424,7 +443,10 @@ class PurchasesCubit extends Cubit<PurchasesState> {
 
       // If credit adjustment, reduce remaining payable on purchase
       if (!isCashRefund && refundAmount > 0) {
-        final newRemaining = (purchase.remainingPayable - refundAmount).clamp(0.0, double.infinity);
+        final newRemaining = (purchase.remainingPayable - refundAmount).clamp(
+          0.0,
+          double.infinity,
+        );
         final updatedPurchase = purchase.copyWith(
           remainingPayable: newRemaining,
           paymentStatus: newRemaining == 0.0 && purchase.amountPaid > 0
@@ -503,7 +525,9 @@ class PurchasesCubit extends Cubit<PurchasesState> {
           partyName: purchase.supplierName,
           isCustomerPayment: false,
           referenceNumber: purchase.purchaseNumber,
-          notes: notes.isNotEmpty ? notes : 'Supplier payment: ${purchase.purchaseNumber}',
+          notes: notes.isNotEmpty
+              ? notes
+              : 'Supplier payment: ${purchase.purchaseNumber}',
           allocations: [
             PaymentAllocation(
               id: const Uuid().v4(),
@@ -525,7 +549,8 @@ class PurchasesCubit extends Cubit<PurchasesState> {
         );
       }
 
-      final updated = await purchaseRepository.getPurchaseById(purchaseId) ?? purchase;
+      final updated =
+          await purchaseRepository.getPurchaseById(purchaseId) ?? purchase;
       await auditRepository.logAction(
         AuditLog(
           id: const Uuid().v4(),
@@ -541,6 +566,109 @@ class PurchasesCubit extends Cubit<PurchasesState> {
       emit(
         PurchaseOperationSuccess(
           'Supplier payment recorded successfully',
+          purchase: updated,
+        ),
+      );
+      await loadPurchases();
+      return true;
+    } catch (e) {
+      emit(PurchasesError(e.toString()));
+      return false;
+    }
+  }
+
+  /// Cancels an issued or draft purchase, reversing stock movements safely and ensuring no dependent payments exist.
+  Future<bool> cancelPurchase(String purchaseId, String reason) async {
+    if (reason.trim().isEmpty) {
+      emit(const PurchasesError('Cancellation reason is required.'));
+      return false;
+    }
+
+    emit(PurchasesLoading());
+    try {
+      final purchase = await purchaseRepository.getPurchaseById(purchaseId);
+      if (purchase == null) {
+        emit(const PurchasesError('Purchase not found.'));
+        return false;
+      }
+      if (purchase.isCancelled) {
+        emit(
+          PurchaseOperationSuccess(
+            'Purchase is already cancelled.',
+            purchase: purchase,
+          ),
+        );
+        return true;
+      }
+
+      // 1. Dependency check: Cannot cancel purchase with recorded payments
+      if (paymentRepository != null) {
+        final payments = await paymentRepository!.getPaymentsForInvoice(
+          purchaseId,
+        );
+        if (payments.isNotEmpty || purchase.amountPaid > 0) {
+          emit(
+            const PurchasesError(
+              'لا يمكن إلغاء فاتورة مشتريات مسجل عليها مدفوعات. يجب تسوية أو استرداد المدفوعات أولاً.',
+            ),
+          );
+          return false;
+        }
+      }
+
+      // 2. Inventory check & reversal: If stock was received, reverse stock
+      if (purchase.isStockReceived && productRepository != null) {
+        // First verify that sufficient stock exists to reverse
+        for (final item in purchase.items) {
+          if (item.productId != null && item.productId!.isNotEmpty) {
+            final prod = await productRepository!.getProductById(
+              item.productId!,
+            );
+            if (prod != null &&
+                prod.trackInventory &&
+                prod.stockQuantity < item.quantity) {
+              emit(
+                PurchasesError(
+                  'المخزون الحالي (${prod.stockQuantity}) غير كافٍ لعكس استلام المشتريات (${item.quantity}). قد تكون البضاعة بيعت.',
+                ),
+              );
+              return false;
+            }
+          }
+        }
+
+        // Deduct received stock
+        for (final item in purchase.items) {
+          if (item.productId != null && item.productId!.isNotEmpty) {
+            await productRepository!.adjustStock(
+              item.productId!,
+              delta: -item.quantity,
+              reason: 'Purchase cancelled: ${purchase.purchaseNumber}',
+            );
+          }
+        }
+      }
+
+      // 3. Mark purchase as cancelled
+      await purchaseRepository.cancelPurchase(purchaseId, reason.trim());
+      final updated = await purchaseRepository.getPurchaseById(purchaseId);
+
+      // 4. Audit log
+      await auditRepository.logAction(
+        AuditLog(
+          id: const Uuid().v4(),
+          action: 'cancel_purchase',
+          documentType: 'purchase_invoice',
+          documentId: purchaseId,
+          description:
+              'Cancelled purchase ${purchase.purchaseNumber} with reason: $reason',
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      emit(
+        PurchaseOperationSuccess(
+          'تم إلغاء فاتورة المشتريات بنجاح وعكس المخزون',
           purchase: updated,
         ),
       );

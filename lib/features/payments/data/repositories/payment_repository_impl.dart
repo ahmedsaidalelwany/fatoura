@@ -1,15 +1,19 @@
+import 'package:decimal/decimal.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
 import 'package:fatoura/features/payments/domain/entities/payment.dart';
 import 'package:fatoura/features/payments/domain/repositories/payment_repository.dart';
+import 'package:fatoura/features/purchases/domain/repositories/purchase_repository.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
   final HiveDatabase database;
   final InvoiceRepository invoiceRepository;
+  final PurchaseRepository? purchaseRepository;
 
   PaymentRepositoryImpl({
     required this.database,
     required this.invoiceRepository,
+    this.purchaseRepository,
   });
 
   @override
@@ -87,43 +91,85 @@ class PaymentRepositoryImpl implements PaymentRepository {
 
   @override
   Future<void> savePayment(Payment payment) async {
-    // 1. Process allocations to invoices
+    if (payment.amount <= 0.0) {
+      throw ArgumentError('Payment amount must be greater than zero.');
+    }
+
+    final box = database.paymentsBox;
+
+    // Idempotency guard: If this payment ID was already persisted, do not duplicate allocations.
+    if (box.containsKey(payment.id)) {
+      return;
+    }
+
+    // 1. Process allocations to invoices / purchases
     for (final alloc in payment.allocations) {
       if (alloc.amount > 0) {
         if (payment.isCustomerPayment) {
+          final invoice = await invoiceRepository.getInvoiceById(
+            alloc.invoiceId,
+          );
+          if (invoice == null) {
+            throw ArgumentError('Invoice ${alloc.invoiceId} does not exist.');
+          }
+          if (alloc.amount > invoice.remainingBalance + 0.0001) {
+            throw ArgumentError(
+              'Allocation amount (${alloc.amount}) exceeds invoice remaining balance (${invoice.remainingBalance}).',
+            );
+          }
           await invoiceRepository.recordPaymentOnInvoice(
             invoiceId: alloc.invoiceId,
             paymentAmount: alloc.amount,
           );
         } else {
           // Supplier payment to purchase invoice
-          final purchaseBox = database.purchasesBox;
-          final purchaseMap = purchaseBox.get(alloc.invoiceId);
-          if (purchaseMap != null) {
-            final currentPaid =
-                (purchaseMap['amountPaid'] as num?)?.toDouble() ?? 0.0;
-            final finalTotal =
-                (purchaseMap['finalTotal'] as num?)?.toDouble() ?? 0.0;
-            final newPaid = currentPaid + alloc.amount;
-            final newRemaining = (finalTotal - newPaid) > 0
-                ? (finalTotal - newPaid)
-                : 0.0;
-            final newStatus = newRemaining == 0.0
-                ? 'fullyPaid'
-                : 'partiallyPaid';
+          if (purchaseRepository != null) {
+            final purchase = await purchaseRepository!.getPurchaseById(
+              alloc.invoiceId,
+            );
+            if (purchase != null &&
+                alloc.amount > purchase.remainingPayable + 0.0001) {
+              throw ArgumentError(
+                'Allocation amount (${alloc.amount}) exceeds purchase remaining payable (${purchase.remainingPayable}).',
+              );
+            }
+            await purchaseRepository!.recordPaymentOnPurchase(
+              purchaseId: alloc.invoiceId,
+              paymentAmount: alloc.amount,
+            );
+          } else {
+            final purchaseBox = database.purchasesBox;
+            final purchaseMap = purchaseBox.get(alloc.invoiceId);
+            if (purchaseMap != null) {
+              final currentPaid = Decimal.parse(
+                ((purchaseMap['amountPaid'] as num?)?.toDouble() ?? 0.0)
+                    .toString(),
+              );
+              final allocAmount = Decimal.parse(alloc.amount.toString());
+              final finalTotal = Decimal.parse(
+                ((purchaseMap['finalTotal'] as num?)?.toDouble() ?? 0.0)
+                    .toString(),
+              );
+              final newPaid = currentPaid + allocAmount;
+              final newRemaining = (finalTotal - newPaid) > Decimal.zero
+                  ? (finalTotal - newPaid)
+                  : Decimal.zero;
+              final newStatus = newRemaining == Decimal.zero
+                  ? 'fullyPaid'
+                  : 'partiallyPaid';
 
-            purchaseMap['amountPaid'] = newPaid;
-            purchaseMap['remainingPayable'] = newRemaining;
-            purchaseMap['paymentStatus'] = newStatus;
-            purchaseMap['updatedAt'] = DateTime.now().toIso8601String();
-            await purchaseBox.put(alloc.invoiceId, purchaseMap);
+              purchaseMap['amountPaid'] = newPaid.toDouble();
+              purchaseMap['remainingPayable'] = newRemaining.toDouble();
+              purchaseMap['paymentStatus'] = newStatus;
+              purchaseMap['updatedAt'] = DateTime.now().toIso8601String();
+              await purchaseBox.put(alloc.invoiceId, purchaseMap);
+            }
           }
         }
       }
     }
 
     // 2. Persist the payment record
-    final box = database.paymentsBox;
     await box.put(payment.id, payment.toMap());
   }
 }

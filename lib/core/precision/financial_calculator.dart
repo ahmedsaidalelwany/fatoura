@@ -44,15 +44,48 @@ class InvoiceCalculationResult {
 class FinancialCalculator {
   FinancialCalculator._();
 
+  /// Deterministic half-up rounding for [Decimal] to [scale] fraction digits.
+  /// Eliminates binary floating-point rounding errors and truncation bias.
+  static Decimal roundHalfUp(Decimal input, int scale) {
+    if (scale < 0) {
+      throw ArgumentError('Scale must be non-negative: $scale');
+    }
+    var factorBigInt = BigInt.one;
+    for (int i = 0; i < scale; i++) {
+      factorBigInt *= BigInt.from(10);
+    }
+    final factor = Decimal.fromBigInt(factorBigInt);
+    final scaled = input * factor;
+
+    final isNegative = scaled < Decimal.zero;
+    final absScaled = isNegative ? -scaled : scaled;
+    final half = Decimal.parse('0.5');
+    final roundedBigInt = (absScaled + half).toBigInt();
+    final signedBigInt = isNegative ? -roundedBigInt : roundedBigInt;
+
+    return (Decimal.fromBigInt(signedBigInt) / factor).toDecimal(
+      scaleOnInfinitePrecision: scale,
+    );
+  }
+
   /// Calculates a single line item total: quantity * unitPrice
+  /// Applies currency half-up rounding.
   static Money calculateLineTotal({
     required Decimal quantity,
     required Money unitPrice,
   }) {
-    if (quantity <= Decimal.zero) {
+    if (quantity < Decimal.zero) {
+      throw ArgumentError('Quantity cannot be negative: $quantity');
+    }
+    if (unitPrice.isNegative) {
+      throw ArgumentError('Unit price cannot be negative: $unitPrice');
+    }
+    if (quantity == Decimal.zero) {
       return Money.zero(unitPrice.currency);
     }
-    return unitPrice * quantity;
+    final scale = AppCurrencies.get(unitPrice.currency).decimalDigits;
+    final rounded = roundHalfUp(unitPrice.value * quantity, scale);
+    return Money.fromDecimal(rounded, unitPrice.currency);
   }
 
   /// Authoritative calculation engine for Invoices (Sales or Purchases)
@@ -63,8 +96,18 @@ class FinancialCalculator {
     Decimal? taxRatePercent,
     String currency = AppCurrencies.defaultCurrency,
   }) {
+    final scale = AppCurrencies.get(currency).decimalDigits;
     final validTaxRate = taxRatePercent ?? Decimal.zero;
     final validDiscountInput = discountValue ?? Decimal.zero;
+
+    if (validTaxRate < Decimal.zero) {
+      throw ArgumentError('Tax rate cannot be negative: $validTaxRate');
+    }
+    if (validDiscountInput < Decimal.zero) {
+      throw ArgumentError(
+        'Discount value cannot be negative: $validDiscountInput',
+      );
+    }
 
     // 1. Calculate each line total
     final lineItems = <LineItemCalculation>[];
@@ -85,6 +128,7 @@ class FinancialCalculator {
       subtotalDecimal += total.value;
     }
 
+    subtotalDecimal = roundHalfUp(subtotalDecimal, scale);
     final subtotal = Money.fromDecimal(subtotalDecimal, currency);
 
     // 2. Calculate discount amount
@@ -96,18 +140,24 @@ class FinancialCalculator {
             : validDiscountInput;
       } else {
         // Percentage discount
-        final rate = (validDiscountInput / Decimal.fromInt(100)).toDecimal(
-          scaleOnInfinitePrecision: 4,
+        final cappedPercent = validDiscountInput > Decimal.fromInt(100)
+            ? Decimal.fromInt(100)
+            : validDiscountInput;
+        final rate = (cappedPercent / Decimal.fromInt(100)).toDecimal(
+          scaleOnInfinitePrecision: 8,
         );
-        final calc = subtotalDecimal * rate;
-        discountDecimal = calc > subtotalDecimal ? subtotalDecimal : calc;
+        discountDecimal = roundHalfUp(subtotalDecimal * rate, scale);
+        if (discountDecimal > subtotalDecimal) {
+          discountDecimal = subtotalDecimal;
+        }
       }
     }
+    discountDecimal = roundHalfUp(discountDecimal, scale);
     final discountAmount = Money.fromDecimal(discountDecimal, currency);
 
     // 3. Taxable Base = subtotal - discount
     final taxableBaseDecimal = subtotalDecimal > discountDecimal
-        ? subtotalDecimal - discountDecimal
+        ? roundHalfUp(subtotalDecimal - discountDecimal, scale)
         : Decimal.zero;
     final taxableBase = Money.fromDecimal(taxableBaseDecimal, currency);
 
@@ -115,14 +165,17 @@ class FinancialCalculator {
     Decimal taxDecimal = Decimal.zero;
     if (validTaxRate > Decimal.zero && taxableBaseDecimal > Decimal.zero) {
       final taxMultiplier = (validTaxRate / Decimal.fromInt(100)).toDecimal(
-        scaleOnInfinitePrecision: 4,
+        scaleOnInfinitePrecision: 8,
       );
-      taxDecimal = taxableBaseDecimal * taxMultiplier;
+      taxDecimal = roundHalfUp(taxableBaseDecimal * taxMultiplier, scale);
     }
     final taxAmount = Money.fromDecimal(taxDecimal, currency);
 
     // 5. Final Total = taxableBase + taxAmount
-    final finalTotalDecimal = taxableBaseDecimal + taxDecimal;
+    final finalTotalDecimal = roundHalfUp(
+      taxableBaseDecimal + taxDecimal,
+      scale,
+    );
     final finalTotal = Money.fromDecimal(finalTotalDecimal, currency);
 
     return InvoiceCalculationResult(
@@ -166,22 +219,25 @@ class FinancialCalculator {
       return Money.zero(originalLineTotal.currency);
     }
 
+    final currency = originalLineTotal.currency;
+    final scale = AppCurrencies.get(currency).decimalDigits;
+
     // Proportion of this line being returned
     final lineRatio = (returnedQuantity / originalSoldQuantity).toDecimal(
-      scaleOnInfinitePrecision: 6,
+      scaleOnInfinitePrecision: 8,
     );
-    final returnedLineGross = originalLineTotal * lineRatio;
+    final returnedLineGross = originalLineTotal.value * lineRatio;
 
     if (originalInvoiceSubtotal.isZero) {
-      return Money.zero(originalLineTotal.currency);
+      return Money.zero(currency);
     }
 
     // Proportional net value based on original invoice finalTotal vs subtotal
     final netRatio =
         (originalInvoiceFinalTotal.value / originalInvoiceSubtotal.value)
-            .toDecimal(scaleOnInfinitePrecision: 6);
-    final refundDecimal = returnedLineGross.value * netRatio;
+            .toDecimal(scaleOnInfinitePrecision: 8);
+    final refundDecimal = roundHalfUp(returnedLineGross * netRatio, scale);
 
-    return Money.fromDecimal(refundDecimal, originalLineTotal.currency);
+    return Money.fromDecimal(refundDecimal, currency);
   }
 }

@@ -297,7 +297,8 @@ class Invoice extends Equatable {
     } else {
       if (parsedItems.isNotEmpty && parsedItems.every((it) => it.isService)) {
         resolvedTemplate = InvoiceTemplate.service;
-      } else if (parsedItems.isNotEmpty && parsedItems.every((it) => !it.isService)) {
+      } else if (parsedItems.isNotEmpty &&
+          parsedItems.every((it) => !it.isService)) {
         resolvedTemplate = InvoiceTemplate.product;
       } else {
         resolvedTemplate = InvoiceTemplate.mixed;

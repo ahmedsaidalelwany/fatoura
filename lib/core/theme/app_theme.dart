@@ -110,11 +110,17 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-          borderSide: const BorderSide(color: AppColors.lightBorder, width: 0.8),
+          borderSide: const BorderSide(
+            color: AppColors.lightBorder,
+            width: 0.8,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-          borderSide: const BorderSide(color: AppColors.lightBorder, width: 0.8),
+          borderSide: const BorderSide(
+            color: AppColors.lightBorder,
+            width: 0.8,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
@@ -156,7 +162,9 @@ class AppTheme {
         backgroundColor: AppColors.lightSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusSheet)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppDimensions.radiusSheet),
+          ),
         ),
       ),
       navigationRailTheme: const NavigationRailThemeData(
@@ -335,7 +343,9 @@ class AppTheme {
         backgroundColor: AppColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusSheet)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppDimensions.radiusSheet),
+          ),
         ),
       ),
       navigationRailTheme: const NavigationRailThemeData(

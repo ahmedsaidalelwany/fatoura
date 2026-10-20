@@ -28,9 +28,16 @@ class CurrencyInfo {
     this.decimalDigits = 2,
   });
 
-  /// Converts a major decimal amount to integer minor units (e.g. 100.00 EGP -> 10000 piastres)
+  /// Converts a major decimal amount to integer minor units (e.g. 100.00 EGP -> 10000 piastres).
+  /// Applies deterministic half-up rounding to prevent truncation loss.
   int toMinorUnits(Decimal majorAmount) {
-    return (majorAmount * Decimal.fromInt(minorUnitFactor)).toBigInt().toInt();
+    final scaled = majorAmount * Decimal.fromInt(minorUnitFactor);
+    final isNegative = scaled < Decimal.zero;
+    final absScaled = isNegative ? -scaled : scaled;
+    final half = Decimal.parse('0.5');
+    final rounded = (absScaled + half).toBigInt();
+    final result = isNegative ? -rounded : rounded;
+    return result.toInt();
   }
 
   /// Converts integer minor units to major decimal amount (e.g. 10000 piastres -> 100.00 EGP)
@@ -175,10 +182,31 @@ class AppCurrencies {
     for (final c in supported) c.code.toUpperCase(): c,
   };
 
-  /// Retrieves currency metadata by ISO code. Defaults to `EGP` if unrecognized.
+  /// Retrieves currency metadata by ISO code.
+  /// If [code] is null, defaults to [defaultCurrency] (`EGP`).
+  /// Throws [ArgumentError] if [code] is unrecognized, preventing silent currency misinterpretation.
   static CurrencyInfo get(String? code) {
     if (code == null) return egp;
-    return _byCode[code.trim().toUpperCase()] ?? egp;
+    final trimmed = code.trim().toUpperCase();
+    final info = _byCode[trimmed];
+    if (info == null) {
+      throw ArgumentError(
+        'Unsupported currency code: "$code". Supported currencies: $supportedCurrencyCodes',
+      );
+    }
+    return info;
+  }
+
+  /// Safely attempts to retrieve currency metadata by ISO code without throwing.
+  static CurrencyInfo? tryGet(String? code) {
+    if (code == null) return null;
+    return _byCode[code.trim().toUpperCase()];
+  }
+
+  /// Checks if the given currency code is officially supported.
+  static bool isSupported(String? code) {
+    if (code == null) return false;
+    return _byCode.containsKey(code.trim().toUpperCase());
   }
 
   /// Converts piastres to EGP Decimal amount (e.g. 2550 -> 25.50)

@@ -61,7 +61,10 @@ void main() {
     shopSetupCubit = ShopSetupCubit(shopRepo);
   });
 
-  Widget buildTestableWidget(Widget child, {Locale locale = const Locale('ar')}) {
+  Widget buildTestableWidget(
+    Widget child, {
+    Locale locale = const Locale('ar'),
+  }) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AppSettingsCubit>.value(value: appSettingsCubit),
@@ -75,71 +78,80 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('ar'),
-          Locale('en'),
-        ],
+        supportedLocales: const [Locale('ar'), Locale('en')],
         home: child,
       ),
     );
   }
 
   group('AboutPage Widget Tests', () {
-    testWidgets('Renders app identity, local privacy notice, and capabilities', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const AboutPage()));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Renders app identity, local privacy notice, and capabilities',
+      (tester) async {
+        await tester.pumpWidget(buildTestableWidget(const AboutPage()));
+        await tester.pumpAndSettle();
 
-      // Check app title and version badge
-      expect(find.text('عن فاتورة'), findsOneWidget);
-      expect(find.text('فاتورة'), findsOneWidget);
-      expect(find.textContaining('1.0.0+1'), findsOneWidget);
+        // Check app title and version badge
+        expect(find.text('عن فاتورة'), findsOneWidget);
+        expect(find.text('فاتورة'), findsOneWidget);
+        expect(find.textContaining('1.0.0+1'), findsOneWidget);
 
-      // Check local-first offline privacy section
-      expect(find.text('الخصوصية أولاً ومحلية البيانات'), findsOneWidget);
+        // Check local-first offline privacy section
+        expect(find.text('الخصوصية أولاً ومحلية البيانات'), findsOneWidget);
 
-      // Check key capabilities
-      expect(find.text('دقة مالية متناهية (الجنيه والقرش)'), findsOneWidget);
-      expect(find.text('إصدار الفواتير وطباعتها'), findsOneWidget);
-    });
+        // Check key capabilities
+        expect(find.text('دقة مالية متناهية (الجنيه والقرش)'), findsOneWidget);
+        expect(find.text('إصدار الفواتير وطباعتها'), findsOneWidget);
+      },
+    );
   });
 
   group('DeveloperInfoPage Widget Tests', () {
-    testWidgets('Renders honest unconfigured or configured state and technical architecture', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const DeveloperInfoPage()));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Renders honest unconfigured or configured state and technical architecture',
+      (tester) async {
+        await tester.pumpWidget(buildTestableWidget(const DeveloperInfoPage()));
+        await tester.pumpAndSettle();
 
-      expect(find.text(DeveloperConfig.developerName), findsOneWidget);
+        expect(find.text(DeveloperConfig.developerName), findsOneWidget);
 
-      // Verify engineering specifications are displayed honestly
-      expect(find.text('البنية الهندسية والتكنولوجيا'), findsOneWidget);
-      expect(find.text(DeveloperConfig.framework), findsOneWidget);
-      expect(find.text(DeveloperConfig.databaseEngine), findsOneWidget);
-      expect(find.text(DeveloperConfig.precisionEngine), findsOneWidget);
-      expect(find.text(DeveloperConfig.targetPlatforms), findsOneWidget);
-    });
+        // Verify engineering specifications are displayed honestly
+        expect(find.text('البنية الهندسية والتكنولوجيا'), findsOneWidget);
+        expect(find.text(DeveloperConfig.framework), findsOneWidget);
+        expect(find.text(DeveloperConfig.databaseEngine), findsOneWidget);
+        expect(find.text(DeveloperConfig.precisionEngine), findsOneWidget);
+        expect(find.text(DeveloperConfig.targetPlatforms), findsOneWidget);
+      },
+    );
   });
 
   group('SettingsPage Widget Tests', () {
-    testWidgets('Renders shop profile snapshot, currency preferences, and navigation links', (tester) async {
-      tester.view.physicalSize = const Size(1200, 2400);
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Renders shop profile snapshot, currency preferences, and navigation links',
+      (tester) async {
+        tester.view.physicalSize = const Size(1200, 2400);
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(buildTestableWidget(const SettingsPage()));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestableWidget(const SettingsPage()));
+        await tester.pumpAndSettle();
 
-      // Verify Shop Profile section
-      expect(find.text('متجر فاتورة التجريبي'), findsOneWidget);
-      expect(find.text('01012345678'), findsOneWidget);
+        // Verify Shop Profile section
+        expect(find.text('متجر فاتورة التجريبي'), findsOneWidget);
+        expect(find.text('01012345678'), findsOneWidget);
 
-      // Verify Currency & Financial section
-      expect(find.text('تفضيلات العملة والمالية'), findsOneWidget);
-      expect(find.text('العملة الافتراضية للمتجر'), findsOneWidget);
+        // Verify Currency & Financial section
+        expect(find.text('تفضيلات العملة والمالية'), findsOneWidget);
+        expect(find.text('العملة الافتراضية للمتجر'), findsOneWidget);
 
-      // Verify About & Developer navigation tiles
-      await tester.scrollUntilVisible(find.text('عن تطبيق فاتورة'), 200);
-      expect(find.text('عن تطبيق فاتورة'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('معلومات المطور والتقنية'), 200);
-      expect(find.text('معلومات المطور والتقنية'), findsOneWidget);
-    });
+        // Verify About & Developer navigation tiles
+        await tester.scrollUntilVisible(find.text('عن تطبيق فاتورة'), 200);
+        expect(find.text('عن تطبيق فاتورة'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('معلومات المطور والتقنية'),
+          200,
+        );
+        expect(find.text('معلومات المطور والتقنية'), findsOneWidget);
+      },
+    );
   });
 }

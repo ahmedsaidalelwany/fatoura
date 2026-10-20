@@ -253,7 +253,10 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     );
   }
 
-  Future<void> _shareInvoicePdf({bool isArabic = true, bool isThermal = false}) async {
+  Future<void> _shareInvoicePdf({
+    bool isArabic = true,
+    bool isThermal = false,
+  }) async {
     if (_invoice == null) return;
     final pdfBytes = isThermal
         ? await InvoicePdfGenerator.generateThermalReceiptPdf(
@@ -267,7 +270,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
 
     await Printing.sharePdf(
       bytes: pdfBytes,
-      filename: '${_invoice!.invoiceNumber}${isThermal ? "-Thermal" : "-A4"}.pdf',
+      filename:
+          '${_invoice!.invoiceNumber}${isThermal ? "-Thermal" : "-A4"}.pdf',
     );
   }
 
@@ -301,7 +305,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           // Print Thermal Receipt
           IconButton(
             icon: const Icon(Icons.receipt_long_outlined),
-            tooltip: l10n.isArabic ? 'طباعة إيصال حراري (80mm)' : 'Print Thermal (80mm)',
+            tooltip: l10n.isArabic
+                ? 'طباعة إيصال حراري (80mm)'
+                : 'Print Thermal (80mm)',
             onPressed: () => _previewOrPrintThermal(isArabic: l10n.isArabic),
           ),
           // Share
@@ -332,7 +338,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   children: [
                     const Icon(Icons.receipt_long_outlined, size: 18),
                     const SizedBox(width: 8),
-                    Text(l10n.isArabic ? 'مشاركة إيصال حراري' : 'Share Thermal Receipt'),
+                    Text(
+                      l10n.isArabic
+                          ? 'مشاركة إيصال حراري'
+                          : 'Share Thermal Receipt',
+                    ),
                   ],
                 ),
               ),
@@ -453,52 +463,51 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                         ),
                       ),
                       const Divider(),
-                      ...invoice.items.map(
-                        (item) {
-                          final typeTag = invoice.template == InvoiceTemplate.mixed
-                              ? (item.isService
+                      ...invoice.items.map((item) {
+                        final typeTag =
+                            invoice.template == InvoiceTemplate.mixed
+                            ? (item.isService
                                   ? (l10n.isArabic ? ' [خدمة]' : ' [Service]')
                                   : (l10n.isArabic ? ' [منتج]' : ' [Product]'))
-                              : '';
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  flex: 4,
-                                  child: Text(
-                                    '${item.description}$typeTag',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    '${item.quantity} × ${item.unitPrice.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondaryLight,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  CurrencyFormatter.format(
-                                    item.lineTotal,
-                                    currency: invoice.currency,
-                                    isArabic: l10n.isArabic,
-                                  ),
+                            : '';
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                flex: 4,
+                                child: Text(
+                                  '${item.description}$typeTag',
                                   style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${item.quantity} × ${item.unitPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondaryLight,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                CurrencyFormatter.format(
+                                  item.lineTotal,
+                                  currency: invoice.currency,
+                                  isArabic: l10n.isArabic,
+                                ),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -584,7 +593,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                   side: BorderSide(
-                    color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                    color: Theme.of(context).dividerColor
+                        .withValues(alpha: 0.2),
                   ),
                 ),
                 child: Padding(
@@ -617,11 +627,19 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                           Expanded(
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
-                              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                              label: Text(l10n.isArabic ? 'طباعة A4' : 'Print A4'),
-                              onPressed: () => _previewOrPrintA4(isArabic: l10n.isArabic),
+                              icon: const Icon(
+                                Icons.picture_as_pdf_outlined,
+                                size: 18,
+                              ),
+                              label: Text(
+                                l10n.isArabic ? 'طباعة A4' : 'Print A4',
+                              ),
+                              onPressed: () =>
+                                  _previewOrPrintA4(isArabic: l10n.isArabic),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -629,15 +647,22 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.secondary,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
-                              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.receipt_long_outlined,
+                                size: 18,
+                              ),
                               label: Text(
                                 l10n.isArabic
                                     ? 'إيصال حراري (80mm)'
                                     : 'Thermal (80mm)',
                               ),
-                              onPressed: () => _previewOrPrintThermal(isArabic: l10n.isArabic),
+                              onPressed: () => _previewOrPrintThermal(
+                                isArabic: l10n.isArabic,
+                              ),
                             ),
                           ),
                         ],
@@ -751,8 +776,12 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               fontSize: fontSize,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
               color: isBold
-                  ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)
-                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                  ? (isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight)
+                  : (isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
             ),
           ),
           Text(
@@ -761,10 +790,13 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
               fontSize: fontSize,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               letterSpacing: -0.2,
-              color: color ??
+              color:
+                  color ??
                   (isBold
                       ? AppColors.primary
-                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+                      : (isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight)),
             ),
           ),
         ],
@@ -786,11 +818,15 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     } else if (invoice.remainingBalance == 0) {
       label = l10n.paymentStatusPaid;
       color = AppColors.successMuted;
-      bg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
+      bg = isDark
+          ? AppColors.successBackgroundDark
+          : AppColors.successBackground;
     } else if (invoice.totalPaid > 0) {
       label = l10n.paymentStatusPartial;
       color = AppColors.warningMuted;
-      bg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
+      bg = isDark
+          ? AppColors.warningBackgroundDark
+          : AppColors.warningBackground;
     } else {
       label = l10n.paymentStatusUnpaid;
       color = AppColors.primary;
@@ -820,15 +856,21 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final IconData icon;
     switch (template) {
       case InvoiceTemplate.service:
-        label = AppLocalizations.of(context).isArabic ? 'فاتورة خدمات' : 'Service';
+        label = AppLocalizations.of(context).isArabic
+            ? 'فاتورة خدمات'
+            : 'Service';
         icon = Icons.build_outlined;
         break;
       case InvoiceTemplate.mixed:
-        label = AppLocalizations.of(context).isArabic ? 'فاتورة مختلطة' : 'Mixed';
+        label = AppLocalizations.of(context).isArabic
+            ? 'فاتورة مختلطة'
+            : 'Mixed';
         icon = Icons.layers_outlined;
         break;
       case InvoiceTemplate.product:
-        label = AppLocalizations.of(context).isArabic ? 'فاتورة منتجات' : 'Products';
+        label = AppLocalizations.of(context).isArabic
+            ? 'فاتورة منتجات'
+            : 'Products';
         icon = Icons.inventory_2_outlined;
         break;
     }
@@ -836,7 +878,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle,
+        color: isDark
+            ? AppColors.darkSurfaceSubtle
+            : AppColors.lightSurfaceSubtle,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -849,10 +893,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
       ),

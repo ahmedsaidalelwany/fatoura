@@ -28,7 +28,9 @@ void main() {
   late InvoicesCubit invoicesCubit;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('fatoura_invoice_stock_test_');
+    tempDir = await Directory.systemTemp.createTemp(
+      'fatoura_invoice_stock_test_',
+    );
     db = HiveDatabase.instance;
     await db.init(customPath: tempDir.path);
 
@@ -155,7 +157,10 @@ void main() {
       expect(invoicesCubit.state, isA<InvoicesError>());
       final errorState = invoicesCubit.state as InvoicesError;
       expect(errorState.message, contains('المخزون غير كافٍ'));
-      expect(errorState.message, contains('6.0')); // Total demanded across lines
+      expect(
+        errorState.message,
+        contains('6.0'),
+      ); // Total demanded across lines
       expect(errorState.message, contains('4.0')); // Available
     });
 
@@ -193,42 +198,45 @@ void main() {
       expect(invoicesCubit.state, isA<InvoicesError>());
     });
 
-    test('Services bypass stock validation completely even if inventory is zero', () async {
-      final serviceProd = Product(
-        id: 'serv_maintenance',
-        name: 'خدمة صيانة دورية',
-        defaultUnitPrice: 300.0,
-        costPrice: 0.0,
-        trackInventory: false,
-        stockQuantity: 0.0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await productRepo.saveProduct(serviceProd);
+    test(
+      'Services bypass stock validation completely even if inventory is zero',
+      () async {
+        final serviceProd = Product(
+          id: 'serv_maintenance',
+          name: 'خدمة صيانة دورية',
+          defaultUnitPrice: 300.0,
+          costPrice: 0.0,
+          trackInventory: false,
+          stockQuantity: 0.0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await productRepo.saveProduct(serviceProd);
 
-      final inv = await invoicesCubit.createInvoice(
-        customerId: 'cust_service',
-        customerName: 'عميل خدمة',
-        rawItems: [
-          (
-            productId: 'serv_maintenance',
-            description: 'صيانة دورية للأجهزة',
-            quantity: 5.0,
-            unitPrice: 300.0,
-            isService: true,
-          ),
-        ],
-        template: InvoiceTemplate.service,
-      );
+        final inv = await invoicesCubit.createInvoice(
+          customerId: 'cust_service',
+          customerName: 'عميل خدمة',
+          rawItems: [
+            (
+              productId: 'serv_maintenance',
+              description: 'صيانة دورية للأجهزة',
+              quantity: 5.0,
+              unitPrice: 300.0,
+              isService: true,
+            ),
+          ],
+          template: InvoiceTemplate.service,
+        );
 
-      expect(inv, isNotNull);
-      expect(inv!.template, InvoiceTemplate.service);
-      expect(inv.finalTotal, 1500.0);
+        expect(inv, isNotNull);
+        expect(inv!.template, InvoiceTemplate.service);
+        expect(inv.finalTotal, 1500.0);
 
-      // Verify product stock is untouched
-      final prod = await productRepo.getProductById('serv_maintenance');
-      expect(prod!.stockQuantity, 0.0);
-    });
+        // Verify product stock is untouched
+        final prod = await productRepo.getProductById('serv_maintenance');
+        expect(prod!.stockQuantity, 0.0);
+      },
+    );
   });
 
   group('Invoice Templates & Dual PDF Generation', () {
@@ -276,67 +284,71 @@ void main() {
       expect(Invoice.fromMap(mapService).template, InvoiceTemplate.service);
     });
 
-    test('Dual PDF printing: generates both A4 and Thermal 80mm receipt formats', () async {
-      final inv = Invoice(
-        id: 'inv_pdf_test',
-        invoiceNumber: 'Ftr-19.10.2026-0099',
-        issueDate: DateTime.now(),
-        shopName: 'مؤسسة فاتورة الحديثة',
-        shopPhone: '01012345678',
-        shopAddress: 'مدينة نصر، القاهرة',
-        shopTaxNumber: '123-456-789',
-        customerName: 'شركة الأمل للتجارة',
-        customerPhone: '01198765432',
-        items: const [
-          InvoiceItem(
-            id: 'item_a',
-            description: 'طابعة باركود حرارية',
-            quantity: 1.0,
-            unitPrice: 3500.0,
-            lineTotal: 3500.0,
-            isService: false,
-          ),
-          InvoiceItem(
-            id: 'item_b',
-            description: 'خدمة التثبيت والتدريب',
-            quantity: 2.0,
-            unitPrice: 500.0,
-            lineTotal: 1000.0,
-            isService: true,
-          ),
-        ],
-        subtotal: 4500.0,
-        taxableBase: 4500.0,
-        taxRate: 14.0,
-        taxAmount: 630.0,
-        finalTotal: 5130.0,
-        totalPaid: 2000.0,
-        remainingBalance: 3130.0,
-        template: InvoiceTemplate.mixed,
-        currency: 'EGP',
-        notes: 'شكراً لتعاملكم معنا',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+    test(
+      'Dual PDF printing: generates both A4 and Thermal 80mm receipt formats',
+      () async {
+        final inv = Invoice(
+          id: 'inv_pdf_test',
+          invoiceNumber: 'Ftr-19.10.2026-0099',
+          issueDate: DateTime.now(),
+          shopName: 'مؤسسة فاتورة الحديثة',
+          shopPhone: '01012345678',
+          shopAddress: 'مدينة نصر، القاهرة',
+          shopTaxNumber: '123-456-789',
+          customerName: 'شركة الأمل للتجارة',
+          customerPhone: '01198765432',
+          items: const [
+            InvoiceItem(
+              id: 'item_a',
+              description: 'طابعة باركود حرارية',
+              quantity: 1.0,
+              unitPrice: 3500.0,
+              lineTotal: 3500.0,
+              isService: false,
+            ),
+            InvoiceItem(
+              id: 'item_b',
+              description: 'خدمة التثبيت والتدريب',
+              quantity: 2.0,
+              unitPrice: 500.0,
+              lineTotal: 1000.0,
+              isService: true,
+            ),
+          ],
+          subtotal: 4500.0,
+          taxableBase: 4500.0,
+          taxRate: 14.0,
+          taxAmount: 630.0,
+          finalTotal: 5130.0,
+          totalPaid: 2000.0,
+          remainingBalance: 3130.0,
+          template: InvoiceTemplate.mixed,
+          currency: 'EGP',
+          notes: 'شكراً لتعاملكم معنا',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
-      // 1. Generate A4 PDF
-      final a4Bytes = await InvoicePdfGenerator.generateA4Pdf(
-        invoice: inv,
-        isArabic: true,
-      );
-      expect(a4Bytes, isNotEmpty);
-      expect(a4Bytes.length, greaterThan(1000));
-      // Standard PDF magic header: %PDF-
-      expect(String.fromCharCodes(a4Bytes.take(4)), '%PDF');
+        // 1. Generate A4 PDF
+        final a4Bytes = await InvoicePdfGenerator.generateA4Pdf(
+          invoice: inv,
+          isArabic: true,
+        );
+        expect(a4Bytes, isNotEmpty);
+        expect(a4Bytes.length, greaterThan(1000));
+        // Standard PDF magic header: %PDF-
+        expect(String.fromCharCodes(a4Bytes.take(4)), '%PDF');
 
-      // 2. Generate Thermal Receipt PDF (80mm)
-      final thermalBytes = await InvoicePdfGenerator.generateThermalReceiptPdf(
-        invoice: inv,
-        isArabic: true,
-      );
-      expect(thermalBytes, isNotEmpty);
-      expect(thermalBytes.length, greaterThan(1000));
-      expect(String.fromCharCodes(thermalBytes.take(4)), '%PDF');
-    });
+        // 2. Generate Thermal Receipt PDF (80mm)
+        final thermalBytes =
+            await InvoicePdfGenerator.generateThermalReceiptPdf(
+              invoice: inv,
+              isArabic: true,
+            );
+        expect(thermalBytes, isNotEmpty);
+        expect(thermalBytes.length, greaterThan(1000));
+        expect(String.fromCharCodes(thermalBytes.take(4)), '%PDF');
+      },
+    );
   });
 }

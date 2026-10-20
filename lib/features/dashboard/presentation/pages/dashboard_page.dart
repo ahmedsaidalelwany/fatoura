@@ -222,7 +222,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                 const Divider(),
                             itemBuilder: (context, index) {
                               final invoice = data.recentInvoices[index];
-                              final isDark = Theme.of(context).brightness == Brightness.dark;
+                              final isDark =
+                                  Theme.of(context).brightness ==
+                                  Brightness.dark;
                               final dateStr = DateFormat('yyyy/MM/dd')
                                   .format(invoice.issueDate);
 
@@ -232,27 +234,40 @@ class _DashboardPageState extends State<DashboardPage> {
 
                               if (invoice.isCancelled) {
                                 statusColor = AppColors.errorMuted;
-                                statusBg = isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground;
+                                statusBg = isDark
+                                    ? AppColors.errorBackgroundDark
+                                    : AppColors.errorBackground;
                                 statusLabel = l10n.statusCancelled;
                               } else if (invoice.remainingBalance == 0) {
                                 statusColor = AppColors.successMuted;
-                                statusBg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
+                                statusBg = isDark
+                                    ? AppColors.successBackgroundDark
+                                    : AppColors.successBackground;
                                 statusLabel = l10n.paymentStatusPaid;
                               } else {
                                 statusColor = AppColors.warningMuted;
-                                statusBg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
+                                statusBg = isDark
+                                    ? AppColors.warningBackgroundDark
+                                    : AppColors.warningBackground;
                                 statusLabel = l10n.paymentStatusPartial;
                               }
 
                               return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
                                 leading: Container(
                                   width: 38,
                                   height: 38,
                                   decoration: BoxDecoration(
                                     color: invoice.isCancelled
-                                        ? (isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground)
-                                        : (isDark ? AppColors.infoBackgroundDark : AppColors.infoBackground),
+                                        ? (isDark
+                                              ? AppColors.errorBackgroundDark
+                                              : AppColors.errorBackground)
+                                        : (isDark
+                                              ? AppColors.infoBackgroundDark
+                                              : AppColors.infoBackground),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
@@ -271,14 +286,18 @@ class _DashboardPageState extends State<DashboardPage> {
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: -0.2,
-                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                    color: isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimaryLight,
                                   ),
                                 ),
                                 subtitle: Text(
                                   '${invoice.customerName.isNotEmpty ? invoice.customerName : l10n.cashCustomer} • $dateStr',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                    color: isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight,
                                   ),
                                 ),
                                 trailing: Column(
@@ -297,12 +316,17 @@ class _DashboardPageState extends State<DashboardPage> {
                                         letterSpacing: -0.2,
                                         color: invoice.isCancelled
                                             ? AppColors.errorMuted
-                                            : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                                            : (isDark
+                                                  ? AppColors.textPrimaryDark
+                                                  : AppColors.textPrimaryLight),
                                       ),
                                     ),
                                     const SizedBox(height: 3),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: statusBg,
                                         borderRadius: BorderRadius.circular(6),
@@ -466,7 +490,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(isDark ? 0.22 : 0.12),
+                    color: color.withValues(alpha: isDark ? 0.22 : 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -479,7 +503,9 @@ class _DashboardPageState extends State<DashboardPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
             ),
             const SizedBox(height: 4),
@@ -492,7 +518,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   fontSize: 19,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.3,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
                 ),
               ),
             ),
@@ -566,7 +594,9 @@ class _DashboardPageState extends State<DashboardPage> {
     return Material(
       color: isPrimary
           ? AppColors.primary
-          : (isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle),
+          : (isDark
+                ? AppColors.darkSurfaceSubtle
+                : AppColors.lightSurfaceSubtle),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -577,10 +607,7 @@ class _DashboardPageState extends State<DashboardPage> {
             borderRadius: BorderRadius.circular(10),
             border: isPrimary
                 ? null
-                : Border.all(
-                    color: Theme.of(context).dividerColor,
-                    width: 0.8,
-                  ),
+                : Border.all(color: Theme.of(context).dividerColor, width: 0.8),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -590,7 +617,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 size: 16,
                 color: isPrimary
                     ? Colors.white
-                    : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                    : (isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight),
               ),
               const SizedBox(width: 6),
               Text(
@@ -600,7 +629,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   fontWeight: FontWeight.w600,
                   color: isPrimary
                       ? Colors.white
-                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                      : (isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight),
                 ),
               ),
             ],
@@ -645,7 +676,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
@@ -656,12 +689,19 @@ class _DashboardPageState extends State<DashboardPage> {
                       alignment: Alignment.bottomCenter,
                       child: Container(
                         width: barWidth.clamp(14.0, 32.0),
-                        height: ((constraints.maxHeight - 48) * ratio)
-                            .clamp(6.0, (constraints.maxHeight - 48).clamp(6.0, double.infinity)),
+                        height: ((constraints.maxHeight - 48) * ratio).clamp(
+                          6.0,
+                          (constraints.maxHeight - 48).clamp(
+                            6.0,
+                            double.infinity,
+                          ),
+                        ),
                         decoration: BoxDecoration(
                           color: p.amount > 0
                               ? AppColors.primary
-                              : (isDark ? AppColors.darkBorder : AppColors.lightSurfaceSubtle),
+                              : (isDark
+                                    ? AppColors.darkBorder
+                                    : AppColors.lightSurfaceSubtle),
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
@@ -676,7 +716,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),

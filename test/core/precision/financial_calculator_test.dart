@@ -137,5 +137,100 @@ void main() {
 
       expect(refund.toStringAsFixed(2), '50.00');
     });
+
+    test(
+      'FinancialCalculator.roundHalfUp applies deterministic half-up rounding',
+      () {
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('10.334'), 2),
+          Decimal.parse('10.33'),
+        );
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('10.335'), 2),
+          Decimal.parse('10.34'),
+        );
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('10.336'), 2),
+          Decimal.parse('10.34'),
+        );
+
+        // Negative values
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('-10.335'), 2),
+          Decimal.parse('-10.34'),
+        );
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('-10.334'), 2),
+          Decimal.parse('-10.33'),
+        );
+
+        // KWD 3 decimals
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('1.2345'), 3),
+          Decimal.parse('1.235'),
+        );
+        expect(
+          FinancialCalculator.roundHalfUp(Decimal.parse('1.2344'), 3),
+          Decimal.parse('1.234'),
+        );
+      },
+    );
+
+    test(
+      'Validates and rejects negative quantities, prices, discounts, and taxes',
+      () {
+        expect(
+          () => FinancialCalculator.calculateLineTotal(
+            quantity: Decimal.parse('-1'),
+            unitPrice: Money.fromNum(10, 'EGP'),
+          ),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => FinancialCalculator.calculateLineTotal(
+            quantity: Decimal.parse('1'),
+            unitPrice: Money.fromNum(-10, 'EGP'),
+          ),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => FinancialCalculator.calculateInvoice(
+            rawItems: [
+              (
+                quantity: Decimal.fromInt(1),
+                unitPrice: Money.fromNum(100, 'EGP'),
+              ),
+            ],
+            discountValue: Decimal.parse('-5'),
+          ),
+          throwsArgumentError,
+        );
+
+        expect(
+          () => FinancialCalculator.calculateInvoice(
+            rawItems: [
+              (
+                quantity: Decimal.fromInt(1),
+                unitPrice: Money.fromNum(100, 'EGP'),
+              ),
+            ],
+            taxRatePercent: Decimal.parse('-14'),
+          ),
+          throwsArgumentError,
+        );
+      },
+    );
+
+    test(
+      'Money.round returns rounded Money instance with half-up arithmetic',
+      () {
+        final unrounded = Money.fromDecimal(Decimal.parse('15.678'), 'EGP');
+        final rounded = unrounded.round();
+        expect(rounded.toStringAsFixed(2), '15.68');
+        expect(rounded.value, Decimal.parse('15.68'));
+      },
+    );
   });
 }

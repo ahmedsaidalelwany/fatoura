@@ -62,10 +62,7 @@ class PartiesCubit extends Cubit<PartiesState> {
     emit(PartiesLoading());
     try {
       final customers = await repository.getCustomers(query: query);
-      final balances = <String, double>{};
-      for (final c in customers) {
-        balances[c.id] = await repository.getCustomerReceivableBalance(c.id);
-      }
+      final balances = await repository.getAllCustomerReceivableBalances();
       emit(CustomersLoaded(customers: customers, balances: balances));
     } catch (e) {
       emit(PartiesError(e.toString()));
@@ -76,10 +73,7 @@ class PartiesCubit extends Cubit<PartiesState> {
     emit(PartiesLoading());
     try {
       final suppliers = await repository.getSuppliers(query: query);
-      final balances = <String, double>{};
-      for (final s in suppliers) {
-        balances[s.id] = await repository.getSupplierPayableBalance(s.id);
-      }
+      final balances = await repository.getAllSupplierPayableBalances();
       emit(SuppliersLoaded(suppliers: suppliers, balances: balances));
     } catch (e) {
       emit(PartiesError(e.toString()));

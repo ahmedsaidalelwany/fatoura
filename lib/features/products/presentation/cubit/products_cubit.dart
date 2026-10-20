@@ -131,7 +131,9 @@ class ProductsCubit extends Cubit<ProductsState> {
       );
 
       await repository.saveProduct(product);
-      emit(ProductOperationSuccess('Product saved successfully', product: product));
+      emit(
+        ProductOperationSuccess('Product saved successfully', product: product),
+      );
       await loadProducts();
     } catch (e) {
       emit(ProductsError(e.toString()));

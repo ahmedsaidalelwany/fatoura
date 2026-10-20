@@ -1,11 +1,24 @@
+import 'dart:async';
+
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
 import 'package:fatoura/features/products/domain/repositories/product_repository.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
   final HiveDatabase database;
+  Future<void> _lock = Future.value();
 
   ProductRepositoryImpl(this.database);
+
+  Future<T> _synchronized<T>(Future<T> Function() action) {
+    final prev = _lock;
+    final completer = Completer<void>();
+    _lock = completer.future;
+
+    return prev.then((_) => action()).whenComplete(() {
+      completer.complete();
+    });
+  }
 
   @override
   Future<List<Product>> getProducts({
@@ -86,7 +99,8 @@ class ProductRepositoryImpl implements ProductRepository {
     String barcode, {
     String? excludeProductId,
   }) async {
-    if (barcode.trim().isEmpty) return true; // Empty is always unique (optional)
+    if (barcode.trim().isEmpty)
+      return true; // Empty is always unique (optional)
     final box = database.productsBox;
     final normalized = barcode.trim();
 
@@ -122,24 +136,30 @@ class ProductRepositoryImpl implements ProductRepository {
   /// Adjusts stock quantity for a product and returns the updated product.
   /// Use a positive [delta] for stock intake and negative for sales deduction.
   /// [reason] is mandatory and is stored for audit/movement tracing.
+  /// Throws [StateError] if deduction would result in negative inventory.
   @override
   Future<Product?> adjustStock(
     String productId, {
     required double delta,
     required String reason,
-  }) async {
+  }) => _synchronized(() async {
     final product = await getProductById(productId);
     if (product == null) return null;
     if (!product.trackInventory) return product; // No-op for non-tracked items
 
     final newQty = product.stockQuantity + delta;
+    if (newQty < 0) {
+      throw StateError(
+        'Stock adjustment would result in negative inventory ($newQty) for product "${product.name}"',
+      );
+    }
     final updated = product.copyWith(
       stockQuantity: newQty,
       updatedAt: DateTime.now(),
     );
     await saveProduct(updated);
     return updated;
-  }
+  });
 
   @override
   Future<List<String>> getCategories() async {

@@ -11,16 +11,19 @@ class DeveloperConfig {
   static const String developerTelegram = '@asx_03';
   static const String developerTelegramUrl = 'https://t.me/asx_03';
   static const String developerWebsite = '';
-  static const String githubUrl = 'https://github.com/ahmedsaidalelwany/fatoura';
+  static const String githubUrl =
+      'https://github.com/ahmedsaidalelwany/fatoura';
   static const String supportContact = '@asx_03';
 
   // Architectural & Technical specifications displayed honestly to users & developers
   static const String appName = 'فاتورة / Fatoura';
   static const String appVersion = '1.0.0+1';
   static const String framework = 'Flutter & Dart';
-  static const String architecture = 'Clean Architecture + BLoC / Cubit Pattern';
+  static const String architecture =
+      'Clean Architecture + BLoC / Cubit Pattern';
   static const String databaseEngine = 'Hive (Local-first Key-Value Store)';
-  static const String precisionEngine = 'Decimal (Arbitrary Precision Financial Math)';
+  static const String precisionEngine =
+      'Decimal (Arbitrary Precision Financial Math)';
   static const String targetPlatforms = 'Android & Windows Desktop';
   static const String license = 'MIT License';
 }

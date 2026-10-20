@@ -79,7 +79,9 @@ class _ProductsPageState extends State<ProductsPage> {
                     Expanded(
                       child: TextField(
                         controller: barcodeCtrl,
-                        decoration: InputDecoration(labelText: l10n.barcodeLabel),
+                        decoration: InputDecoration(
+                          labelText: l10n.barcodeLabel,
+                        ),
                       ),
                     ),
                   ],
@@ -93,8 +95,9 @@ class _ProductsPageState extends State<ProductsPage> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration:
-                            InputDecoration(labelText: l10n.defaultPriceLabel),
+                        decoration: InputDecoration(
+                          labelText: l10n.defaultPriceLabel,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -104,8 +107,9 @@ class _ProductsPageState extends State<ProductsPage> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration:
-                            InputDecoration(labelText: l10n.costPriceLabel),
+                        decoration: InputDecoration(
+                          labelText: l10n.costPriceLabel,
+                        ),
                       ),
                     ),
                   ],
@@ -258,14 +262,18 @@ class _ProductsPageState extends State<ProductsPage> {
                             Icon(
                               Icons.inventory_2_outlined,
                               size: 56,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               l10n.noDataFound,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -293,16 +301,24 @@ class _ProductsPageState extends State<ProductsPage> {
 
                         if (p.isOutOfStock) {
                           stockBadgeColor = AppColors.errorMuted;
-                          stockBadgeBg = isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground;
+                          stockBadgeBg = isDark
+                              ? AppColors.errorBackgroundDark
+                              : AppColors.errorBackground;
                           stockLabel = l10n.outOfStockLabel;
                         } else if (p.isLowStock) {
                           stockBadgeColor = AppColors.warningMuted;
-                          stockBadgeBg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
-                          stockLabel = '${l10n.lowStockLabel} (${p.stockQuantity})';
+                          stockBadgeBg = isDark
+                              ? AppColors.warningBackgroundDark
+                              : AppColors.warningBackground;
+                          stockLabel =
+                              '${l10n.lowStockLabel} (${p.stockQuantity})';
                         } else {
                           stockBadgeColor = AppColors.successMuted;
-                          stockBadgeBg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
-                          stockLabel = '${l10n.stockQuantityLabel}: ${p.stockQuantity}';
+                          stockBadgeBg = isDark
+                              ? AppColors.successBackgroundDark
+                              : AppColors.successBackground;
+                          stockLabel =
+                              '${l10n.stockQuantityLabel}: ${p.stockQuantity}';
                         }
 
                         return Card(
@@ -328,7 +344,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         p.name,
@@ -336,19 +353,24 @@ class _ProductsPageState extends State<ProductsPage> {
                                           fontWeight: FontWeight.w600,
                                           fontSize: 15,
                                           letterSpacing: -0.2,
-                                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                          color: isDark
+                                              ? AppColors.textPrimaryDark
+                                              : AppColors.textPrimaryLight,
                                         ),
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
                                         [
                                           if (p.sku.isNotEmpty) 'SKU: ${p.sku}',
-                                          if (p.barcode.isNotEmpty) 'Barcode: ${p.barcode}',
+                                          if (p.barcode.isNotEmpty)
+                                            'Barcode: ${p.barcode}',
                                           if (p.category.isNotEmpty) p.category,
                                         ].join(' • '),
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                          color: isDark
+                                              ? AppColors.textSecondaryDark
+                                              : AppColors.textSecondaryLight,
                                         ),
                                       ),
                                       if (p.trackInventory) ...[
@@ -356,13 +378,15 @@ class _ProductsPageState extends State<ProductsPage> {
                                         Row(
                                           children: [
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 7,
-                                                vertical: 2,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 7,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: stockBadgeBg,
-                                                borderRadius: BorderRadius.circular(6),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                               ),
                                               child: Text(
                                                 stockLabel,
@@ -400,11 +424,17 @@ class _ProductsPageState extends State<ProductsPage> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.edit_outlined, size: 18),
+                                          icon: const Icon(
+                                            Icons.edit_outlined,
+                                            size: 18,
+                                          ),
                                           constraints: const BoxConstraints(),
                                           padding: const EdgeInsets.all(6),
                                           onPressed: () =>
-                                              _showAddEditProductDialog(context, p),
+                                              _showAddEditProductDialog(
+                                                context,
+                                                p,
+                                              ),
                                         ),
                                         const SizedBox(width: 4),
                                         IconButton(

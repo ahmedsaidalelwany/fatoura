@@ -75,17 +75,18 @@ Future<AppDependencies> bootstrap() async {
   final partyRepository = PartyRepositoryImpl(hiveDatabase);
   final productRepository = ProductRepositoryImpl(hiveDatabase);
   final invoiceRepository = InvoiceRepositoryImpl(hiveDatabase);
+  final purchaseRepository = PurchaseRepositoryImpl(hiveDatabase);
   final auditRepository = AuditRepositoryImpl(hiveDatabase);
   final paymentRepository = PaymentRepositoryImpl(
     database: hiveDatabase,
     invoiceRepository: invoiceRepository,
+    purchaseRepository: purchaseRepository,
   );
   final returnRepository = SalesReturnRepositoryImpl(
     database: hiveDatabase,
     invoiceRepository: invoiceRepository,
     productRepository: productRepository,
   );
-  final purchaseRepository = PurchaseRepositoryImpl(hiveDatabase);
 
   // 5. Settings Cubit
   final appSettingsCubit = AppSettingsCubit(prefs);

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -72,13 +73,19 @@ class InvoicePdfGenerator {
 
     switch (invoice.template) {
       case InvoiceTemplate.service:
-        title = isArabic ? 'فاتورة خدمات مهنية' : 'PROFESSIONAL SERVICES INVOICE';
-        descHeader = isArabic ? 'بيان الخدمة / نطاق العمل' : 'Service Description / Scope';
+        title = isArabic
+            ? 'فاتورة خدمات مهنية'
+            : 'PROFESSIONAL SERVICES INVOICE';
+        descHeader = isArabic
+            ? 'بيان الخدمة / نطاق العمل'
+            : 'Service Description / Scope';
         qtyHeader = isArabic ? 'الوحدات / الساعات' : 'Units / Hours';
         priceHeader = isArabic ? 'معدل الوحدة' : 'Rate';
         break;
       case InvoiceTemplate.mixed:
-        title = isArabic ? 'فاتورة مبيعات وخدمات' : 'PRODUCTS & SERVICES INVOICE';
+        title = isArabic
+            ? 'فاتورة مبيعات وخدمات'
+            : 'PRODUCTS & SERVICES INVOICE';
         descHeader = isArabic ? 'البيان' : 'Description';
         qtyHeader = isArabic ? 'الكمية' : 'Qty';
         priceHeader = isArabic ? 'سعر الوحدة' : 'Unit Price';
@@ -303,7 +310,9 @@ class InvoicePdfGenerator {
                   children: [
                     // Table Header
                     pw.TableRow(
-                      decoration: const pw.BoxDecoration(color: PdfColors.blue50),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.blue50,
+                      ),
                       children: [
                         _buildTableCell(
                           descHeader,
@@ -383,7 +392,9 @@ class InvoicePdfGenerator {
                   children: [
                     // Table Header
                     pw.TableRow(
-                      decoration: const pw.BoxDecoration(color: PdfColors.blue50),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.blue50,
+                      ),
                       children: [
                         _buildTableCell(
                           descHeader,
@@ -695,14 +706,18 @@ class InvoicePdfGenerator {
       theme: pw.ThemeData.withFont(base: _regularFont!, bold: _boldFont!),
     );
 
-    final textDirection = isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr;
+    final textDirection = isArabic
+        ? pw.TextDirection.rtl
+        : pw.TextDirection.ltr;
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
     final formattedDate = dateFormat.format(invoice.issueDate);
 
     final title = switch (invoice.template) {
-      InvoiceTemplate.service => (isArabic ? 'إيصال خدمات مهنية' : 'SERVICE RECEIPT'),
+      InvoiceTemplate.service =>
+        (isArabic ? 'إيصال خدمات مهنية' : 'SERVICE RECEIPT'),
       InvoiceTemplate.product => (isArabic ? 'إيصال مبيعات' : 'SALES RECEIPT'),
-      InvoiceTemplate.mixed => (isArabic ? 'إيصال مبيعات وخدمات' : 'SALES RECEIPT'),
+      InvoiceTemplate.mixed =>
+        (isArabic ? 'إيصال مبيعات وخدمات' : 'SALES RECEIPT'),
     };
 
     pdf.addPage(
@@ -734,14 +749,20 @@ class InvoicePdfGenerator {
                 pw.Center(
                   child: pw.Text(
                     invoice.shopPhone,
-                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                    style: const pw.TextStyle(
+                      fontSize: 8,
+                      color: PdfColors.grey700,
+                    ),
                   ),
                 ),
               if (invoice.shopTaxNumber.isNotEmpty)
                 pw.Center(
                   child: pw.Text(
                     '${isArabic ? 'الرقم الضريبي:' : 'Tax No:'} ${invoice.shopTaxNumber}',
-                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                    style: const pw.TextStyle(
+                      fontSize: 8,
+                      color: PdfColors.grey700,
+                    ),
                   ),
                 ),
               pw.SizedBox(height: 4),
@@ -763,10 +784,7 @@ class InvoicePdfGenerator {
                 isArabic ? 'رقم الفاتورة:' : 'Invoice No:',
                 invoice.invoiceNumber,
               ),
-              _buildThermalRow(
-                isArabic ? 'التاريخ:' : 'Date:',
-                formattedDate,
-              ),
+              _buildThermalRow(isArabic ? 'التاريخ:' : 'Date:', formattedDate),
               if (invoice.customerName.isNotEmpty)
                 _buildThermalRow(
                   isArabic ? 'العميل:' : 'Customer:',
@@ -782,11 +800,17 @@ class InvoicePdfGenerator {
                 children: [
                   pw.Text(
                     isArabic ? 'الصنف / الكمية × السعر' : 'Item / Qty x Price',
-                    style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                   pw.Text(
                     isArabic ? 'الإجمالي' : 'Total',
-                    style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -797,7 +821,9 @@ class InvoicePdfGenerator {
               // Items List
               ...invoice.items.map((item) {
                 final typeTag = invoice.template == InvoiceTemplate.mixed
-                    ? (item.isService ? (isArabic ? ' [خدمة]' : ' [Service]') : (isArabic ? ' [منتج]' : ' [Product]'))
+                    ? (item.isService
+                          ? (isArabic ? ' [خدمة]' : ' [Service]')
+                          : (isArabic ? ' [منتج]' : ' [Product]'))
                     : '';
                 return pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(vertical: 2),
@@ -806,18 +832,31 @@ class InvoicePdfGenerator {
                     children: [
                       pw.Text(
                         '${item.description}$typeTag',
-                        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                        style: pw.TextStyle(
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
                       ),
                       pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
                           pw.Text(
                             '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currency: invoice.currency, isArabic: isArabic)}',
-                            style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700),
+                            style: const pw.TextStyle(
+                              fontSize: 7.5,
+                              color: PdfColors.grey700,
+                            ),
                           ),
                           pw.Text(
-                            CurrencyFormatter.format(item.lineTotal, currency: invoice.currency, isArabic: isArabic),
-                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                            CurrencyFormatter.format(
+                              item.lineTotal,
+                              currency: invoice.currency,
+                              isArabic: isArabic,
+                            ),
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -833,7 +872,11 @@ class InvoicePdfGenerator {
               // Totals
               _buildThermalRow(
                 isArabic ? 'المجموع الفرعي:' : 'Subtotal:',
-                CurrencyFormatter.format(invoice.subtotal, currency: invoice.currency, isArabic: isArabic),
+                CurrencyFormatter.format(
+                  invoice.subtotal,
+                  currency: invoice.currency,
+                  isArabic: isArabic,
+                ),
               ),
               if (invoice.discountAmount > 0)
                 _buildThermalRow(
@@ -855,22 +898,40 @@ class InvoicePdfGenerator {
                 children: [
                   pw.Text(
                     isArabic ? 'الإجمالي النهائي:' : 'TOTAL:',
-                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                   pw.Text(
-                    CurrencyFormatter.format(invoice.finalTotal, currency: invoice.currency, isArabic: isArabic),
-                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                    CurrencyFormatter.format(
+                      invoice.finalTotal,
+                      currency: invoice.currency,
+                      isArabic: isArabic,
+                    ),
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
               _buildThermalRow(
                 isArabic ? 'المدفوع:' : 'Paid:',
-                CurrencyFormatter.format(invoice.totalPaid, currency: invoice.currency, isArabic: isArabic),
+                CurrencyFormatter.format(
+                  invoice.totalPaid,
+                  currency: invoice.currency,
+                  isArabic: isArabic,
+                ),
               ),
               if (invoice.remainingBalance > 0)
                 _buildThermalRow(
                   isArabic ? 'المتبقي:' : 'Balance:',
-                  CurrencyFormatter.format(invoice.remainingBalance, currency: invoice.currency, isArabic: isArabic),
+                  CurrencyFormatter.format(
+                    invoice.remainingBalance,
+                    currency: invoice.currency,
+                    isArabic: isArabic,
+                  ),
                   isBold: true,
                 ),
 
@@ -881,14 +942,22 @@ class InvoicePdfGenerator {
               // Footer Note
               pw.Center(
                 child: pw.Text(
-                  isArabic ? 'شكراً لتعاملكم معنا' : 'Thank you for your business!',
-                  style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                  isArabic
+                      ? 'شكراً لتعاملكم معنا'
+                      : 'Thank you for your business!',
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
               ),
               pw.Center(
                 child: pw.Text(
                   'فاتورة • Fatoura',
-                  style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
+                  style: const pw.TextStyle(
+                    fontSize: 7,
+                    color: PdfColors.grey600,
+                  ),
                 ),
               ),
             ],

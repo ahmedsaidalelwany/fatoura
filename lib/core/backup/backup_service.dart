@@ -91,6 +91,13 @@ class BackupService {
       }
 
       final checksum = decoded['checksum'] as String?;
+      if (checksum == null || checksum.trim().isEmpty) {
+        return RestoreValidationResult(
+          isValid: false,
+          error: 'Missing integrity checksum: backup cannot be verified',
+        );
+      }
+
       final data = decoded['data'] as Map<String, dynamic>?;
       if (data == null || data['tables'] == null) {
         return RestoreValidationResult(
@@ -104,7 +111,7 @@ class BackupService {
           .convert(utf8.encode(tablesJson))
           .toString();
 
-      if (checksum != null && checksum != calculatedChecksum) {
+      if (checksum != calculatedChecksum) {
         return RestoreValidationResult(
           isValid: false,
           error: 'Integrity check failed: checksum mismatch (corrupted data)',
@@ -147,12 +154,19 @@ class BackupService {
       if (rollbackSnapshot != null) {
         try {
           await database.restoreAllData(rollbackSnapshot);
-        } catch (_) {}
+          return BackupResult(
+            success: false,
+            message: 'Restoration failed and rolled back safely: $e',
+          );
+        } catch (rollbackError) {
+          return BackupResult(
+            success: false,
+            message:
+                'CRITICAL: Restoration failed ($e) and safety rollback also failed ($rollbackError)',
+          );
+        }
       }
-      return BackupResult(
-        success: false,
-        message: 'Restoration failed and rolled back: $e',
-      );
+      return BackupResult(success: false, message: 'Restoration failed: $e');
     }
   }
 }

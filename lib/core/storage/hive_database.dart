@@ -52,12 +52,11 @@ class HiveDatabase {
       }
     }
 
-    // Open all core boxes
-    for (final boxName in HiveBoxes.allBoxes) {
-      if (!Hive.isBoxOpen(boxName)) {
-        await Hive.openBox<Map>(boxName);
-      }
-    }
+    // Open all core boxes concurrently in parallel
+    final unopenedBoxes = HiveBoxes.allBoxes.where((b) => !Hive.isBoxOpen(b));
+    await Future.wait(
+      unopenedBoxes.map((boxName) => Hive.openBox<Map>(boxName)),
+    );
 
     _isInitialized = true;
   }
@@ -106,25 +105,45 @@ class HiveDatabase {
     return export;
   }
 
-  /// Restores all database boxes from a verified backup payload
+  /// Restores all database boxes from a verified backup payload using staged verification.
   Future<void> restoreAllData(Map<String, dynamic> backupData) async {
     final tables = backupData['tables'] as Map<String, dynamic>?;
     if (tables == null) {
       throw ArgumentError('Malformed backup data: missing tables map');
     }
 
+    // 1. Stage and validate all tables and records in memory BEFORE modifying any live box
+    final staged = <String, Map<String, dynamic>>{};
+    for (final boxName in HiveBoxes.allBoxes) {
+      final boxData = tables[boxName];
+      if (boxData != null) {
+        if (boxData is! Map) {
+          throw ArgumentError('Table $boxName must be a Map of records');
+        }
+        final records = <String, dynamic>{};
+        for (final entry in boxData.entries) {
+          if (entry.value is! Map) {
+            throw ArgumentError(
+              'Record ${entry.key} in $boxName must be a Map',
+            );
+          }
+          records[entry.key.toString()] = Map<String, dynamic>.from(
+            entry.value as Map,
+          );
+        }
+        staged[boxName] = records;
+      } else {
+        staged[boxName] = {};
+      }
+    }
+
+    // 2. Atomically commit staged data into live Hive boxes
     for (final boxName in HiveBoxes.allBoxes) {
       final box = getBox(boxName);
       await box.clear();
-
-      final boxData = tables[boxName] as Map<String, dynamic>?;
-      if (boxData != null) {
-        for (final entry in boxData.entries) {
-          await box.put(
-            entry.key,
-            Map<String, dynamic>.from(entry.value as Map),
-          );
-        }
+      final records = staged[boxName]!;
+      for (final entry in records.entries) {
+        await box.put(entry.key, entry.value);
       }
     }
   }

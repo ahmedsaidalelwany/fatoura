@@ -17,4 +17,5 @@ abstract class PurchaseRepository {
     required double paymentAmount,
   });
   Future<void> updateStockReceiptStatus(String purchaseId, bool isReceived);
+  Future<void> cancelPurchase(String purchaseId, String reason);
 }

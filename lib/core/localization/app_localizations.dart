@@ -79,7 +79,8 @@ class AppLocalizations {
       isArabic ? 'فاتورة شراء جديدة' : 'New Purchase';
   String get actionAddCustomer => isArabic ? 'إضافة عميل' : 'Add Customer';
   String get actionAddSupplier => isArabic ? 'إضافة مورد' : 'Add Supplier';
-  String get actionAddProduct => isArabic ? 'إضافة منتج جديد' : 'Add New Product';
+  String get actionAddProduct =>
+      isArabic ? 'إضافة منتج جديد' : 'Add New Product';
   String get actionRecordPayment => isArabic ? 'تسجيل دفعة' : 'Record Payment';
   String get actionNewReturn => isArabic ? 'تسجيل مرتجع' : 'New Return';
 
@@ -190,8 +191,7 @@ class AppLocalizations {
       isArabic ? 'إجمالي الذمم المدينة' : 'Total Receivables';
   String get totalPayable =>
       isArabic ? 'إجمالي الذمم الدائنة' : 'Total Payables';
-  String get selectSupplierBtn =>
-      isArabic ? 'اختر المورد' : 'Select Supplier';
+  String get selectSupplierBtn => isArabic ? 'اختر المورد' : 'Select Supplier';
 
   // Products
   String get productCatalogTitle =>
@@ -200,15 +200,12 @@ class AppLocalizations {
   String get skuLabel => isArabic ? 'رمز الصنف (SKU)' : 'SKU / Barcode';
   String get defaultPriceLabel =>
       isArabic ? 'سعر البيع الافتراضي' : 'Default Unit Price';
-  String get sellingPriceLabel =>
-      isArabic ? 'سعر البيع' : 'Selling Price';
+  String get sellingPriceLabel => isArabic ? 'سعر البيع' : 'Selling Price';
   String get categoryLabel => isArabic ? 'التصنيف' : 'Category';
   String get barcodeLabel => isArabic ? 'الباركود (Barcode)' : 'Barcode';
   String get costPriceLabel => isArabic ? 'سعر التكلفة' : 'Cost Price';
-  String get stockQuantityLabel =>
-      isArabic ? 'كمية المخزون' : 'Stock Quantity';
-  String get reorderLevelLabel =>
-      isArabic ? 'حد إعادة الطلب' : 'Reorder Level';
+  String get stockQuantityLabel => isArabic ? 'كمية المخزون' : 'Stock Quantity';
+  String get reorderLevelLabel => isArabic ? 'حد إعادة الطلب' : 'Reorder Level';
   String get trackInventoryLabel =>
       isArabic ? 'تتبع المخزون' : 'Track Inventory';
   String get inStockLabel => isArabic ? 'متوفر' : 'In Stock';
@@ -312,10 +309,8 @@ class AppLocalizations {
 
   // Customer Selection & Payments in Invoices
   String get customerTypeLabel => isArabic ? 'نوع العميل' : 'Customer Type';
-  String get walkInCustomer =>
-      isArabic ? 'عميل عام (نقدي)' : 'Walk-in (Cash)';
-  String get existingCustomer =>
-      isArabic ? 'عميل مسجل' : 'Existing Customer';
+  String get walkInCustomer => isArabic ? 'عميل عام (نقدي)' : 'Walk-in (Cash)';
+  String get existingCustomer => isArabic ? 'عميل مسجل' : 'Existing Customer';
   String get newCustomer => isArabic ? 'عميل جديد' : 'New Customer';
   String get walkInCustomerSubtitle => isArabic
       ? 'مبيعات نقدية مباشرة دون فتح حساب مديونية أو تسجيل اسم العميل'

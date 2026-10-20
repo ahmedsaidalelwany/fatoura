@@ -12,6 +12,7 @@ import 'package:fatoura/features/invoices/domain/repositories/invoice_repository
 import 'package:fatoura/features/payments/domain/entities/payment.dart';
 import 'package:fatoura/features/payments/domain/repositories/payment_repository.dart';
 import 'package:fatoura/features/products/domain/repositories/product_repository.dart';
+import 'package:fatoura/features/returns/domain/repositories/sales_return_repository.dart';
 import 'package:fatoura/features/shop_setup/domain/repositories/shop_profile_repository.dart';
 
 abstract class InvoicesState extends Equatable {
@@ -59,6 +60,7 @@ class InvoicesCubit extends Cubit<InvoicesState> {
   final AuditRepository auditRepository;
   final ProductRepository? productRepository;
   final PaymentRepository? paymentRepository;
+  final SalesReturnRepository? returnRepository;
 
   InvoicesCubit({
     required this.invoiceRepository,
@@ -67,6 +69,7 @@ class InvoicesCubit extends Cubit<InvoicesState> {
     required this.auditRepository,
     this.productRepository,
     this.paymentRepository,
+    this.returnRepository,
   }) : super(InvoicesInitial());
 
   Future<void> loadInvoices({
@@ -141,7 +144,9 @@ class InvoicesCubit extends Cubit<InvoicesState> {
         final cumulativeDemands = <String, double>{};
         final itemDescriptions = <String, String>{};
         for (final item in rawItems) {
-          if (!item.isService && item.productId != null && item.productId!.isNotEmpty) {
+          if (!item.isService &&
+              item.productId != null &&
+              item.productId!.isNotEmpty) {
             cumulativeDemands[item.productId!] =
                 (cumulativeDemands[item.productId!] ?? 0.0) + item.quantity;
             itemDescriptions[item.productId!] = item.description;
@@ -174,7 +179,8 @@ class InvoicesCubit extends Cubit<InvoicesState> {
       } else {
         if (rawItems.isNotEmpty && rawItems.every((it) => it.isService)) {
           resolvedTemplate = InvoiceTemplate.service;
-        } else if (rawItems.isNotEmpty && rawItems.every((it) => !it.isService)) {
+        } else if (rawItems.isNotEmpty &&
+            rawItems.every((it) => !it.isService)) {
           resolvedTemplate = InvoiceTemplate.product;
         } else {
           resolvedTemplate = InvoiceTemplate.mixed;
@@ -238,7 +244,9 @@ class InvoicesCubit extends Cubit<InvoicesState> {
           initialTotalPaid = initialPaidAmount.clamp(0.0, finalTotal);
           paymentStatus = initialTotalPaid >= finalTotal
               ? PaymentStatus.fullyPaid
-              : (initialTotalPaid > 0 ? PaymentStatus.partiallyPaid : PaymentStatus.unpaid);
+              : (initialTotalPaid > 0
+                    ? PaymentStatus.partiallyPaid
+                    : PaymentStatus.unpaid);
         } else {
           initialTotalPaid = 0.0;
           paymentStatus = PaymentStatus.unpaid;
@@ -246,7 +254,8 @@ class InvoicesCubit extends Cubit<InvoicesState> {
       }
 
       // If paymentRepository is provided and payment is made, we record payment via repository
-      final shouldRecordRepoPayment = !isDraft && initialTotalPaid > 0 && paymentRepository != null;
+      final shouldRecordRepoPayment =
+          !isDraft && initialTotalPaid > 0 && paymentRepository != null;
 
       final invoice = Invoice(
         id: invoiceId,
@@ -274,9 +283,13 @@ class InvoicesCubit extends Cubit<InvoicesState> {
         taxAmount: calcResult.taxAmount.toDouble(),
         finalTotal: finalTotal,
         totalPaid: shouldRecordRepoPayment ? 0.0 : initialTotalPaid,
-        remainingBalance: shouldRecordRepoPayment ? finalTotal : (finalTotal - initialTotalPaid).clamp(0.0, double.infinity),
+        remainingBalance: shouldRecordRepoPayment
+            ? finalTotal
+            : (finalTotal - initialTotalPaid).clamp(0.0, double.infinity),
         documentStatus: isDraft ? DocumentStatus.draft : DocumentStatus.issued,
-        paymentStatus: shouldRecordRepoPayment ? PaymentStatus.unpaid : paymentStatus,
+        paymentStatus: shouldRecordRepoPayment
+            ? PaymentStatus.unpaid
+            : paymentStatus,
         template: resolvedTemplate,
         currency: currency,
         notes: notes.trim(),
@@ -319,7 +332,9 @@ class InvoicesCubit extends Cubit<InvoicesState> {
       // Deduct inventory stock for physical items if not draft
       if (!isDraft && productRepository != null) {
         for (final item in rawItems) {
-          if (!item.isService && item.productId != null && item.productId!.isNotEmpty) {
+          if (!item.isService &&
+              item.productId != null &&
+              item.productId!.isNotEmpty) {
             await productRepository!.adjustStock(
               item.productId!,
               delta: -item.quantity,
@@ -330,7 +345,8 @@ class InvoicesCubit extends Cubit<InvoicesState> {
       }
 
       // Fetch latest invoice snapshot (with payment updates applied if any)
-      final finalInvoice = await invoiceRepository.getInvoiceById(invoice.id) ?? invoice;
+      final finalInvoice =
+          await invoiceRepository.getInvoiceById(invoice.id) ?? invoice;
 
       // Audit log
       await auditRepository.logAction(
@@ -368,15 +384,52 @@ class InvoicesCubit extends Cubit<InvoicesState> {
     emit(InvoicesLoading());
     try {
       final invoice = await invoiceRepository.getInvoiceById(invoiceId);
-      await invoiceRepository.cancelInvoice(invoiceId, reason.trim());
+      if (invoice == null) {
+        emit(const InvoicesError('Invoice not found.'));
+        return;
+      }
+      if (invoice.isCancelled) {
+        emit(const InvoiceOperationSuccess('Invoice is already cancelled.'));
+        return;
+      }
 
-      // Restore inventory stock for physical items if invoice was issued
-      if (invoice != null &&
-          !invoice.isDraft &&
-          !invoice.isCancelled &&
-          productRepository != null) {
+      // 1. Dependency check: Cannot cancel invoice with recorded payments
+      if (paymentRepository != null) {
+        final payments = await paymentRepository!.getPaymentsForInvoice(
+          invoiceId,
+        );
+        if (payments.isNotEmpty || invoice.totalPaid > 0) {
+          emit(
+            const InvoicesError(
+              'لا يمكن إلغاء فاتورة مسجل عليها مدفوعات. يجب تسوية أو استرداد المدفوعات أولاً.',
+            ),
+          );
+          return;
+        }
+      }
+
+      // 2. Dependency check: Cannot cancel invoice with active sales returns
+      if (returnRepository != null) {
+        final returns = await returnRepository!.getReturns(
+          originalInvoiceId: invoiceId,
+        );
+        if (returns.isNotEmpty ||
+            invoice.paymentStatus == PaymentStatus.refunded) {
+          emit(
+            const InvoicesError(
+              'لا يمكن إلغاء فاتورة يوجد عليها مرتجع مبيعات. يجب معالجة المرتجعات أولاً.',
+            ),
+          );
+          return;
+        }
+      }
+
+      // 3. Restore inventory stock for physical items if invoice was issued
+      if (!invoice.isDraft && productRepository != null) {
         for (final item in invoice.items) {
-          if (!item.isService && item.productId != null && item.productId!.isNotEmpty) {
+          if (!item.isService &&
+              item.productId != null &&
+              item.productId!.isNotEmpty) {
             await productRepository!.adjustStock(
               item.productId!,
               delta: item.quantity,
@@ -385,6 +438,8 @@ class InvoicesCubit extends Cubit<InvoicesState> {
           }
         }
       }
+
+      await invoiceRepository.cancelInvoice(invoiceId, reason.trim());
 
       await auditRepository.logAction(
         AuditLog(

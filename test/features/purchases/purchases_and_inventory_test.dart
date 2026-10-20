@@ -45,6 +45,7 @@ void main() {
     paymentRepo = PaymentRepositoryImpl(
       database: db,
       invoiceRepository: invoiceRepo,
+      purchaseRepository: purchaseRepo,
     );
 
     await shopRepo.saveProfile(
@@ -92,48 +93,51 @@ void main() {
   });
 
   group('Supplier Purchases & Stock Integration Tests', () {
-    test('Confirmed purchase creates stock inventory and updates cost price', () async {
-      // 1. Initial product with 5 units at cost 100
-      final product = Product(
-        id: 'prod_cement',
-        name: 'شيكارة أسمنت',
-        defaultUnitPrice: 180.0,
-        costPrice: 140.0,
-        trackInventory: true,
-        stockQuantity: 5.0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await productRepo.saveProduct(product);
+    test(
+      'Confirmed purchase creates stock inventory and updates cost price',
+      () async {
+        // 1. Initial product with 5 units at cost 100
+        final product = Product(
+          id: 'prod_cement',
+          name: 'شيكارة أسمنت',
+          defaultUnitPrice: 180.0,
+          costPrice: 140.0,
+          trackInventory: true,
+          stockQuantity: 5.0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await productRepo.saveProduct(product);
 
-      // 2. Issue confirmed purchase for 20 units at new cost 145
-      final purchase = await purchasesCubit.createPurchase(
-        supplierId: 'supp_al_ahram',
-        supplierName: 'شركة الأهرام للتوريدات',
-        rawItems: [
-          (
-            productId: 'prod_cement',
-            description: 'شيكارة أسمنت ممتاز',
-            quantity: 20.0,
-            unitPrice: 145.0,
-          ),
-        ],
-        isDraft: false, // Confirmed purchase!
-        initialPaymentStatus: PaymentStatus.fullyPaid,
-      );
+        // 2. Issue confirmed purchase for 20 units at new cost 145
+        final purchase = await purchasesCubit.createPurchase(
+          supplierId: 'supp_al_ahram',
+          supplierName: 'شركة الأهرام للتوريدات',
+          rawItems: [
+            (
+              productId: 'prod_cement',
+              description: 'شيكارة أسمنت ممتاز',
+              quantity: 20.0,
+              unitPrice: 145.0,
+            ),
+          ],
+          isDraft: false, // Confirmed purchase!
+          initialPaymentStatus: PaymentStatus.fullyPaid,
+        );
 
-      expect(purchase, isNotNull);
-      expect(purchase!.isStockReceived, isTrue);
-      expect(purchase.documentStatus, DocumentStatus.issued);
-      expect(purchase.finalTotal, 20.0 * 145.0); // 2900.0
+        expect(purchase, isNotNull);
+        expect(purchase!.isStockReceived, isTrue);
+        expect(purchase.documentStatus, DocumentStatus.issued);
+        expect(purchase.finalTotal, 20.0 * 145.0); // 2900.0
 
-      // Verify product stock is incremented: 5 + 20 = 25
-      final updatedProduct = await productRepo.getProductById('prod_cement');
-      expect(updatedProduct, isNotNull);
-      expect(updatedProduct!.stockQuantity, 25.0);
-      // Cost price updated to latest purchase unit cost
-      expect(updatedProduct.costPrice, 145.0);
-    });
+        // Verify product stock is incremented: 5 + 20 = 25
+        final updatedProduct = await productRepo.getProductById('prod_cement');
+        expect(updatedProduct, isNotNull);
+        expect(updatedProduct!.stockQuantity, 25.0);
+        // Cost price updated to latest purchase unit cost
+        expect(updatedProduct.costPrice, 145.0);
+      },
+    );
 
     test('Draft purchase does NOT increment inventory', () async {
       final product = Product(
@@ -214,8 +218,13 @@ void main() {
       final success2 = await purchasesCubit.confirmStockReceipt(draft.id);
       expect(success2, isTrue);
 
-      final prodAfterSecondConfirm = await productRepo.getProductById('prod_pipes');
-      expect(prodAfterSecondConfirm!.stockQuantity, 15.0); // Strictly unchanged!
+      final prodAfterSecondConfirm = await productRepo.getProductById(
+        'prod_pipes',
+      );
+      expect(
+        prodAfterSecondConfirm!.stockQuantity,
+        15.0,
+      ); // Strictly unchanged!
     });
 
     test('Supplier return decrements stock and validates sufficient available inventory', () async {
@@ -289,54 +298,155 @@ void main() {
   });
 
   group('Supplier Payment States & Subsequent Payments', () {
-    test('Purchase payment lifecycle: Unpaid -> Partial Payment -> Full Payment', () async {
-      // Create unpaid purchase for EGP 1000
+    test(
+      'Purchase payment lifecycle: Unpaid -> Partial Payment -> Full Payment',
+      () async {
+        // Create unpaid purchase for EGP 1000
+        final purchase = await purchasesCubit.createPurchase(
+          supplierId: 'supp_al_ahram',
+          supplierName: 'شركة الأهرام للتوريدات',
+          rawItems: [
+            (
+              productId: null,
+              description: 'مستلزمات عامة',
+              quantity: 10.0,
+              unitPrice: 100.0,
+            ),
+          ],
+          initialPaymentStatus: PaymentStatus.unpaid,
+        );
+        expect(purchase, isNotNull);
+        expect(purchase!.finalTotal, 1000.0);
+        expect(purchase.amountPaid, 0.0);
+        expect(purchase.remainingPayable, 1000.0);
+        expect(purchase.paymentStatus, PaymentStatus.unpaid);
+
+        // Record partial payment of EGP 400
+        final partialSuccess = await purchasesCubit.recordSupplierPayment(
+          purchaseId: purchase.id,
+          amount: 400.0,
+          method: PaymentMethod.bank,
+          notes: 'TRX-1001',
+        );
+        expect(partialSuccess, isTrue);
+
+        final afterPartial = await purchaseRepo.getPurchaseById(purchase.id);
+        expect(afterPartial!.amountPaid, 400.0);
+        expect(afterPartial.remainingPayable, 600.0);
+        expect(afterPartial.paymentStatus, PaymentStatus.partiallyPaid);
+
+        // Record final payment of EGP 600
+        final fullSuccess = await purchasesCubit.recordSupplierPayment(
+          purchaseId: purchase.id,
+          amount: 600.0,
+          method: PaymentMethod.cash,
+          notes: 'CASH-1002',
+        );
+        expect(fullSuccess, isTrue);
+
+        final afterFull = await purchaseRepo.getPurchaseById(purchase.id);
+        expect(afterFull!.amountPaid, 1000.0);
+        expect(afterFull.remainingPayable, 0.0);
+        expect(afterFull.paymentStatus, PaymentStatus.fullyPaid);
+      },
+    );
+
+    test('Initial payment on purchase creation does NOT duplicate payment amount', () async {
+      // Create confirmed purchase of 500 EGP with partial payment of 200 EGP
       final purchase = await purchasesCubit.createPurchase(
         supplierId: 'supp_al_ahram',
         supplierName: 'شركة الأهرام للتوريدات',
         rawItems: [
           (
             productId: null,
-            description: 'مستلزمات عامة',
-            quantity: 10.0,
+            description: 'لوازم سباكة',
+            quantity: 5.0,
             unitPrice: 100.0,
           ),
         ],
+        isDraft: false,
+        initialPaymentStatus: PaymentStatus.partiallyPaid,
+        initialPaidAmount: 200.0,
+      );
+
+      expect(purchase, isNotNull);
+      // Fresh lookup from repository must confirm exact 200.0 paid, NOT 400.0!
+      final reloaded = await purchaseRepo.getPurchaseById(purchase!.id);
+      expect(reloaded, isNotNull);
+      expect(reloaded!.finalTotal, 500.0);
+      expect(reloaded.amountPaid, 200.0); // Verifies fix of Defect 1
+      expect(reloaded.remainingPayable, 300.0);
+      expect(reloaded.paymentStatus, PaymentStatus.partiallyPaid);
+    });
+
+    test('Purchase cancellation reverses stock and rejects cancellation if payments exist', () async {
+      final product = Product(
+        id: 'prod_reversal',
+        name: 'كيس أسمنت خاص',
+        defaultUnitPrice: 100.0,
+        costPrice: 80.0,
+        trackInventory: true,
+        stockQuantity: 10.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await productRepo.saveProduct(product);
+
+      // Create confirmed purchase for 15 units (stock becomes 10 + 15 = 25)
+      final purchase = await purchasesCubit.createPurchase(
+        supplierId: 'supp_al_ahram',
+        supplierName: 'شركة الأهرام للتوريدات',
+        rawItems: [
+          (
+            productId: 'prod_reversal',
+            description: 'كيس أسمنت خاص',
+            quantity: 15.0,
+            unitPrice: 80.0,
+          ),
+        ],
+        isDraft: false,
         initialPaymentStatus: PaymentStatus.unpaid,
       );
       expect(purchase, isNotNull);
-      expect(purchase!.finalTotal, 1000.0);
-      expect(purchase.amountPaid, 0.0);
-      expect(purchase.remainingPayable, 1000.0);
-      expect(purchase.paymentStatus, PaymentStatus.unpaid);
+      var prod = await productRepo.getProductById('prod_reversal');
+      expect(prod!.stockQuantity, 25.0);
 
-      // Record partial payment of EGP 400
-      final partialSuccess = await purchasesCubit.recordSupplierPayment(
-        purchaseId: purchase.id,
-        amount: 400.0,
-        method: PaymentMethod.bank,
-        notes: 'TRX-1001',
+      // Cancel purchase -> stock must revert back to 10.0
+      final cancelSuccess = await purchasesCubit.cancelPurchase(
+        purchase!.id,
+        'إلغاء الطلب بالاتفاق مع المورد',
       );
-      expect(partialSuccess, isTrue);
+      expect(cancelSuccess, isTrue);
 
-      final afterPartial = await purchaseRepo.getPurchaseById(purchase.id);
-      expect(afterPartial!.amountPaid, 400.0);
-      expect(afterPartial.remainingPayable, 600.0);
-      expect(afterPartial.paymentStatus, PaymentStatus.partiallyPaid);
+      prod = await productRepo.getProductById('prod_reversal');
+      expect(prod!.stockQuantity, 10.0); // Exact reversal!
 
-      // Record final payment of EGP 600
-      final fullSuccess = await purchasesCubit.recordSupplierPayment(
-        purchaseId: purchase.id,
-        amount: 600.0,
-        method: PaymentMethod.cash,
-        notes: 'CASH-1002',
+      final cancelledPurchase = await purchaseRepo.getPurchaseById(purchase.id);
+      expect(cancelledPurchase!.documentStatus, DocumentStatus.cancelled);
+
+      // Attempt to cancel a purchase with existing payments -> MUST BE REJECTED
+      final paidPurchase = await purchasesCubit.createPurchase(
+        supplierId: 'supp_al_ahram',
+        supplierName: 'شركة الأهرام للتوريدات',
+        rawItems: [
+          (
+            productId: null,
+            description: 'مواد بناء',
+            quantity: 1.0,
+            unitPrice: 500.0,
+          ),
+        ],
+        isDraft: false,
+        initialPaymentStatus: PaymentStatus.fullyPaid,
       );
-      expect(fullSuccess, isTrue);
+      expect(paidPurchase, isNotNull);
 
-      final afterFull = await purchaseRepo.getPurchaseById(purchase.id);
-      expect(afterFull!.amountPaid, 1000.0);
-      expect(afterFull.remainingPayable, 0.0);
-      expect(afterFull.paymentStatus, PaymentStatus.fullyPaid);
+      final failedCancel = await purchasesCubit.cancelPurchase(
+        paidPurchase!.id,
+        'محاولة إلغاء غير قانونية',
+      );
+      expect(failedCancel, isFalse);
+      expect(purchasesCubit.state, isA<PurchasesError>());
     });
   });
 }

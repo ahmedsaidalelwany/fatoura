@@ -14,4 +14,6 @@ abstract class PartyRepository {
   Future<void> archiveParty(String id);
   Future<double> getCustomerReceivableBalance(String customerId);
   Future<double> getSupplierPayableBalance(String supplierId);
+  Future<Map<String, double>> getAllCustomerReceivableBalances();
+  Future<Map<String, double>> getAllSupplierPayableBalances();
 }

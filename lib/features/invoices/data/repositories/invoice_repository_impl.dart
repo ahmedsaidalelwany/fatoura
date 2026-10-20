@@ -172,8 +172,9 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final currentRemaining = Decimal.parse(invoice.remainingBalance.toString());
     final credit = Decimal.parse(creditAmount.toString());
 
-    final newRemainingDecimal =
-        currentRemaining > credit ? currentRemaining - credit : Decimal.zero;
+    final newRemainingDecimal = currentRemaining > credit
+        ? currentRemaining - credit
+        : Decimal.zero;
     final newRemaining = newRemainingDecimal.toDouble();
 
     final PaymentStatus newPaymentStatus;

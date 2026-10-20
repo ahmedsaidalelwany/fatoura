@@ -85,7 +85,10 @@ class CurrencyFormatter {
   }
 
   /// Localized currency display name (e.g. "الجنيه المصري (EGP)" or "Egyptian Pound (EGP)").
-  static String getLocalizedDisplayName(String currency, {bool isArabic = false}) {
+  static String getLocalizedDisplayName(
+    String currency, {
+    bool isArabic = false,
+  }) {
     final info = AppCurrencies.get(currency);
     if (isArabic) {
       return '${info.nameAr} (${info.code})';

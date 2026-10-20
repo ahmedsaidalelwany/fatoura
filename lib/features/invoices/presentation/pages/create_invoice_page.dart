@@ -59,6 +59,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   InvoiceTemplate _template = InvoiceTemplate.product;
   CustomerMode _customerMode = CustomerMode.walkIn;
   Party? _selectedCustomer;
+  String? _selectedCustomerId;
   final _items = <_EditableItem>[];
 
   DiscountType _discountType = DiscountType.fixed;
@@ -282,8 +283,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               builder: (context, state) {
                 List<Product> products = [];
                 if (state is ProductsLoaded) {
-                  products =
-                      state.products.where((p) => !p.isArchived).toList();
+                  products = state.products
+                      .where((p) => !p.isArchived)
+                      .toList();
                 }
 
                 return Padding(
@@ -441,8 +443,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       labelText: l10n.nameLabel,
                       prefixIcon: const Icon(Icons.person_outline),
                     ),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? l10n.setupRequiredField : null,
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? l10n.setupRequiredField
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -464,7 +467,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: openBalCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: '${l10n.openingBalanceLabel} ($_currency)',
                       prefixIcon: const Icon(Icons.account_balance_outlined),
@@ -476,7 +481,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       if (!modalFormKey.currentState!.validate()) return;
                       final newId = const Uuid().v4();
                       final now = DateTime.now();
-                      final openBal = double.tryParse(openBalCtrl.text.trim()) ?? 0.0;
+                      final openBal =
+                          double.tryParse(openBalCtrl.text.trim()) ?? 0.0;
 
                       await context.read<PartiesCubit>().saveParty(
                         id: newId,
@@ -501,6 +507,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
                       if (!mounted) return;
                       setState(() {
+                        _selectedCustomerId = newId;
                         _selectedCustomer = newParty;
                         _customerMode = CustomerMode.existing;
                       });
@@ -518,7 +525,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       );
                     },
                     child: Text(
-                      l10n.isArabic ? 'حفظ واختيار العميل' : 'Save & Select Customer',
+                      l10n.isArabic
+                          ? 'حفظ واختيار العميل'
+                          : 'Save & Select Customer',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -535,7 +544,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     if (!_formKey.currentState!.validate()) return;
     final l10n = AppLocalizations.of(context);
 
-    if (_customerMode == CustomerMode.existing && _selectedCustomer == null) {
+    if (_customerMode == CustomerMode.existing &&
+        (_selectedCustomerId == null || _selectedCustomer == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -635,7 +645,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     }
 
     context.read<InvoicesCubit>().createInvoice(
-      customerId: _selectedCustomer?.id,
+      customerId: _selectedCustomerId,
       customerName:
           _selectedCustomer?.name ??
           (_customerMode == CustomerMode.walkIn ? l10n.walkInCustomer : ''),
@@ -663,9 +673,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     return BlocListener<InvoicesCubit, InvoicesState>(
       listener: (context, state) {
         if (state is InvoiceOperationSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(state.message)));
           Navigator.pop(context);
         } else if (state is InvoicesError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -690,9 +699,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                       side: BorderSide(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                        color: Theme.of(context).dividerColor
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Padding(
@@ -725,7 +737,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                             runSpacing: 8,
                             children: [
                               ChoiceChip(
-                                avatar: const Icon(Icons.inventory_2_outlined, size: 16),
+                                avatar: const Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 16,
+                                ),
                                 label: Text(
                                   l10n.isArabic
                                       ? 'فاتورة منتجات (بضائع)'
@@ -746,7 +761,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 },
                               ),
                               ChoiceChip(
-                                avatar: const Icon(Icons.build_outlined, size: 16),
+                                avatar: const Icon(
+                                  Icons.build_outlined,
+                                  size: 16,
+                                ),
                                 label: Text(
                                   l10n.isArabic
                                       ? 'فاتورة خدمات (أتعاب/استشارات)'
@@ -765,7 +783,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 },
                               ),
                               ChoiceChip(
-                                avatar: const Icon(Icons.layers_outlined, size: 16),
+                                avatar: const Icon(
+                                  Icons.layers_outlined,
+                                  size: 16,
+                                ),
                                 label: Text(
                                   l10n.isArabic
                                       ? 'فاتورة مختلطة (منتجات وخدمات)'
@@ -792,9 +813,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                       side: BorderSide(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                        color: Theme.of(context).dividerColor
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Padding(
@@ -825,7 +849,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                             runSpacing: 8,
                             children: [
                               ChoiceChip(
-                                avatar: const Icon(Icons.storefront_outlined, size: 16),
+                                avatar: const Icon(
+                                  Icons.storefront_outlined,
+                                  size: 16,
+                                ),
                                 label: Text(l10n.walkInCustomer),
                                 selected: _customerMode == CustomerMode.walkIn,
                                 onSelected: (selected) {
@@ -833,15 +860,21 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                     setState(() {
                                       _customerMode = CustomerMode.walkIn;
                                       _selectedCustomer = null;
-                                      _paymentMode = InvoicePaymentMode.fullyPaid;
+                                      _selectedCustomerId = null;
+                                      _paymentMode =
+                                          InvoicePaymentMode.fullyPaid;
                                     });
                                   }
                                 },
                               ),
                               ChoiceChip(
-                                avatar: const Icon(Icons.people_outline, size: 16),
+                                avatar: const Icon(
+                                  Icons.people_outline,
+                                  size: 16,
+                                ),
                                 label: Text(l10n.existingCustomer),
-                                selected: _customerMode == CustomerMode.existing,
+                                selected:
+                                    _customerMode == CustomerMode.existing,
                                 onSelected: (selected) {
                                   if (selected) {
                                     setState(() {
@@ -869,8 +902,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryMuted.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
+                                color: AppColors.primaryMuted.withValues(
+                                  alpha: 0.08,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusSmall,
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -894,19 +931,193 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 ],
                               ),
                             ),
-                          ] else if (_customerMode == CustomerMode.existing) ...[
+                          ] else if (_customerMode ==
+                              CustomerMode.existing) ...[
                             BlocBuilder<PartiesCubit, PartiesState>(
                               builder: (context, state) {
-                                List<Party> customers = [];
-                                if (state is CustomersLoaded) {
-                                  customers = state.customers;
+                                if (state is PartiesLoading) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 4.0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          l10n.isArabic
+                                              ? 'جاري تحميل قائمة العملاء...'
+                                              : 'Loading customers...',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 }
-                                return DropdownButtonFormField<Party?>(
-                                  value: _selectedCustomer,
+
+                                if (state is PartiesError) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppDimensions.radiusSmall,
+                                      ),
+                                      border: Border.all(
+                                        color: AppColors.error.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.error_outline,
+                                          size: 18,
+                                          color: AppColors.error,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            state.message,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.error,
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => context
+                                              .read<PartiesCubit>()
+                                              .loadCustomers(),
+                                          child: Text(
+                                            l10n.isArabic
+                                                ? 'إعادة المحاولة'
+                                                : 'Retry',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                List<Party> rawCustomers = [];
+                                if (state is CustomersLoaded) {
+                                  rawCustomers = state.customers;
+                                }
+
+                                final uniqueCustomers = <String, Party>{};
+                                for (final c in rawCustomers) {
+                                  if (c.id.isNotEmpty &&
+                                      !uniqueCustomers.containsKey(c.id)) {
+                                    uniqueCustomers[c.id] = c;
+                                  }
+                                }
+                                final customers = uniqueCustomers.values.toList();
+
+                                final bool isSelectionInList =
+                                    _selectedCustomerId != null &&
+                                    uniqueCustomers.containsKey(
+                                      _selectedCustomerId,
+                                    );
+
+                                if (_selectedCustomerId != null &&
+                                    !isSelectionInList &&
+                                    state is CustomersLoaded) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (mounted &&
+                                        _selectedCustomerId != null &&
+                                        !uniqueCustomers.containsKey(
+                                          _selectedCustomerId,
+                                        )) {
+                                      setState(() {
+                                        _selectedCustomerId = null;
+                                        _selectedCustomer = null;
+                                      });
+                                    }
+                                  });
+                                }
+
+                                if (isSelectionInList) {
+                                  final fresh =
+                                      uniqueCustomers[_selectedCustomerId]!;
+                                  if (_selectedCustomer != fresh) {
+                                    _selectedCustomer = fresh;
+                                  }
+                                }
+
+                                final effectiveSelectedId = isSelectionInList
+                                    ? _selectedCustomerId
+                                    : null;
+
+                                if (customers.isEmpty) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).cardColor,
+                                      borderRadius: BorderRadius.circular(
+                                        AppDimensions.radiusSmall,
+                                      ),
+                                      border: Border.all(
+                                        color: Theme.of(context).dividerColor
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.people_outline,
+                                          size: 20,
+                                          color:
+                                              AppColors.textSecondaryLight,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            l10n.isArabic
+                                                ? 'لا يوجد عملاء مسجلين حالياً. انقر على "+" لإضافة عميل جديد.'
+                                                : 'No customers found. Click "+" to add a new customer.',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: isDark
+                                                  ? AppColors.textSecondaryDark
+                                                  : AppColors.textSecondaryLight,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                return DropdownButtonFormField<String?>(
+                                  key: ValueKey(effectiveSelectedId),
+                                  initialValue: effectiveSelectedId,
                                   isExpanded: true,
                                   decoration: InputDecoration(
                                     labelText: l10n.customerLabel,
-                                    prefixIcon: const Icon(Icons.person_search_outlined),
+                                    prefixIcon: const Icon(
+                                      Icons.person_search_outlined,
+                                    ),
                                   ),
                                   hint: Text(
                                     l10n.isArabic
@@ -914,8 +1125,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                         : 'Select customer...',
                                   ),
                                   items: customers.map((c) {
-                                    return DropdownMenuItem<Party>(
-                                      value: c,
+                                    return DropdownMenuItem<String>(
+                                      value: c.id,
                                       child: Text(
                                         c.phone.isNotEmpty
                                             ? '${c.name} (${c.phone})'
@@ -924,8 +1135,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                       ),
                                     );
                                   }).toList(),
-                                  onChanged: (val) {
-                                    setState(() => _selectedCustomer = val);
+                                  onChanged: (newId) {
+                                    setState(() {
+                                      _selectedCustomerId = newId;
+                                      _selectedCustomer = newId != null
+                                          ? uniqueCustomers[newId]
+                                          : null;
+                                    });
                                   },
                                 );
                               },
@@ -943,8 +1159,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                     AppDimensions.radiusSmall,
                                   ),
                                   border: Border.all(
-                                    color: Theme.of(context)
-                                        .dividerColor
+                                    color: Theme.of(context).dividerColor
                                         .withValues(alpha: 0.3),
                                   ),
                                 ),
@@ -965,7 +1180,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                         ),
                                       ),
                                     ),
-                                    if (_selectedCustomer!.openingReceivable > 0)
+                                    if (_selectedCustomer!.openingReceivable >
+                                        0)
                                       Text(
                                         '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _currency, isArabic: l10n.isArabic)}',
                                         style: const TextStyle(
@@ -988,9 +1204,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                       side: BorderSide(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                        color: Theme.of(context).dividerColor
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Padding(
@@ -1072,8 +1291,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                   AppDimensions.radiusMedium,
                                 ),
                                 border: Border.all(
-                                  color: Theme.of(context)
-                                      .dividerColor
+                                  color: Theme.of(context).dividerColor
                                       .withValues(alpha: 0.25),
                                 ),
                               ),
@@ -1160,8 +1378,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                           item.isService
                                               ? l10n.serviceItemLabel
                                               : (l10n.isArabic
-                                                  ? 'منتج ملموس (مخزون)'
-                                                  : 'Tangible Product (Stock)'),
+                                                    ? 'منتج ملموس (مخزون)'
+                                                    : 'Tangible Product (Stock)'),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: item.isService
@@ -1206,9 +1424,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                       side: BorderSide(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                        color: Theme.of(context).dividerColor
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Padding(
@@ -1297,9 +1518,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                       side: BorderSide(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                        color: Theme.of(context).dividerColor
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Padding(
@@ -1336,7 +1560,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 ),
                                 label: Text(l10n.paymentOptionFullyPaid),
                                 selected:
-                                    _paymentMode == InvoicePaymentMode.fullyPaid,
+                                    _paymentMode ==
+                                    InvoicePaymentMode.fullyPaid,
                                 onSelected: (selected) {
                                   if (selected) {
                                     setState(() {
@@ -1406,7 +1631,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                     decoration: InputDecoration(
                                       labelText:
                                           '${l10n.amountReceivedLabel} ($_currency)',
-                                      prefixIcon: const Icon(Icons.paid_outlined),
+                                      prefixIcon: const Icon(
+                                        Icons.paid_outlined,
+                                      ),
                                       isDense: true,
                                     ),
                                     onChanged: (_) => setState(() {}),
@@ -1451,7 +1678,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                               fontSize: 12,
                                               color: isDark
                                                   ? AppColors.textSecondaryDark
-                                                  : AppColors.textSecondaryLight,
+                                                  : AppColors
+                                                        .textSecondaryLight,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -1478,7 +1706,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           if (_paymentMode != InvoicePaymentMode.unpaid) ...[
                             const SizedBox(height: 12),
                             DropdownButtonFormField<PaymentMethod>(
-                              value: _paymentMethod,
+                              key: ValueKey(_paymentMethod),
+                              initialValue: _paymentMethod,
                               decoration: InputDecoration(
                                 labelText: l10n.paymentMethodLabel,
                                 prefixIcon: const Icon(
@@ -1521,9 +1750,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                       side: BorderSide(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                        color: Theme.of(context).dividerColor
+                            .withValues(alpha: 0.2),
                       ),
                     ),
                     child: Padding(
@@ -1656,8 +1888,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               fontSize: fontSize,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w400,
               color: isBold
-                  ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)
-                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                  ? (isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight)
+                  : (isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
             ),
           ),
           Text(
@@ -1666,10 +1902,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               fontSize: fontSize,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
               letterSpacing: -0.2,
-              color: color ??
+              color:
+                  color ??
                   (isBold
                       ? AppColors.primary
-                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+                      : (isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight)),
             ),
           ),
         ],

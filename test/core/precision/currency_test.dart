@@ -48,31 +48,62 @@ void main() {
       expect(AppCurrencies.egpToPiastres(Decimal.parse('0.01')), 1);
     });
 
-    test('Money value object defaults to EGP and handles minor units seamlessly', () {
-      final money = Money.fromNum(25.50);
-      expect(money.currency, 'EGP');
-      expect(money.toPiastres(), 2550);
-      expect(money.toMinorUnits(), 2550);
+    test(
+      'Money value object defaults to EGP and handles minor units seamlessly',
+      () {
+        final money = Money.fromNum(25.50);
+        expect(money.currency, 'EGP');
+        expect(money.toPiastres(), 2550);
+        expect(money.toMinorUnits(), 2550);
 
-      final fromPiastres = Money.fromPiastres(10000);
-      expect(fromPiastres.currency, 'EGP');
-      expect(fromPiastres.value, Decimal.parse('100.00'));
-      expect(fromPiastres.toStringAsFixed(2), '100.00');
+        final fromPiastres = Money.fromPiastres(10000);
+        expect(fromPiastres.currency, 'EGP');
+        expect(fromPiastres.value, Decimal.parse('100.00'));
+        expect(fromPiastres.toStringAsFixed(2), '100.00');
+      },
+    );
+
+    test(
+      'Money.fromString throws ArgumentError on invalid non-numeric strings',
+      () {
+        // Empty string parses safely as zero
+        expect(Money.fromString('').isZero, isTrue);
+        expect(Money.fromString('   ').isZero, isTrue);
+
+        // Valid decimal string parses exactly
+        expect(Money.fromString('123.45').value, Decimal.parse('123.45'));
+
+        // Non-numeric strings must throw ArgumentError and NEVER convert silently to zero
+        expect(() => Money.fromString('invalid'), throwsArgumentError);
+        expect(() => Money.fromString('abc123'), throwsArgumentError);
+        expect(() => Money.fromString('NaN'), throwsArgumentError);
+      },
+    );
+
+    test('Rejects unknown currency codes with ArgumentError and supports safe lookups', () {
+      expect(() => AppCurrencies.get('UNKNOWN'), throwsArgumentError);
+      expect(() => AppCurrencies.get('XYZ'), throwsArgumentError);
+      expect(() => AppCurrencies.get(''), throwsArgumentError);
+
+      expect(AppCurrencies.tryGet('XYZ'), isNull);
+      expect(AppCurrencies.tryGet('EGP')?.code, 'EGP');
+
+      expect(AppCurrencies.isSupported('XYZ'), isFalse);
+      expect(AppCurrencies.isSupported('EGP'), isTrue);
+      expect(AppCurrencies.isSupported(null), isFalse);
     });
 
-    test('Money.fromString throws ArgumentError on invalid non-numeric strings', () {
-      // Empty string parses safely as zero
-      expect(Money.fromString('').isZero, isTrue);
-      expect(Money.fromString('   ').isZero, isTrue);
-
-      // Valid decimal string parses exactly
-      expect(Money.fromString('123.45').value, Decimal.parse('123.45'));
-
-      // Non-numeric strings must throw ArgumentError and NEVER convert silently to zero
-      expect(() => Money.fromString('invalid'), throwsArgumentError);
-      expect(() => Money.fromString('abc123'), throwsArgumentError);
-      expect(() => Money.fromString('NaN'), throwsArgumentError);
-    });
+    test(
+      'Deterministic half-up rounding in toMinorUnits prevents truncation',
+      () {
+        // 10.005 EGP has 1000.5 piastres -> rounds half-up to 1001 piastres
+        expect(AppCurrencies.egp.toMinorUnits(Decimal.parse('10.005')), 1001);
+        // 10.004 EGP has 1000.4 piastres -> rounds down to 1000 piastres
+        expect(AppCurrencies.egp.toMinorUnits(Decimal.parse('10.004')), 1000);
+        // 10.006 EGP has 1000.6 piastres -> rounds up to 1001 piastres
+        expect(AppCurrencies.egp.toMinorUnits(Decimal.parse('10.006')), 1001);
+      },
+    );
 
     test('Supports 3-decimal digit currencies such as KWD', () {
       final kwd = AppCurrencies.get('KWD');
@@ -83,7 +114,11 @@ void main() {
       expect(moneyKwd.toStringAsFixed(3), '12.345');
       expect(moneyKwd.toMinorUnits(), 12345);
 
-      final formatted = CurrencyFormatter.format(12.345, currency: 'KWD', isArabic: false);
+      final formatted = CurrencyFormatter.format(
+        12.345,
+        currency: 'KWD',
+        isArabic: false,
+      );
       expect(formatted, 'KWD 12.345');
     });
 
@@ -146,10 +181,16 @@ void main() {
     });
 
     test('Provides full localized currency names for settings selection', () {
-      final arName = CurrencyFormatter.getLocalizedDisplayName('EGP', isArabic: true);
+      final arName = CurrencyFormatter.getLocalizedDisplayName(
+        'EGP',
+        isArabic: true,
+      );
       expect(arName, 'الجنيه المصري (EGP)');
 
-      final enName = CurrencyFormatter.getLocalizedDisplayName('EGP', isArabic: false);
+      final enName = CurrencyFormatter.getLocalizedDisplayName(
+        'EGP',
+        isArabic: false,
+      );
       expect(enName, 'Egyptian Pound (EGP)');
     });
   });

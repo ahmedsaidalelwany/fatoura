@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:fatoura/core/precision/currency.dart';
 import 'package:fatoura/core/precision/currency_formatter.dart';
+import 'package:fatoura/core/precision/financial_calculator.dart';
 
 /// Immutable high-precision Money value object.
 /// Eliminates binary floating-point representation bugs (e.g. 0.1 + 0.2 = 0.30000000000000004).
@@ -105,6 +106,13 @@ class Money implements Comparable<Money> {
   /// Converts this amount into Egyptian piastres if currency is EGP.
   int toPiastres() {
     return toMinorUnits();
+  }
+
+  /// Returns a new [Money] instance rounded to the currency's decimal precision using deterministic half-up arithmetic.
+  Money round([int? fractionDigits]) {
+    final digits = fractionDigits ?? AppCurrencies.get(currency).decimalDigits;
+    final rounded = FinancialCalculator.roundHalfUp(value, digits);
+    return Money._(rounded, currency);
   }
 
   /// Formats the money to fixed decimal places (default based on currency)

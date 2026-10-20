@@ -49,7 +49,9 @@ class _PurchasesPageState extends State<PurchasesPage> {
           children: [
             const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text(l10n.isArabic ? 'تأكيد استلام البضاعة' : 'Confirm Stock Receipt'),
+            Text(
+              l10n.isArabic ? 'تأكيد استلام البضاعة' : 'Confirm Stock Receipt',
+            ),
           ],
         ),
         content: Text(
@@ -99,7 +101,9 @@ class _PurchasesPageState extends State<PurchasesPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(l10n.isArabic ? 'تسجيل دفعة للمورد' : 'Record Supplier Payment'),
+          title: Text(
+            l10n.isArabic ? 'تسجيل دفعة للمورد' : 'Record Supplier Payment',
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -112,23 +116,31 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 const SizedBox(height: 4),
                 Text(
                   '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(pur.remainingPayable, currency: pur.currency, isArabic: l10n.isArabic)}',
-                  style: const TextStyle(color: AppColors.errorMuted, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.errorMuted,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: amountCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
-                    labelText: '${l10n.isArabic ? 'المبلغ المدفوع' : 'Amount'} (${pur.currency})',
+                    labelText:
+                        '${l10n.isArabic ? 'المبلغ المدفوع' : 'Amount'} (${pur.currency})',
                     prefixIcon: const Icon(Icons.paid_outlined),
                   ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<PaymentMethod>(
-                  value: method,
+                  initialValue: method,
                   decoration: InputDecoration(
                     labelText: l10n.paymentMethodLabel,
-                    prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+                    prefixIcon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                    ),
                   ),
                   items: [
                     DropdownMenuItem(
@@ -155,9 +167,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: notesCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.notesLabel,
-                  ),
+                  decoration: InputDecoration(labelText: l10n.notesLabel),
                 ),
               ],
             ),
@@ -212,17 +222,21 @@ class _PurchasesPageState extends State<PurchasesPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(l10n.isArabic ? 'تسجيل مرتجع مشتريات' : 'Record Purchase Return'),
+          title: Text(
+            l10n.isArabic ? 'تسجيل مرتجع مشتريات' : 'Record Purchase Return',
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownButtonFormField<PurchaseInvoiceItem>(
-                  value: selectedItem,
+                  initialValue: selectedItem,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: l10n.isArabic ? 'الصنف المرتجع' : 'Returned Item',
+                    labelText: l10n.isArabic
+                        ? 'الصنف المرتجع'
+                        : 'Returned Item',
                   ),
                   items: pur.items.map((it) {
                     return DropdownMenuItem(
@@ -245,9 +259,13 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: qtyCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
-                    labelText: l10n.isArabic ? 'كمية المرتجع' : 'Return Quantity',
+                    labelText: l10n.isArabic
+                        ? 'كمية المرتجع'
+                        : 'Return Quantity',
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -280,7 +298,9 @@ class _PurchasesPageState extends State<PurchasesPage> {
                       returnQuantity: qty,
                       reason: reasonCtrl.text.trim().isNotEmpty
                           ? reasonCtrl.text.trim()
-                          : (l10n.isArabic ? 'مرتجع مشتريات' : 'Purchase return'),
+                          : (l10n.isArabic
+                                ? 'مرتجع مشتريات'
+                                : 'Purchase return'),
                       refundAmount: refundAmount,
                     );
                 if (mounted && success) {
@@ -401,9 +421,12 @@ class _PurchasesPageState extends State<PurchasesPage> {
                         return Card(
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusCard,
+                            ),
                             side: BorderSide(
-                              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                              color: Theme.of(context).dividerColor
+                                  .withValues(alpha: 0.2),
                             ),
                           ),
                           child: Padding(
@@ -451,7 +474,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                             style: TextStyle(
                                               color: isDark
                                                   ? AppColors.textSecondaryDark
-                                                  : AppColors.textSecondaryLight,
+                                                  : AppColors
+                                                        .textSecondaryLight,
                                               fontSize: 12,
                                             ),
                                           ),
@@ -459,7 +483,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                       ),
                                     ),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Text(
                                           CurrencyFormatter.format(
@@ -488,7 +513,10 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                       ],
                                     ),
                                     PopupMenuButton<String>(
-                                      icon: const Icon(Icons.more_vert, size: 20),
+                                      icon: const Icon(
+                                        Icons.more_vert,
+                                        size: 20,
+                                      ),
                                       onSelected: (action) {
                                         if (action == 'confirm_stock') {
                                           _showConfirmReceiptDialog(pur);
@@ -504,9 +532,17 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                             value: 'confirm_stock',
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.check_circle_outline, color: AppColors.success, size: 18),
+                                                const Icon(
+                                                  Icons.check_circle_outline,
+                                                  color: AppColors.success,
+                                                  size: 18,
+                                                ),
                                                 const SizedBox(width: 8),
-                                                Text(l10n.isArabic ? 'تأكيد استلام المخزون' : 'Confirm Stock Receipt'),
+                                                Text(
+                                                  l10n.isArabic
+                                                      ? 'تأكيد استلام المخزون'
+                                                      : 'Confirm Stock Receipt',
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -515,9 +551,17 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                             value: 'pay',
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.payment, color: AppColors.primary, size: 18),
+                                                const Icon(
+                                                  Icons.payment,
+                                                  color: AppColors.primary,
+                                                  size: 18,
+                                                ),
                                                 const SizedBox(width: 8),
-                                                Text(l10n.isArabic ? 'تسجيل دفعة للمورد' : 'Record Supplier Payment'),
+                                                Text(
+                                                  l10n.isArabic
+                                                      ? 'تسجيل دفعة للمورد'
+                                                      : 'Record Supplier Payment',
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -526,9 +570,18 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                             value: 'return',
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.assignment_return_outlined, color: AppColors.error, size: 18),
+                                                const Icon(
+                                                  Icons
+                                                      .assignment_return_outlined,
+                                                  color: AppColors.error,
+                                                  size: 18,
+                                                ),
                                                 const SizedBox(width: 8),
-                                                Text(l10n.isArabic ? 'مرتجع مشتريات' : 'Purchase Return'),
+                                                Text(
+                                                  l10n.isArabic
+                                                      ? 'مرتجع مشتريات'
+                                                      : 'Purchase Return',
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -545,12 +598,17 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                   children: [
                                     // Stock receipt badge
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: pur.isStockReceived
                                             ? AppColors.successBackground
                                             : AppColors.warningBackground,
-                                        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                                        borderRadius: BorderRadius.circular(
+                                          AppDimensions.radiusPill,
+                                        ),
                                         border: Border.all(
                                           color: pur.isStockReceived
                                               ? AppColors.success
@@ -562,19 +620,29 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            pur.isStockReceived ? Icons.inventory : Icons.pending_actions,
+                                            pur.isStockReceived
+                                                ? Icons.inventory
+                                                : Icons.pending_actions,
                                             size: 11,
-                                            color: pur.isStockReceived ? AppColors.success : AppColors.warning,
+                                            color: pur.isStockReceived
+                                                ? AppColors.success
+                                                : AppColors.warning,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             pur.isStockReceived
-                                                ? (l10n.isArabic ? 'مستلم بالمخزون' : 'Stock Received')
-                                                : (l10n.isArabic ? 'في انتظار الاستلام' : 'Pending Receipt'),
+                                                ? (l10n.isArabic
+                                                      ? 'مستلم بالمخزون'
+                                                      : 'Stock Received')
+                                                : (l10n.isArabic
+                                                      ? 'في انتظار الاستلام'
+                                                      : 'Pending Receipt'),
                                             style: TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold,
-                                              color: pur.isStockReceived ? AppColors.success : AppColors.warning,
+                                              color: pur.isStockReceived
+                                                  ? AppColors.success
+                                                  : AppColors.warning,
                                             ),
                                           ),
                                         ],
@@ -582,40 +650,62 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                     ),
                                     // Payment status badge
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: pur.remainingPayable == 0
                                             ? AppColors.successBackground
-                                            : (pur.amountPaid > 0 ? AppColors.warningBackground : AppColors.errorBackground),
-                                        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                                            : (pur.amountPaid > 0
+                                                  ? AppColors.warningBackground
+                                                  : AppColors.errorBackground),
+                                        borderRadius: BorderRadius.circular(
+                                          AppDimensions.radiusPill,
+                                        ),
                                         border: Border.all(
                                           color: pur.remainingPayable == 0
                                               ? AppColors.success
-                                              : (pur.amountPaid > 0 ? AppColors.warning : AppColors.error),
+                                              : (pur.amountPaid > 0
+                                                    ? AppColors.warning
+                                                    : AppColors.error),
                                           width: 0.6,
                                         ),
                                       ),
                                       child: Text(
                                         pur.remainingPayable == 0
-                                            ? (l10n.isArabic ? 'مسددة بالكامل' : 'Fully Paid')
+                                            ? (l10n.isArabic
+                                                  ? 'مسددة بالكامل'
+                                                  : 'Fully Paid')
                                             : (pur.amountPaid > 0
-                                                ? (l10n.isArabic ? 'مسددة جزئياً' : 'Partially Paid')
-                                                : (l10n.isArabic ? 'غير مسددة' : 'Unpaid')),
+                                                  ? (l10n.isArabic
+                                                        ? 'مسددة جزئياً'
+                                                        : 'Partially Paid')
+                                                  : (l10n.isArabic
+                                                        ? 'غير مسددة'
+                                                        : 'Unpaid')),
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                           color: pur.remainingPayable == 0
                                               ? AppColors.success
-                                              : (pur.amountPaid > 0 ? AppColors.warning : AppColors.error),
+                                              : (pur.amountPaid > 0
+                                                    ? AppColors.warning
+                                                    : AppColors.error),
                                         ),
                                       ),
                                     ),
                                     if (pur.isDraft)
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.infoBackground,
-                                          borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                                          borderRadius: BorderRadius.circular(
+                                            AppDimensions.radiusPill,
+                                          ),
                                         ),
                                         child: Text(
                                           l10n.isArabic ? 'مسودة' : 'Draft',

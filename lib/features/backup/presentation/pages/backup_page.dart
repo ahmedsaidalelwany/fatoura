@@ -53,11 +53,19 @@ class BackupPage extends StatelessWidget {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      side: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.8,
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0,
+                        vertical: 32.0,
+                      ),
                       child: Column(
                         children: [
                           Container(
@@ -65,7 +73,9 @@ class BackupPage extends StatelessWidget {
                             height: 72,
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                              borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusCard,
+                              ),
                             ),
                             child: const Icon(
                               Icons.cloud_sync_outlined,
@@ -102,7 +112,9 @@ class BackupPage extends StatelessWidget {
                               label: Text(l10n.createBackupBtn),
                               style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusControl,
+                                  ),
                                 ),
                               ),
                               onPressed: state is BackupLoading
@@ -121,7 +133,9 @@ class BackupPage extends StatelessWidget {
                               label: Text(l10n.restoreBackupBtn),
                               style: OutlinedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusControl,
+                                  ),
                                 ),
                               ),
                               onPressed: state is BackupLoading
@@ -131,7 +145,9 @@ class BackupPage extends StatelessWidget {
                                         context: context,
                                         builder: (ctx) => AlertDialog(
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(AppDimensions.radiusSheet),
+                                            borderRadius: BorderRadius.circular(
+                                              AppDimensions.radiusSheet,
+                                            ),
                                           ),
                                           title: Text(l10n.restoreBackupBtn),
                                           content: Text(l10n.restoreWarning),
@@ -143,20 +159,28 @@ class BackupPage extends StatelessWidget {
                                             ),
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.error,
+                                                backgroundColor:
+                                                    AppColors.error,
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        AppDimensions
+                                                            .radiusControl,
+                                                      ),
                                                 ),
                                               ),
                                               onPressed: () =>
                                                   Navigator.pop(ctx, true),
-                                              child: Text(l10n.restoreBackupBtn),
+                                              child: Text(
+                                                l10n.restoreBackupBtn,
+                                              ),
                                             ),
                                           ],
                                         ),
                                       );
 
-                                      if (confirmed == true && context.mounted) {
+                                      if (confirmed == true &&
+                                          context.mounted) {
                                         context
                                             .read<BackupCubit>()
                                             .restoreBackupFromFile();

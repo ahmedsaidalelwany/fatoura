@@ -12,16 +12,30 @@ class AppColors {
   static const Color primaryLight = primary;
 
   // Backgrounds & Surfaces - Light
-  static const Color lightBackground = Color(0xFFF5F5F7); // Apple Grouped Background
-  static const Color lightSurface = Color(0xFFFFFFFF); // Pure white cards/containers
-  static const Color lightSurfaceSubtle = Color(0xFFF0F0F2); // Inset controls, filled inputs
-  static const Color lightBorder = Color(0xFFD2D2D7); // Cupertino separator hairline
+  static const Color lightBackground = Color(
+    0xFFF5F5F7,
+  ); // Apple Grouped Background
+  static const Color lightSurface = Color(
+    0xFFFFFFFF,
+  ); // Pure white cards/containers
+  static const Color lightSurfaceSubtle = Color(
+    0xFFF0F0F2,
+  ); // Inset controls, filled inputs
+  static const Color lightBorder = Color(
+    0xFFD2D2D7,
+  ); // Cupertino separator hairline
   static const Color borderLight = lightBorder;
 
   // Backgrounds & Surfaces - Dark
-  static const Color darkBackground = Color(0xFF151516); // Cupertino Dark grouped bg
-  static const Color darkSurface = Color(0xFF1C1C1E); // Apple dark secondary grouped bg
-  static const Color darkSurfaceSubtle = Color(0xFF28282A); // Inset controls dark
+  static const Color darkBackground = Color(
+    0xFF151516,
+  ); // Cupertino Dark grouped bg
+  static const Color darkSurface = Color(
+    0xFF1C1C1E,
+  ); // Apple dark secondary grouped bg
+  static const Color darkSurfaceSubtle = Color(
+    0xFF28282A,
+  ); // Inset controls dark
   static const Color darkBorder = Color(0xFF38383A); // Cupertino dark separator
 
   // Aliases for clean cross-theme references
@@ -29,8 +43,12 @@ class AppColors {
   static const Color surfaceSubtleDark = darkSurfaceSubtle;
 
   // Text Tokens - Light
-  static const Color textPrimaryLight = Color(0xFF1D1D1F); // Apple high-contrast text
-  static const Color textSecondaryLight = Color(0xFF6E6E73); // Apple secondary text
+  static const Color textPrimaryLight = Color(
+    0xFF1D1D1F,
+  ); // Apple high-contrast text
+  static const Color textSecondaryLight = Color(
+    0xFF6E6E73,
+  ); // Apple secondary text
   static const Color textTertiaryLight = Color(0xFF86868B);
 
   // Text Tokens - Dark
@@ -77,13 +95,14 @@ class AppDimensions {
   AppDimensions._();
 
   // Radius Hierarchy
-  static const double radiusSmall = 8.0;   // Badges, tags, chips
+  static const double radiusSmall = 8.0; // Badges, tags, chips
   static const double radiusMedium = 12.0; // Text fields, buttons, dropdowns
-  static const double radiusControl = 12.0; // Inset form controls, inputs, buttons
-  static const double radiusCard = 16.0;   // Cards, grouped panels, containers
-  static const double radiusLarge = 16.0;  // Backward-compatibility
-  static const double radiusSheet = 20.0;  // Bottom sheets, dialogs, modals
-  static const double radiusPill = 20.0;   // Cupertino status pills and badges
+  static const double radiusControl =
+      12.0; // Inset form controls, inputs, buttons
+  static const double radiusCard = 16.0; // Cards, grouped panels, containers
+  static const double radiusLarge = 16.0; // Backward-compatibility
+  static const double radiusSheet = 20.0; // Bottom sheets, dialogs, modals
+  static const double radiusPill = 20.0; // Cupertino status pills and badges
 
   // Padding
   static const double paddingSmall = 8.0;

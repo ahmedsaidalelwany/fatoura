@@ -16,7 +16,9 @@ class DeveloperInfoPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isAr ? 'معلومات المطور والتقنية' : 'Developer & Architecture'),
+        title: Text(
+          isAr ? 'معلومات المطور والتقنية' : 'Developer & Architecture',
+        ),
       ),
       body: ResponsiveContentContainer(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -31,7 +33,10 @@ class DeveloperInfoPage extends StatelessWidget {
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.8,
+                ),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               ),
               child: Padding(
@@ -47,7 +52,11 @@ class DeveloperInfoPage extends StatelessWidget {
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.memory, color: AppColors.primary, size: 20),
+                          child: const Icon(
+                            Icons.memory,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -139,7 +148,11 @@ class DeveloperInfoPage extends StatelessWidget {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.person_outline, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.person_outline,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -202,7 +215,9 @@ class DeveloperInfoPage extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 13,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
           ),
         ),
         const SizedBox(width: 16),
@@ -210,10 +225,7 @@ class DeveloperInfoPage extends StatelessWidget {
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ),
       ],

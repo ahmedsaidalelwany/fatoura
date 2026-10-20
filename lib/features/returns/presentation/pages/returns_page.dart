@@ -47,14 +47,18 @@ class _ReturnsPageState extends State<ReturnsPage> {
                       Icon(
                         Icons.assignment_return_outlined,
                         size: 56,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         l10n.noDataFound,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -64,7 +68,8 @@ class _ReturnsPageState extends State<ReturnsPage> {
 
               return ListView.separated(
                 itemCount: returns.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final ret = returns[index];
                   final dateStr = DateFormat('yyyy/MM/dd HH:mm')
@@ -85,7 +90,9 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15,
                                   letterSpacing: -0.2,
-                                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimaryLight,
                                 ),
                               ),
                               Text(
@@ -108,14 +115,22 @@ class _ReturnsPageState extends State<ReturnsPage> {
                             '${l10n.originalInvoiceLabel}: ${ret.originalInvoiceNumber} • ${ret.customerName.isNotEmpty ? ret.customerName : l10n.cashCustomer}',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           Text(
                             dateStr,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? AppColors.textSecondaryDark.withOpacity(0.8) : AppColors.textSecondaryLight.withOpacity(0.8),
+                              color: isDark
+                                  ? AppColors.textSecondaryDark.withValues(
+                                      alpha: 0.8,
+                                    )
+                                  : AppColors.textSecondaryLight.withValues(
+                                      alpha: 0.8,
+                                    ),
                             ),
                           ),
                           if (ret.returnReason.isNotEmpty) ...[
@@ -125,7 +140,9 @@ class _ReturnsPageState extends State<ReturnsPage> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -143,7 +160,9 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                     '${item.description} (x${item.returnedQuantity})',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                      color: isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimaryLight,
                                     ),
                                   ),
                                   Text(
@@ -155,7 +174,9 @@ class _ReturnsPageState extends State<ReturnsPage> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                      color: isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimaryLight,
                                     ),
                                   ),
                                 ],

@@ -31,7 +31,9 @@ class BusinessType {
       case service:
         return isArabic ? 'تقديم الخدمات' : 'Services';
       case mixed:
-        return isArabic ? 'بيع المنتجات وتقديم الخدمات' : 'Products and Services';
+        return isArabic
+            ? 'بيع المنتجات وتقديم الخدمات'
+            : 'Products and Services';
       default:
         return typeCode;
     }
@@ -66,7 +68,9 @@ class BusinessType {
     // Heuristic migration for common free-text values
     final lower = stored.toLowerCase();
     if (lower.contains('service') || lower.contains('خدم')) return service;
-    if (lower.contains('mixed') || lower.contains('مختلط') || lower.contains('متنوع')) {
+    if (lower.contains('mixed') ||
+        lower.contains('مختلط') ||
+        lower.contains('متنوع')) {
       return mixed;
     }
     // Default to product for any unrecognized previous value
@@ -125,7 +129,9 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
     _logoPath = profile.logoPath;
     _signaturePath = profile.signaturePath;
     // Migrate any old free-text business type value to a stable code
-    _selectedBusinessType = BusinessType.compatibleDefault(profile.businessType);
+    _selectedBusinessType = BusinessType.compatibleDefault(
+      profile.businessType,
+    );
   }
 
   @override
@@ -155,7 +161,10 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -178,7 +187,10 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -242,7 +254,10 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 32.0,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -255,14 +270,23 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                               width: 84,
                               height: 84,
                               decoration: BoxDecoration(
-                                color: isDark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle,
-                                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                                border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+                                color: isDark
+                                    ? AppColors.surfaceSubtleDark
+                                    : AppColors.surfaceSubtle,
+                                borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusCard,
+                                ),
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
+                                  width: 0.8,
+                                ),
                               ),
                               padding: const EdgeInsets.all(8),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: (_logoPath.isNotEmpty && File(_logoPath).existsSync())
+                                child:
+                                    (_logoPath.isNotEmpty &&
+                                        File(_logoPath).existsSync())
                                     ? Image.file(
                                         File(_logoPath),
                                         fit: BoxFit.contain,
@@ -270,17 +294,22 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                     : Image.asset(
                                         'assets/images/logo.png',
                                         fit: BoxFit.contain,
-                                        errorBuilder: (context, error, stackTrace) => Container(
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.receipt_long,
-                                            color: Colors.white,
-                                            size: 36,
-                                          ),
-                                        ),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.receipt_long,
+                                                    color: Colors.white,
+                                                    size: 36,
+                                                  ),
+                                                ),
                                       ),
                               ),
                             ),
@@ -289,9 +318,14 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 OutlinedButton.icon(
-                                  icon: const Icon(Icons.image_outlined, size: 16),
+                                  icon: const Icon(
+                                    Icons.image_outlined,
+                                    size: 16,
+                                  ),
                                   label: Text(
-                                    _logoPath.isEmpty ? l10n.pickLogoBtn : l10n.changeLogoBtn,
+                                    _logoPath.isEmpty
+                                        ? l10n.pickLogoBtn
+                                        : l10n.changeLogoBtn,
                                     style: const TextStyle(fontSize: 12),
                                   ),
                                   onPressed: _pickLogo,
@@ -299,12 +333,20 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                 if (_logoPath.isNotEmpty) ...[
                                   const SizedBox(width: 8),
                                   TextButton.icon(
-                                    icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 16,
+                                      color: AppColors.error,
+                                    ),
                                     label: Text(
                                       l10n.removeLogoBtn,
-                                      style: const TextStyle(fontSize: 12, color: AppColors.error),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.error,
+                                      ),
                                     ),
-                                    onPressed: () => setState(() => _logoPath = ''),
+                                    onPressed: () =>
+                                        setState(() => _logoPath = ''),
                                   ),
                                 ],
                               ],
@@ -328,7 +370,9 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                       const SizedBox(height: 28),
@@ -378,10 +422,16 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                         : Theme.of(context).dividerColor,
                                     width: isSelected ? 1.5 : 0.8,
                                   ),
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusControl,
+                                  ),
                                   color: isSelected
-                                      ? AppColors.primary.withValues(alpha: 0.08)
-                                      : (isDark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle),
+                                      ? AppColors.primary.withValues(
+                                          alpha: 0.08,
+                                        )
+                                      : (isDark
+                                            ? AppColors.surfaceSubtleDark
+                                            : AppColors.surfaceSubtle),
                                 ),
                                 child: Row(
                                   children: [
@@ -392,8 +442,8 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                       color: isSelected
                                           ? AppColors.primary
                                           : (isDark
-                                              ? AppColors.textSecondaryDark
-                                              : AppColors.textSecondaryLight),
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight),
                                       size: 20,
                                     ),
                                     const SizedBox(width: 12),
@@ -425,7 +475,8 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                               fontSize: 12,
                                               color: isDark
                                                   ? AppColors.textSecondaryDark
-                                                  : AppColors.textSecondaryLight,
+                                                  : AppColors
+                                                        .textSecondaryLight,
                                             ),
                                           ),
                                         ],
@@ -531,8 +582,13 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                       Card(
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                          side: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                            width: 0.8,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusCard,
+                          ),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -541,11 +597,18 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.draw_outlined, size: 20, color: AppColors.primary),
+                                  const Icon(
+                                    Icons.draw_outlined,
+                                    size: 20,
+                                    color: AppColors.primary,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
                                     l10n.shopSignatureLabel,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -556,22 +619,35 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                     : 'Add an electronic signature or official stamp image to appear on printed invoices',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight,
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              if (_signaturePath.isNotEmpty && File(_signaturePath).existsSync()) ...[
+                              if (_signaturePath.isNotEmpty &&
+                                  File(_signaturePath).existsSync()) ...[
                                 Center(
                                   child: Container(
                                     height: 70,
                                     width: 180,
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: isDark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle,
-                                      borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
-                                      border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+                                      color: isDark
+                                          ? AppColors.surfaceSubtleDark
+                                          : AppColors.surfaceSubtle,
+                                      borderRadius: BorderRadius.circular(
+                                        AppDimensions.radiusControl,
+                                      ),
+                                      border: Border.all(
+                                        color: Theme.of(context).dividerColor,
+                                        width: 0.8,
+                                      ),
                                     ),
-                                    child: Image.file(File(_signaturePath), fit: BoxFit.contain),
+                                    child: Image.file(
+                                      File(_signaturePath),
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -585,15 +661,28 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                     ),
                                     const SizedBox(width: 8),
                                     TextButton.icon(
-                                      icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
-                                      label: Text(l10n.removeSignatureBtn, style: const TextStyle(color: AppColors.error)),
-                                      onPressed: () => setState(() => _signaturePath = ''),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        size: 16,
+                                        color: AppColors.error,
+                                      ),
+                                      label: Text(
+                                        l10n.removeSignatureBtn,
+                                        style: const TextStyle(
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                      onPressed: () =>
+                                          setState(() => _signaturePath = ''),
                                     ),
                                   ],
                                 ),
                               ] else ...[
                                 OutlinedButton.icon(
-                                  icon: const Icon(Icons.file_upload_outlined, size: 18),
+                                  icon: const Icon(
+                                    Icons.file_upload_outlined,
+                                    size: 18,
+                                  ),
                                   label: Text(l10n.pickSignatureBtn),
                                   onPressed: _pickSignature,
                                 ),
@@ -609,7 +698,9 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusControl),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusControl,
+                            ),
                           ),
                         ),
                         onPressed: state is ShopSetupLoading ? null : _submit,

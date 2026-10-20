@@ -94,8 +94,12 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                   height: AppDimensions.buttonHeight,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+                    color: isDark
+                        ? AppColors.darkSurfaceSubtle
+                        : AppColors.lightSurfaceSubtle,
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.radiusMedium,
+                    ),
                     border: Border.all(
                       color: Theme.of(context).dividerColor,
                       width: 0.8,
@@ -108,12 +112,17 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                         l10n.allLabel,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                       icon: const Icon(Icons.keyboard_arrow_down, size: 18),
                       items: [
-                        DropdownMenuItem(value: null, child: Text(l10n.allLabel)),
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text(l10n.allLabel),
+                        ),
                         DropdownMenuItem(
                           value: DocumentStatus.issued,
                           child: Text(l10n.statusIssued),
@@ -158,14 +167,18 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                             Icon(
                               Icons.receipt_outlined,
                               size: 56,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               l10n.noDataFound,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -197,7 +210,9 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
 
                         return Card(
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusCard,
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -216,10 +231,17 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                     height: 42,
                                     decoration: BoxDecoration(
                                       color: invoice.isCancelled
-                                          ? (isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground)
+                                          ? (isDark
+                                                ? AppColors.errorBackgroundDark
+                                                : AppColors.errorBackground)
                                           : invoice.remainingBalance == 0
-                                          ? (isDark ? AppColors.successBackgroundDark : AppColors.successBackground)
-                                          : (isDark ? AppColors.infoBackgroundDark : AppColors.infoBackground),
+                                          ? (isDark
+                                                ? AppColors
+                                                      .successBackgroundDark
+                                                : AppColors.successBackground)
+                                          : (isDark
+                                                ? AppColors.infoBackgroundDark
+                                                : AppColors.infoBackground),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(
@@ -252,7 +274,10 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 15,
                                                 letterSpacing: -0.2,
-                                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                                color: isDark
+                                                    ? AppColors.textPrimaryDark
+                                                    : AppColors
+                                                          .textPrimaryLight,
                                               ),
                                             ),
                                             _buildStatusBadge(context, invoice),
@@ -264,14 +289,20 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                               ? invoice.customerName
                                               : l10n.cashCustomer,
                                           style: TextStyle(
-                                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
                                             fontSize: 13,
                                           ),
                                         ),
                                         Text(
                                           dateStr,
                                           style: TextStyle(
-                                            color: isDark ? AppColors.textSecondaryDark.withOpacity(0.8) : AppColors.textSecondaryLight.withOpacity(0.8),
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                      .withValues(alpha: 0.8)
+                                                : AppColors.textSecondaryLight
+                                                      .withValues(alpha: 0.8),
                                             fontSize: 11,
                                           ),
                                         ),
@@ -293,13 +324,18 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
                                           letterSpacing: -0.2,
                                           color: invoice.isCancelled
                                               ? AppColors.errorMuted
-                                              : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                                              : (isDark
+                                                    ? AppColors.textPrimaryDark
+                                                    : AppColors
+                                                          .textPrimaryLight),
                                         ),
                                       ),
                                       if (!invoice.isCancelled &&
                                           invoice.remainingBalance > 0)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 2),
+                                          padding: const EdgeInsets.only(
+                                            top: 2,
+                                          ),
                                           child: Text(
                                             '${l10n.remainingBalanceLabel}: ${CurrencyFormatter.format(invoice.remainingBalance, currency: invoice.currency, isArabic: l10n.isArabic)}',
                                             style: const TextStyle(
@@ -342,16 +378,22 @@ class _InvoicesListPageState extends State<InvoicesListPage> {
       bg = isDark ? AppColors.errorBackgroundDark : AppColors.errorBackground;
     } else if (invoice.isDraft) {
       label = l10n.statusDraft;
-      color = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+      color = isDark
+          ? AppColors.textSecondaryDark
+          : AppColors.textSecondaryLight;
       bg = isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle;
     } else if (invoice.remainingBalance == 0) {
       label = l10n.paymentStatusPaid;
       color = AppColors.successMuted;
-      bg = isDark ? AppColors.successBackgroundDark : AppColors.successBackground;
+      bg = isDark
+          ? AppColors.successBackgroundDark
+          : AppColors.successBackground;
     } else if (invoice.totalPaid > 0) {
       label = l10n.paymentStatusPartial;
       color = AppColors.warningMuted;
-      bg = isDark ? AppColors.warningBackgroundDark : AppColors.warningBackground;
+      bg = isDark
+          ? AppColors.warningBackgroundDark
+          : AppColors.warningBackground;
     } else {
       label = l10n.paymentStatusUnpaid;
       color = AppColors.primary;

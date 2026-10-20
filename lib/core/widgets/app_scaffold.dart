@@ -26,32 +26,57 @@ class AppScaffold extends StatefulWidget {
 
 class AppScaffoldState extends State<AppScaffold> {
   late int _currentIndex;
+  late final Set<int> _visitedIndices;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _visitedIndices = {widget.initialIndex};
   }
 
-  void navigateToTab(int index) {
-    if (index >= 0 && index < _pages.length) {
+  void _switchTab(int index) {
+    if (index >= 0 && index < 9) {
       setState(() {
         _currentIndex = index;
+        _visitedIndices.add(index);
       });
     }
   }
 
-  final List<Widget> _pages = const [
-    DashboardPage(),
-    InvoicesListPage(),
-    PurchasesPage(),
-    PartiesPage(),
-    ProductsPage(),
-    ReturnsPage(),
-    ReportsPage(),
-    BackupPage(),
-    SettingsPage(),
-  ];
+  void navigateToTab(int index) {
+    _switchTab(index);
+  }
+
+  Widget _buildTab(int index) {
+    if (!_visitedIndices.contains(index)) {
+      return const SizedBox.shrink();
+    }
+    switch (index) {
+      case 0:
+        return const DashboardPage();
+      case 1:
+        return const InvoicesListPage();
+      case 2:
+        return const PurchasesPage();
+      case 3:
+        return const PartiesPage();
+      case 4:
+        return const ProductsPage();
+      case 5:
+        return const ReturnsPage();
+      case 6:
+        return const ReportsPage();
+      case 7:
+        return const BackupPage();
+      case 8:
+        return const SettingsPage();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  List<Widget> get _pages => List.generate(9, _buildTab);
 
   @override
   Widget build(BuildContext context) {
@@ -66,13 +91,13 @@ class AppScaffoldState extends State<AppScaffold> {
               builder: (context, constraint) {
                 return SingleChildScrollView(
                   child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraint.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraint.maxHeight,
+                    ),
                     child: IntrinsicHeight(
                       child: NavigationRail(
                         selectedIndex: _currentIndex,
-                        onDestinationSelected: (idx) =>
-                            setState(() => _currentIndex = idx),
+                        onDestinationSelected: (idx) => _switchTab(idx),
                         labelType: NavigationRailLabelType.all,
                         leading: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -84,20 +109,21 @@ class AppScaffoldState extends State<AppScaffold> {
                                   'assets/images/logo.png',
                                   width: 44,
                                   height: 44,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(
-                                      Icons.receipt_long,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.receipt_long,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -188,8 +214,12 @@ class AppScaffoldState extends State<AppScaffold> {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 52, 20, 24),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle,
-                border: Border(bottom: BorderSide(color: dividerColor, width: 0.8)),
+                color: isDark
+                    ? AppColors.darkSurfaceSubtle
+                    : AppColors.lightSurfaceSubtle,
+                border: Border(
+                  bottom: BorderSide(color: dividerColor, width: 0.8),
+                ),
               ),
               child: Row(
                 children: [
@@ -226,14 +256,18 @@ class AppScaffoldState extends State<AppScaffold> {
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.3,
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           l10n.appTagline,
                           style: TextStyle(
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -254,7 +288,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 0,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 0);
+                _switchTab(0);
               },
             ),
             _buildDrawerTile(
@@ -265,7 +299,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 1,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 1);
+                _switchTab(1);
               },
             ),
             _buildDrawerTile(
@@ -276,7 +310,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 2,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 2);
+                _switchTab(2);
               },
             ),
             _buildDrawerTile(
@@ -287,7 +321,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 3,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 3);
+                _switchTab(3);
               },
             ),
             _buildDrawerTile(
@@ -298,7 +332,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 4,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 4);
+                _switchTab(4);
               },
             ),
             _buildDrawerTile(
@@ -309,7 +343,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 5,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 5);
+                _switchTab(5);
               },
             ),
             _buildDrawerTile(
@@ -320,7 +354,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 6,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 6);
+                _switchTab(6);
               },
             ),
             Padding(
@@ -335,7 +369,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 7,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 7);
+                _switchTab(7);
               },
             ),
             _buildDrawerTile(
@@ -346,7 +380,7 @@ class AppScaffoldState extends State<AppScaffold> {
               selected: _currentIndex == 8,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 8);
+                _switchTab(8);
               },
             ),
             Padding(
@@ -389,9 +423,7 @@ class AppScaffoldState extends State<AppScaffold> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: surfaceColor,
-          border: Border(
-            top: BorderSide(color: dividerColor, width: 0.8),
-          ),
+          border: Border(top: BorderSide(color: dividerColor, width: 0.8)),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex >= 4 ? 4 : _currentIndex,
@@ -401,7 +433,7 @@ class AppScaffoldState extends State<AppScaffold> {
             if (idx == 4) {
               _showMoreMenu(context);
             } else {
-              setState(() => _currentIndex = idx);
+              _switchTab(idx);
             }
           },
           items: [
@@ -466,7 +498,9 @@ class AppScaffoldState extends State<AppScaffold> {
                   size: 22,
                   color: selected
                       ? primaryColor
-                      : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                      : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -477,7 +511,9 @@ class AppScaffoldState extends State<AppScaffold> {
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                       color: selected
                           ? primaryColor
-                          : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                          : (isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight),
                     ),
                   ),
                 ),
@@ -516,7 +552,7 @@ class AppScaffoldState extends State<AppScaffold> {
                     isSelected: _currentIndex == 4,
                     onTap: () {
                       Navigator.pop(ctx);
-                      setState(() => _currentIndex = 4);
+                      _switchTab(4);
                     },
                   ),
                   _buildMoreMenuItem(
@@ -527,7 +563,7 @@ class AppScaffoldState extends State<AppScaffold> {
                     isSelected: _currentIndex == 5,
                     onTap: () {
                       Navigator.pop(ctx);
-                      setState(() => _currentIndex = 5);
+                      _switchTab(5);
                     },
                   ),
                   _buildMoreMenuItem(
@@ -538,7 +574,7 @@ class AppScaffoldState extends State<AppScaffold> {
                     isSelected: _currentIndex == 6,
                     onTap: () {
                       Navigator.pop(ctx);
-                      setState(() => _currentIndex = 6);
+                      _switchTab(6);
                     },
                   ),
                   _buildMoreMenuItem(
@@ -549,7 +585,7 @@ class AppScaffoldState extends State<AppScaffold> {
                     isSelected: _currentIndex == 7,
                     onTap: () {
                       Navigator.pop(ctx);
-                      setState(() => _currentIndex = 7);
+                      _switchTab(7);
                     },
                   ),
                   _buildMoreMenuItem(
@@ -560,11 +596,14 @@ class AppScaffoldState extends State<AppScaffold> {
                     isSelected: _currentIndex == 8,
                     onTap: () {
                       Navigator.pop(ctx);
-                      setState(() => _currentIndex = 8);
+                      _switchTab(8);
                     },
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Divider(
                       color: Theme.of(context).dividerColor,
                       thickness: 0.8,
@@ -637,7 +676,9 @@ class AppScaffoldState extends State<AppScaffold> {
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           color: isSelected
               ? AppColors.primary
-              : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+              : (isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight),
         ),
       ),
       trailing: const Icon(

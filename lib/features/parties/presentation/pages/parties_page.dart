@@ -281,7 +281,10 @@ class _PartiesPageState extends State<PartiesPage>
 
               return Card(
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   leading: Container(
                     width: 42,
                     height: 42,
@@ -291,7 +294,11 @@ class _PartiesPageState extends State<PartiesPage>
                           : const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.person_outline, color: AppColors.primary, size: 22),
+                    child: const Icon(
+                      Icons.person_outline,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                   ),
                   title: Text(
                     c.name,
@@ -299,7 +306,9 @@ class _PartiesPageState extends State<PartiesPage>
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                       letterSpacing: -0.2,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
                     ),
                   ),
                   subtitle: Text(
@@ -308,7 +317,9 @@ class _PartiesPageState extends State<PartiesPage>
                         : (c.address.isNotEmpty ? c.address : '-'),
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                   trailing: Column(
@@ -336,7 +347,9 @@ class _PartiesPageState extends State<PartiesPage>
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -402,7 +415,10 @@ class _PartiesPageState extends State<PartiesPage>
 
               return Card(
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   leading: Container(
                     width: 42,
                     height: 42,
@@ -412,7 +428,11 @@ class _PartiesPageState extends State<PartiesPage>
                           : const Color(0xFFF5F3FF),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.business_outlined, color: AppColors.secondary, size: 22),
+                    child: const Icon(
+                      Icons.business_outlined,
+                      color: AppColors.secondary,
+                      size: 22,
+                    ),
                   ),
                   title: Text(
                     s.name,
@@ -420,7 +440,9 @@ class _PartiesPageState extends State<PartiesPage>
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                       letterSpacing: -0.2,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
                     ),
                   ),
                   subtitle: Text(
@@ -429,7 +451,9 @@ class _PartiesPageState extends State<PartiesPage>
                         : (s.address.isNotEmpty ? s.address : '-'),
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                   trailing: Column(
@@ -457,7 +481,9 @@ class _PartiesPageState extends State<PartiesPage>
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],

@@ -239,7 +239,9 @@ class _ReportsPageState extends State<ReportsPage> {
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                       letterSpacing: -0.2,
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
                     ),
                   ),
                   Text(
@@ -273,14 +275,18 @@ class _ReportsPageState extends State<ReportsPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
                               ),
                             ),
                             subtitle: Text(
                               dateStr,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             trailing: Column(
@@ -306,7 +312,9 @@ class _ReportsPageState extends State<ReportsPage> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                    color: isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight,
                                   ),
                                 ),
                               ],
@@ -337,7 +345,9 @@ class _ReportsPageState extends State<ReportsPage> {
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                     letterSpacing: -0.2,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
                   ),
                 ),
                 if (data.totalCollected > 0)
@@ -385,14 +395,18 @@ class _ReportsPageState extends State<ReportsPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
                               ),
                             ),
                             subtitle: Text(
                               DateFormat('yyyy/MM/dd').format(inv.issueDate),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             trailing: Text(
@@ -401,7 +415,9 @@ class _ReportsPageState extends State<ReportsPage> {
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                                 letterSpacing: -0.2,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
                               ),
                             ),
                           );
@@ -413,14 +429,18 @@ class _ReportsPageState extends State<ReportsPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
                               ),
                             ),
                             subtitle: Text(
                               '${pur.supplierName} • ${DateFormat('yyyy/MM/dd').format(pur.issueDate)}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             trailing: Text(
@@ -429,7 +449,9 @@ class _ReportsPageState extends State<ReportsPage> {
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                                 letterSpacing: -0.2,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
                               ),
                             ),
                           );
@@ -441,14 +463,18 @@ class _ReportsPageState extends State<ReportsPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight,
                               ),
                             ),
                             subtitle: Text(
                               '${ret.customerName} • ${DateFormat('yyyy/MM/dd').format(ret.returnDate)}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             trailing: Text(

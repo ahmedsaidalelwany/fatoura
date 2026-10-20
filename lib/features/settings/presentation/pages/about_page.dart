@@ -4,6 +4,7 @@ import 'package:fatoura/core/constants/developer_config.dart';
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
+
 import 'developer_info_page.dart';
 
 class AboutPage extends StatelessWidget {
@@ -16,9 +17,7 @@ class AboutPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isAr ? 'عن فاتورة' : 'About Fatoura'),
-      ),
+      appBar: AppBar(title: Text(isAr ? 'عن فاتورة' : 'About Fatoura')),
       body: ResponsiveContentContainer(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
         child: ListView(
@@ -31,9 +30,16 @@ class AboutPage extends StatelessWidget {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                      border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+                      color: isDark
+                          ? AppColors.surfaceSubtleDark
+                          : AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusCard,
+                      ),
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.8,
+                      ),
                     ),
                     padding: const EdgeInsets.all(8),
                     child: ClipRRect(
@@ -66,24 +72,37 @@ class AboutPage extends StatelessWidget {
                     DeveloperConfig.appName,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceSubtleDark : AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                      border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+                      color: isDark
+                          ? AppColors.surfaceSubtleDark
+                          : AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusPill,
+                      ),
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
                       '${isAr ? "الإصدار" : "Version"} ${DeveloperConfig.appVersion}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight,
                       ),
                     ),
                   ),
@@ -96,7 +115,10 @@ class AboutPage extends StatelessWidget {
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.8,
+                ),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               ),
               child: Padding(
@@ -112,8 +134,11 @@ class AboutPage extends StatelessWidget {
                             color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.shield_outlined,
-                              color: AppColors.success, size: 20),
+                          child: const Icon(
+                            Icons.shield_outlined,
+                            color: AppColors.success,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -135,7 +160,9 @@ class AboutPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.5,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -148,7 +175,10 @@ class AboutPage extends StatelessWidget {
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.8,
+                ),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               ),
               child: Padding(
@@ -224,7 +254,10 @@ class AboutPage extends StatelessWidget {
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.8,
+                ),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               ),
               child: Padding(
@@ -242,7 +275,11 @@ class AboutPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.android, color: Color(0xFF3DDC84), size: 20),
+                        const Icon(
+                          Icons.android,
+                          color: Color(0xFF3DDC84),
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           isAr
@@ -255,8 +292,11 @@ class AboutPage extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.desktop_windows,
-                            color: Color(0xFF0078D4), size: 20),
+                        const Icon(
+                          Icons.desktop_windows,
+                          color: Color(0xFF0078D4),
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           isAr
@@ -276,7 +316,10 @@ class AboutPage extends StatelessWidget {
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Theme.of(context).dividerColor, width: 0.8),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.8,
+                ),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               ),
               child: ListTile(
@@ -286,10 +329,16 @@ class AboutPage extends StatelessWidget {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.code_outlined, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.code_outlined,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
-                  isAr ? 'معلومات المطور والتقنية' : 'Developer & Technical Info',
+                  isAr
+                      ? 'معلومات المطور والتقنية'
+                      : 'Developer & Technical Info',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
@@ -298,18 +347,24 @@ class AboutPage extends StatelessWidget {
                       : 'View engineering architecture and publisher details',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
                 trailing: Icon(
                   Icons.chevron_right,
                   size: 18,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const DeveloperInfoPage()),
+                    MaterialPageRoute(
+                      builder: (_) => const DeveloperInfoPage(),
+                    ),
                   );
                 },
               ),
@@ -357,7 +412,9 @@ class AboutPage extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],

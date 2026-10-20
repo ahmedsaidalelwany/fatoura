@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/purchases/domain/entities/purchase_invoice.dart';
@@ -93,25 +94,32 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
     required double paymentAmount,
   }) async {
     final purchase = await getPurchaseById(purchaseId);
-    if (purchase == null) return;
+    if (purchase == null) {
+      throw ArgumentError('Purchase $purchaseId does not exist.');
+    }
 
-    final newPaid = purchase.amountPaid + paymentAmount;
-    final newRemaining = (purchase.finalTotal - newPaid) > 0.0
-        ? (purchase.finalTotal - newPaid)
-        : 0.0;
+    final currentPaid = Decimal.parse(purchase.amountPaid.toString());
+    final deltaPayment = Decimal.parse(paymentAmount.toString());
+    final newPaidDecimal = currentPaid + deltaPayment;
+    final finalTotalDecimal = Decimal.parse(purchase.finalTotal.toString());
+
+    final newRemainingDecimal =
+        (finalTotalDecimal - newPaidDecimal) > Decimal.zero
+        ? finalTotalDecimal - newPaidDecimal
+        : Decimal.zero;
 
     final PaymentStatus newStatus;
-    if (newRemaining == 0.0) {
+    if (newRemainingDecimal == Decimal.zero) {
       newStatus = PaymentStatus.fullyPaid;
-    } else if (newPaid > 0.0) {
+    } else if (newPaidDecimal > Decimal.zero) {
       newStatus = PaymentStatus.partiallyPaid;
     } else {
       newStatus = PaymentStatus.unpaid;
     }
 
     final updated = purchase.copyWith(
-      amountPaid: newPaid,
-      remainingPayable: newRemaining,
+      amountPaid: newPaidDecimal.toDouble(),
+      remainingPayable: newRemainingDecimal.toDouble(),
       paymentStatus: newStatus,
       updatedAt: DateTime.now(),
     );
@@ -130,5 +138,21 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       updatedAt: DateTime.now(),
     );
     await savePurchase(updated);
+  }
+
+  @override
+  Future<void> cancelPurchase(String purchaseId, String reason) async {
+    final purchase = await getPurchaseById(purchaseId);
+    if (purchase == null) {
+      throw ArgumentError('Purchase $purchaseId does not exist.');
+    }
+    if (purchase.isCancelled) {
+      return;
+    }
+    final cancelled = purchase.copyWith(
+      documentStatus: DocumentStatus.cancelled,
+      updatedAt: DateTime.now(),
+    );
+    await savePurchase(cancelled);
   }
 }

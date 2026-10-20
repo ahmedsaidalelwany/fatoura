@@ -61,6 +61,7 @@ class FatouraApp extends StatelessWidget {
               auditRepository: dependencies.auditRepository,
               productRepository: dependencies.productRepository,
               paymentRepository: dependencies.paymentRepository,
+              returnRepository: dependencies.returnRepository,
             ),
           ),
           BlocProvider(

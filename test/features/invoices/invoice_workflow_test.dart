@@ -6,12 +6,15 @@ import 'package:fatoura/features/audit/data/repositories/audit_repository_impl.d
 import 'package:fatoura/features/invoices/data/repositories/invoice_repository_impl.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/invoices/presentation/cubit/invoices_cubit.dart';
+import 'package:fatoura/features/parties/data/repositories/party_repository_impl.dart';
+import 'package:fatoura/features/parties/domain/entities/party.dart';
 import 'package:fatoura/features/payments/data/repositories/payment_repository_impl.dart';
 import 'package:fatoura/features/payments/domain/entities/payment.dart';
 import 'package:fatoura/features/payments/presentation/cubit/payments_cubit.dart';
 import 'package:fatoura/features/products/data/repositories/product_repository_impl.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
 import 'package:fatoura/features/returns/data/repositories/sales_return_repository_impl.dart';
+import 'package:fatoura/features/returns/domain/entities/sales_return.dart';
 import 'package:fatoura/features/returns/presentation/cubit/returns_cubit.dart';
 import 'package:fatoura/features/shop_setup/data/repositories/shop_profile_repository_impl.dart';
 import 'package:fatoura/features/shop_setup/domain/entities/shop_profile.dart';
@@ -72,6 +75,7 @@ void main() {
       auditRepository: auditRepo,
       productRepository: productRepo,
       paymentRepository: paymentRepo,
+      returnRepository: returnRepo,
     );
 
     paymentsCubit = PaymentsCubit(
@@ -302,7 +306,9 @@ void main() {
 
     // 2. Cancel invoice - stock must remain unchanged
     await invoicesCubit.cancelInvoice(inv!.id, 'إلغاء حجز الخدمة');
-    final stockAfterCancel = await productRepo.getProductById(serviceProduct.id);
+    final stockAfterCancel = await productRepo.getProductById(
+      serviceProduct.id,
+    );
     expect(stockAfterCancel!.stockQuantity, 0.0); // Never incremented
   });
 
@@ -433,5 +439,133 @@ void main() {
     expect(afterReturn2, isNotNull);
     // Crucial accounting invariant: Remaining balance must be 50.0 (100 - 20 - 30), NOT (100 - 30 = 70.0)
     expect(afterReturn2!.remainingBalance, 50.0);
+  });
+
+  test(
+    'Cannot cancel invoice with recorded payments or active returns',
+    () async {
+      // 1. Create invoice with partial payment
+      final paidInv = await invoicesCubit.createInvoice(
+        customerId: 'cust_paid_cancel',
+        customerName: 'عميل مسدد',
+        rawItems: [
+          (
+            productId: null,
+            description: 'سلعة مدفوعة',
+            quantity: 1.0,
+            unitPrice: 200.0,
+            isService: false,
+          ),
+        ],
+        initialPaymentStatus: PaymentStatus.partiallyPaid,
+        initialPaidAmount: 50.0,
+      );
+      expect(paidInv, isNotNull);
+
+      // Attempt to cancel -> must be rejected because payment exists
+      await invoicesCubit.cancelInvoice(paidInv!.id, 'محاولة إلغاء خاطئة');
+      expect(invoicesCubit.state, isA<InvoicesError>());
+      final invoiceAfter = await invoiceRepo.getInvoiceById(paidInv.id);
+      expect(invoiceAfter!.isCancelled, isFalse);
+
+      // 2. Create invoice and process return, then attempt cancel
+      final retInv = await invoicesCubit.createInvoice(
+        customerId: 'cust_ret_cancel',
+        customerName: 'عميل مرتجع',
+        rawItems: [
+          (
+            productId: null,
+            description: 'سلعة مرتجعة',
+            quantity: 2.0,
+            unitPrice: 100.0,
+            isService: false,
+          ),
+        ],
+      );
+      expect(retInv, isNotNull);
+
+      await returnRepo.saveReturn(
+        SalesReturn(
+          id: 'ret_test_1',
+          returnNumber: 'Ret-01.01.2026-0001',
+          returnDate: DateTime.now(),
+          originalInvoiceId: retInv!.id,
+          originalInvoiceNumber: retInv.invoiceNumber,
+          items: const [],
+          totalRefundAmount: 50.0,
+          returnReason: 'تالف',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      // Attempt to cancel -> must be rejected because sales return exists
+      await invoicesCubit.cancelInvoice(
+        retInv.id,
+        'محاولة إلغاء مع وجود مرتجع',
+      );
+      expect(invoicesCubit.state, isA<InvoicesError>());
+      final retInvAfter = await invoiceRepo.getInvoiceById(retInv.id);
+      expect(retInvAfter!.isCancelled, isFalse);
+    },
+  );
+
+  test('Unallocated on-account payment deducts customer receivable balance correctly', () async {
+    final partyRepo = PartyRepositoryImpl(db);
+    final customer = Party(
+      id: 'cust_ledger_test',
+      name: 'شركة النور',
+      phone: '01012341234',
+      openingReceivable: 1000.0, // Customer owes 1000 EGP opening balance
+      isCustomer: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await partyRepo.saveParty(customer);
+
+    // Initial receivable balance must be 1000 EGP
+    final initialBal = await partyRepo.getCustomerReceivableBalance(
+      'cust_ledger_test',
+    );
+    expect(initialBal, 1000.0);
+
+    // Customer makes on-account payment of 400 EGP (no invoice allocation)
+    final payment = Payment(
+      id: 'pay_on_account_1',
+      amount: 400.0,
+      currency: 'EGP',
+      paymentDate: DateTime.now(),
+      method: PaymentMethod.cash,
+      partyId: 'cust_ledger_test',
+      partyName: 'شركة النور',
+      isCustomerPayment: true,
+      allocations: const [], // Unallocated on-account payment
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await paymentRepo.savePayment(payment);
+
+    // Balance must now be 600.0 (1000 - 400), verifying fix of Defect 2!
+    final updatedBal = await partyRepo.getCustomerReceivableBalance(
+      'cust_ledger_test',
+    );
+    expect(updatedBal, 600.0);
+  });
+
+  test('SequenceManager concurrent allocations produce strictly unique sequence numbers', () async {
+    final now = DateTime.now();
+    final results = await Future.wait([
+      seqManager.getNextInvoiceNumber(now),
+      seqManager.getNextInvoiceNumber(now),
+      seqManager.getNextInvoiceNumber(now),
+      seqManager.getNextInvoiceNumber(now),
+      seqManager.getNextInvoiceNumber(now),
+    ]);
+
+    // All 5 allocated numbers must be distinct
+    final uniqueSet = results.toSet();
+    expect(uniqueSet.length, 5);
+    expect(results[0], contains('0001'));
+    expect(results[4], contains('0005'));
   });
 }
