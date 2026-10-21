@@ -25,6 +25,8 @@ jobs:
           cache: true
       - name: Resolve dependencies
         run: flutter pub get
+      - name: Diagnostic formatter output (temporary)
+        run: dart format --output=show test/features/purchases/purchases_and_inventory_test.dart
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
       - name: Static analysis
