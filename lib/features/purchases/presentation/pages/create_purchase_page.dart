@@ -894,80 +894,95 @@ class _CreatePurchasePageState extends State<CreatePurchasePage> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      OutlinedButton.icon(
-                                        icon: const Icon(
-                                          Icons.inventory_2_outlined,
-                                          size: 16,
-                                        ),
-                                        label: Text(
-                                          item.productId != null
-                                              ? (l10n.isArabic
-                                                    ? 'تغيير الصنف'
-                                                    : 'Change Product')
-                                              : (l10n.isArabic
-                                                    ? 'ربط بصنف من الدليل'
-                                                    : 'Link from Catalog'),
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                        onPressed: () =>
-                                            _showProductCatalogSheet(idx),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        children: [
+                                          OutlinedButton.icon(
+                                            icon: const Icon(
+                                              Icons.inventory_2_outlined,
+                                              size: 16,
+                                            ),
+                                            label: Text(
+                                              item.productId != null
+                                                  ? (l10n.isArabic
+                                                        ? 'تغيير الصنف'
+                                                        : 'Change Product')
+                                                  : (l10n.isArabic
+                                                        ? 'ربط بصنف من الدليل'
+                                                        : 'Link from Catalog'),
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            onPressed: () =>
+                                                _showProductCatalogSheet(idx),
+                                          ),
+                                          if (item.productId == null)
+                                            TextButton.icon(
+                                              icon: const Icon(
+                                                Icons.add_box_outlined,
+                                                size: 16,
+                                              ),
+                                              label: Text(
+                                                l10n.isArabic
+                                                    ? '+ تعريف كمنتج جديد'
+                                                    : '+ Create as Product',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              onPressed: () =>
+                                                  _showCreateNewProductDialog(
+                                                    idx,
+                                                  ),
+                                            )
+                                          else
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.success
+                                                    .withValues(alpha: 0.12),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppDimensions.radiusSmall,
+                                                    ),
+                                              ),
+                                              child: Text(
+                                                l10n.isArabic
+                                                    ? 'صنف مرتبط بالمخزن'
+                                                    : 'Linked Catalog Item',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors.success,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 8),
-                                      if (item.productId == null)
-                                        TextButton.icon(
-                                          icon: const Icon(
-                                            Icons.add_box_outlined,
-                                            size: 16,
+                                      Align(
+                                        alignment:
+                                            AlignmentDirectional.centerEnd,
+                                        child: Text(
+                                          CurrencyFormatter.format(
+                                            lineTotal,
+                                            currency: _currency,
+                                            isArabic: l10n.isArabic,
                                           ),
-                                          label: Text(
-                                            l10n.isArabic
-                                                ? '+ تعريف كمنتج جديد'
-                                                : '+ Create as Product',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                            ),
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primary,
                                           ),
-                                          onPressed: () =>
-                                              _showCreateNewProductDialog(idx),
-                                        )
-                                      else
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.success.withValues(
-                                              alpha: 0.12,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              AppDimensions.radiusSmall,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            l10n.isArabic
-                                                ? 'صنف مرتبط بالمخزن'
-                                                : 'Linked Catalog Item',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: AppColors.success,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      const Spacer(),
-                                      Text(
-                                        CurrencyFormatter.format(
-                                          lineTotal,
-                                          currency: _currency,
-                                          isArabic: l10n.isArabic,
-                                        ),
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary,
                                         ),
                                       ),
                                     ],

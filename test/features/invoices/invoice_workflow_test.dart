@@ -102,6 +102,25 @@ void main() {
     }
   });
 
+  Future<Product> seedStockProduct(
+    String id,
+    String name,
+    double price, {
+    double quantity = 100,
+  }) async {
+    final product = Product(
+      id: id,
+      name: name,
+      defaultUnitPrice: price,
+      trackInventory: true,
+      stockQuantity: quantity,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await productRepo.saveProduct(product);
+    return product;
+  }
+
   test('Invoice issuance allocates daily sequence Ftr-DD.MM.YYYY-0001 and calculates correctly', () async {
     final inv = await invoicesCubit.createInvoice(
       customerId: 'cust_1',
@@ -150,12 +169,17 @@ void main() {
   });
 
   test('Walk-in customer invoice issuance without customerId succeeds and records customer name', () async {
+    final product = await seedStockProduct(
+      'walk_in_goods',
+      'مبيعات مباشرة',
+      80,
+    );
     final inv = await invoicesCubit.createInvoice(
       customerId: null,
       customerName: 'عميل عام (نقدي)',
       rawItems: [
         (
-          productId: null,
+          productId: product.id,
           description: 'مبيعات مباشرة',
           quantity: 1.0,
           unitPrice: 80.0,
@@ -171,12 +195,13 @@ void main() {
   });
 
   test('Initial full payment on invoice creation records payment and updates balances to 0', () async {
+    final product = await seedStockProduct('paid_goods', 'بضاعة نقدية', 100);
     final inv = await invoicesCubit.createInvoice(
       customerId: 'cust_cash_sale',
       customerName: 'عميل نقدي فوري',
       rawItems: [
         (
-          productId: null,
+          productId: product.id,
           description: 'بضاعة نقدية',
           quantity: 2.0,
           unitPrice: 100.0,
@@ -202,12 +227,17 @@ void main() {
   });
 
   test('Initial partial payment on invoice creation records payment and sets remaining balance', () async {
+    final product = await seedStockProduct(
+      'partial_goods',
+      'جهاز كهربائي',
+      1000,
+    );
     final inv = await invoicesCubit.createInvoice(
       customerId: 'cust_partial',
       customerName: 'عميل بالتقسيط',
       rawItems: [
         (
-          productId: null,
+          productId: product.id,
           description: 'جهاز كهربائي',
           quantity: 1.0,
           unitPrice: 1000.0,
@@ -315,12 +345,17 @@ void main() {
   test(
     'Partial payment and full payment lifecycle works and prevents overpayment',
     () async {
+      final product = await seedStockProduct(
+        'lifecycle_goods',
+        'بند رقم 1',
+        500,
+      );
       final inv = await invoicesCubit.createInvoice(
         customerId: 'cust_1',
         customerName: 'محمد أحمد',
         rawItems: [
           (
-            productId: null,
+            productId: product.id,
             description: 'بند رقم 1',
             quantity: 1.0,
             unitPrice: 500.0,
@@ -375,12 +410,13 @@ void main() {
   );
 
   test('Invoice cancellation preserves historical document and records mandatory reason', () async {
+    final product = await seedStockProduct('cancel_goods', 'سلعة مباعة', 100);
     final inv = await invoicesCubit.createInvoice(
       customerId: 'cust_1',
       customerName: 'محمد أحمد',
       rawItems: [
         (
-          productId: null,
+          productId: product.id,
           description: 'سلعة مباعة',
           quantity: 1.0,
           unitPrice: 100.0,
@@ -404,12 +440,13 @@ void main() {
 
   test('Cumulative return accounting correctly deducts successive returns from remaining balance', () async {
     // Original invoice: EGP 100
+    final product = await seedStockProduct('return_goods', 'سلعة تجريبية', 100);
     final inv = await invoicesCubit.createInvoice(
       customerId: 'cust_return_test',
       customerName: 'عميل مرتجعات',
       rawItems: [
         (
-          productId: null,
+          productId: product.id,
           description: 'سلعة تجريبية',
           quantity: 1.0,
           unitPrice: 100.0,
@@ -445,12 +482,17 @@ void main() {
     'Cannot cancel invoice with recorded payments or active returns',
     () async {
       // 1. Create invoice with partial payment
+      final paidProduct = await seedStockProduct(
+        'paid_cancel_goods',
+        'سلعة مدفوعة',
+        200,
+      );
       final paidInv = await invoicesCubit.createInvoice(
         customerId: 'cust_paid_cancel',
         customerName: 'عميل مسدد',
         rawItems: [
           (
-            productId: null,
+            productId: paidProduct.id,
             description: 'سلعة مدفوعة',
             quantity: 1.0,
             unitPrice: 200.0,
@@ -469,12 +511,17 @@ void main() {
       expect(invoiceAfter!.isCancelled, isFalse);
 
       // 2. Create invoice and process return, then attempt cancel
+      final returnedProduct = await seedStockProduct(
+        'return_cancel_goods',
+        'سلعة مرتجعة',
+        100,
+      );
       final retInv = await invoicesCubit.createInvoice(
         customerId: 'cust_ret_cancel',
         customerName: 'عميل مرتجع',
         rawItems: [
           (
-            productId: null,
+            productId: returnedProduct.id,
             description: 'سلعة مرتجعة',
             quantity: 2.0,
             unitPrice: 100.0,

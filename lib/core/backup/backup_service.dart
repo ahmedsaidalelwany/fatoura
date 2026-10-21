@@ -106,7 +106,23 @@ class BackupService {
         );
       }
 
-      final tablesJson = jsonEncode(data['tables']);
+      final tables = data['tables'];
+      if (tables is! Map<String, dynamic>) {
+        return RestoreValidationResult(
+          isValid: false,
+          error: 'Backup payload tables must be a map',
+        );
+      }
+      for (final boxName in HiveBoxes.allBoxes) {
+        if (!tables.containsKey(boxName)) {
+          return RestoreValidationResult(
+            isValid: false,
+            error: 'Backup payload is missing required table $boxName',
+          );
+        }
+      }
+
+      final tablesJson = jsonEncode(tables);
       final calculatedChecksum = sha256
           .convert(utf8.encode(tablesJson))
           .toString();

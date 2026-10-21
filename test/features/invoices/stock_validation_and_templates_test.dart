@@ -76,6 +76,103 @@ void main() {
   });
 
   group('Strict Stock Validation & Cumulative Checks', () {
+    test('Rejects a physical product that is missing from storage', () async {
+      final invoice = await invoicesCubit.createInvoice(
+        customerId: 'cust_missing_product',
+        customerName: 'عميل منتج مفقود',
+        rawItems: [
+          (
+            productId: 'missing_product',
+            description: 'منتج غير مسجل',
+            quantity: 1.0,
+            unitPrice: 100.0,
+            isService: false,
+          ),
+        ],
+      );
+
+      expect(invoice, isNull);
+      expect(invoicesCubit.state, isA<InvoicesError>());
+      expect(await invoiceRepo.getInvoices(), isEmpty);
+    });
+
+    test(
+      'Repository rejects an issued invoice that bypasses the Cubit',
+      () async {
+        final now = DateTime.now();
+        final invoice = Invoice(
+          id: 'direct_missing_product',
+          invoiceNumber: 'Ftr-direct-missing',
+          issueDate: now,
+          shopName: 'متجر اختبار المخزون',
+          items: const [
+            InvoiceItem(
+              id: 'missing_item',
+              productId: 'missing_product',
+              description: 'منتج غير مسجل',
+              quantity: 1,
+              unitPrice: 100,
+              lineTotal: 100,
+            ),
+          ],
+          subtotal: 100,
+          taxableBase: 100,
+          finalTotal: 100,
+          remainingBalance: 100,
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        await expectLater(invoiceRepo.saveInvoice(invoice), throwsStateError);
+        expect(await invoiceRepo.getInvoiceById(invoice.id), isNull);
+      },
+    );
+
+    test('Concurrent sales cannot both consume the last unit', () async {
+      await productRepo.saveProduct(
+        Product(
+          id: 'last_unit',
+          name: 'وحدة أخيرة',
+          defaultUnitPrice: 100,
+          trackInventory: true,
+          stockQuantity: 1,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final results = await Future.wait([
+        invoicesCubit.createInvoice(
+          customerName: 'عميل 1',
+          rawItems: [
+            (
+              productId: 'last_unit',
+              description: 'وحدة أخيرة',
+              quantity: 1,
+              unitPrice: 100,
+              isService: false,
+            ),
+          ],
+        ),
+        invoicesCubit.createInvoice(
+          customerName: 'عميل 2',
+          rawItems: [
+            (
+              productId: 'last_unit',
+              description: 'وحدة أخيرة',
+              quantity: 1,
+              unitPrice: 100,
+              isService: false,
+            ),
+          ],
+        ),
+      ]);
+
+      expect(results.whereType<Invoice>(), hasLength(1));
+      expect((await productRepo.getProductById('last_unit'))!.stockQuantity, 0);
+      expect(await invoiceRepo.getInvoices(), hasLength(1));
+    });
+
     test('Rejects invoice when physical product requested quantity exceeds available stock', () async {
       final product = Product(
         id: 'prod_stock_5',

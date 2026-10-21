@@ -1,24 +1,11 @@
-import 'dart:async';
-
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
 import 'package:fatoura/features/products/domain/repositories/product_repository.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
   final HiveDatabase database;
-  Future<void> _lock = Future.value();
 
   ProductRepositoryImpl(this.database);
-
-  Future<T> _synchronized<T>(Future<T> Function() action) {
-    final prev = _lock;
-    final completer = Completer<void>();
-    _lock = completer.future;
-
-    return prev.then((_) => action()).whenComplete(() {
-      completer.complete();
-    });
-  }
 
   @override
   Future<List<Product>> getProducts({
@@ -142,7 +129,7 @@ class ProductRepositoryImpl implements ProductRepository {
     String productId, {
     required double delta,
     required String reason,
-  }) => _synchronized(() async {
+  }) => database.runExclusive(() async {
     final product = await getProductById(productId);
     if (product == null) return null;
     if (!product.trackInventory) return product; // No-op for non-tracked items

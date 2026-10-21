@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -34,8 +36,16 @@ class HiveDatabase {
   HiveDatabase._internal();
 
   bool _isInitialized = false;
+  Future<void> _operationLock = Future.value();
 
   bool get isInitialized => _isInitialized;
+
+  Future<T> runExclusive<T>(Future<T> Function() action) {
+    final previous = _operationLock;
+    final completer = Completer<void>();
+    _operationLock = completer.future;
+    return previous.then((_) => action()).whenComplete(completer.complete);
+  }
 
   Future<void> init({String? customPath}) async {
     if (_isInitialized) return;
@@ -111,30 +121,29 @@ class HiveDatabase {
     if (tables == null) {
       throw ArgumentError('Malformed backup data: missing tables map');
     }
+    for (final boxName in HiveBoxes.allBoxes) {
+      if (!tables.containsKey(boxName)) {
+        throw ArgumentError('Malformed backup data: missing table $boxName');
+      }
+    }
 
     // 1. Stage and validate all tables and records in memory BEFORE modifying any live box
     final staged = <String, Map<String, dynamic>>{};
     for (final boxName in HiveBoxes.allBoxes) {
       final boxData = tables[boxName];
-      if (boxData != null) {
-        if (boxData is! Map) {
-          throw ArgumentError('Table $boxName must be a Map of records');
-        }
-        final records = <String, dynamic>{};
-        for (final entry in boxData.entries) {
-          if (entry.value is! Map) {
-            throw ArgumentError(
-              'Record ${entry.key} in $boxName must be a Map',
-            );
-          }
-          records[entry.key.toString()] = Map<String, dynamic>.from(
-            entry.value as Map,
-          );
-        }
-        staged[boxName] = records;
-      } else {
-        staged[boxName] = {};
+      if (boxData is! Map) {
+        throw ArgumentError('Table $boxName must be a Map of records');
       }
+      final records = <String, dynamic>{};
+      for (final entry in boxData.entries) {
+        if (entry.value is! Map) {
+          throw ArgumentError('Record ${entry.key} in $boxName must be a Map');
+        }
+        records[entry.key.toString()] = Map<String, dynamic>.from(
+          entry.value as Map,
+        );
+      }
+      staged[boxName] = records;
     }
 
     // 2. Atomically commit staged data into live Hive boxes

@@ -157,18 +157,26 @@ class InvoicesCubit extends Cubit<InvoicesState> {
           final prodId = entry.key;
           final demandedQty = entry.value;
           final product = await productRepository!.getProductById(prodId);
-          if (product != null && product.trackInventory) {
-            if (product.stockQuantity < demandedQty) {
-              final prodName = product.name.isNotEmpty
-                  ? product.name
-                  : (itemDescriptions[prodId] ?? 'المنتج');
-              emit(
-                InvoicesError(
-                  'المخزون غير كافٍ للمنتج ($prodName). الكمية المطلوبة: $demandedQty، المتاح في المخزن: ${product.stockQuantity}.',
-                ),
-              );
-              return null;
-            }
+          if (product == null ||
+              product.isArchived ||
+              !product.trackInventory) {
+            emit(
+              InvoicesError(
+                'المنتج غير موجود أو غير متاح للبيع: ${itemDescriptions[prodId] ?? prodId}.',
+              ),
+            );
+            return null;
+          }
+          if (product.stockQuantity < demandedQty) {
+            final prodName = product.name.isNotEmpty
+                ? product.name
+                : (itemDescriptions[prodId] ?? 'المنتج');
+            emit(
+              InvoicesError(
+                'المخزون غير كافٍ للمنتج ($prodName). الكمية المطلوبة: $demandedQty، المتاح في المخزن: ${product.stockQuantity}.',
+              ),
+            );
+            return null;
           }
         }
       }
@@ -329,21 +337,6 @@ class InvoicesCubit extends Cubit<InvoicesState> {
         await paymentRepository!.savePayment(payment);
       }
 
-      // Deduct inventory stock for physical items if not draft
-      if (!isDraft && productRepository != null) {
-        for (final item in rawItems) {
-          if (!item.isService &&
-              item.productId != null &&
-              item.productId!.isNotEmpty) {
-            await productRepository!.adjustStock(
-              item.productId!,
-              delta: -item.quantity,
-              reason: 'Invoice sale: ${invoice.invoiceNumber}',
-            );
-          }
-        }
-      }
-
       // Fetch latest invoice snapshot (with payment updates applied if any)
       final finalInvoice =
           await invoiceRepository.getInvoiceById(invoice.id) ?? invoice;
@@ -421,21 +414,6 @@ class InvoicesCubit extends Cubit<InvoicesState> {
             ),
           );
           return;
-        }
-      }
-
-      // 3. Restore inventory stock for physical items if invoice was issued
-      if (!invoice.isDraft && productRepository != null) {
-        for (final item in invoice.items) {
-          if (!item.isService &&
-              item.productId != null &&
-              item.productId!.isNotEmpty) {
-            await productRepository!.adjustStock(
-              item.productId!,
-              delta: item.quantity,
-              reason: 'Invoice cancelled: ${invoice.invoiceNumber}',
-            );
-          }
         }
       }
 

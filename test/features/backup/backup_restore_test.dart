@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:fatoura/core/backup/backup_service.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/parties/data/repositories/party_repository_impl.dart';
@@ -116,5 +117,22 @@ void main() {
     expect(restoredParty, isNotNull);
     expect(restoredParty!.name, 'سالم الكعبي');
     expect(restoredParty.openingReceivable, 120.0);
+  });
+
+  test('Rejects a backup that omits a required table', () async {
+    final backup = await backupService.createBackup();
+    final decoded = jsonDecode(backup.backupJson!) as Map<String, dynamic>;
+    final tables = Map<String, dynamic>.from(
+      (decoded['data'] as Map<String, dynamic>)['tables'] as Map,
+    )..remove(HiveBoxes.products);
+    decoded['data'] = <String, dynamic>{'tables': tables};
+    decoded['checksum'] = sha256
+        .convert(utf8.encode(jsonEncode(tables)))
+        .toString();
+
+    final result = backupService.validateBackup(jsonEncode(decoded));
+
+    expect(result.isValid, isFalse);
+    expect(result.error, contains(HiveBoxes.products));
   });
 }

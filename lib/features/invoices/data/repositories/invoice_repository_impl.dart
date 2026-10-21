@@ -4,6 +4,7 @@ import 'package:fatoura/core/precision/money.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
+import 'package:fatoura/features/products/domain/entities/product.dart';
 
 class InvoiceRepositoryImpl implements InvoiceRepository {
   final HiveDatabase database;
@@ -96,17 +97,126 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
   @override
   Future<void> saveInvoice(Invoice invoice) async {
     final box = database.invoicesBox;
-    await box.put(invoice.id, invoice.toMap());
+    final existingMap = box.get(invoice.id);
+    final existingStatus = existingMap?['documentStatus'] as String?;
+    final needsIssueCommit =
+        invoice.isIssued &&
+        (existingMap == null || existingStatus == DocumentStatus.draft.name);
+    if (invoice.isIssued &&
+        existingMap != null &&
+        existingStatus != DocumentStatus.draft.name &&
+        existingStatus != DocumentStatus.issued.name) {
+      throw StateError('لا يمكن إعادة اعتماد فاتورة ملغاة.');
+    }
+    if (!needsIssueCommit) {
+      await box.put(invoice.id, invoice.toMap());
+      return;
+    }
+
+    await database.runExclusive(() async {
+      final latestMap = box.get(invoice.id);
+      final latestStatus = latestMap?['documentStatus'] as String?;
+      if (latestStatus == DocumentStatus.issued.name) {
+        await box.put(invoice.id, invoice.toMap());
+        return;
+      }
+      if (latestMap != null && latestStatus != DocumentStatus.draft.name) {
+        throw StateError('لا يمكن اعتماد فاتورة حالتها غير صالحة.');
+      }
+
+      final demands = <String, double>{};
+      for (final item in invoice.items.where((item) => !item.isService)) {
+        final productId = item.productId;
+        if (productId == null || productId.isEmpty) {
+          throw StateError(
+            'لا يمكن بيع بند منتج غير مرتبط بمنتج مسجل في المخزون.',
+          );
+        }
+        if (!item.quantity.isFinite || item.quantity <= 0) {
+          throw StateError('يجب أن تكون كمية المنتج أكبر من الصفر.');
+        }
+        demands[productId] = (demands[productId] ?? 0) + item.quantity;
+      }
+
+      final productsBox = database.productsBox;
+      final originalProducts = <String, Map>{};
+      final updatedProducts = <String, Map<String, dynamic>>{};
+      for (final entry in demands.entries) {
+        final productMap = productsBox.get(entry.key);
+        if (productMap == null) {
+          throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
+        }
+        final product = Product.fromMap(Map<String, dynamic>.from(productMap));
+        if (product.isArchived || !product.trackInventory) {
+          throw StateError('المنتج غير متاح للبيع: ${product.name}');
+        }
+        if (!product.stockQuantity.isFinite ||
+            entry.value > product.stockQuantity) {
+          throw StateError(
+            'المخزون غير كافٍ للمنتج (${product.name}). '
+            'الكمية المطلوبة: ${entry.value}، المتاح في المخزن: ${product.stockQuantity}.',
+          );
+        }
+        originalProducts[entry.key] = productMap;
+        updatedProducts[entry.key] = product
+            .copyWith(
+              stockQuantity: product.stockQuantity - entry.value,
+              updatedAt: DateTime.now(),
+            )
+            .toMap();
+      }
+
+      try {
+        for (final entry in updatedProducts.entries) {
+          await productsBox.put(entry.key, entry.value);
+        }
+        await box.put(invoice.id, invoice.toMap());
+      } catch (_) {
+        for (final entry in originalProducts.entries) {
+          await productsBox.put(entry.key, entry.value);
+        }
+        rethrow;
+      }
+    });
   }
 
   @override
-  Future<void> cancelInvoice(String invoiceId, String reason) async {
-    final invoice = await getInvoiceById(invoiceId);
-    if (invoice == null) {
+  Future<void> cancelInvoice(
+    String invoiceId,
+    String reason,
+  ) => database.runExclusive(() async {
+    final box = database.invoicesBox;
+    final invoiceMap = box.get(invoiceId);
+    if (invoiceMap == null) {
       throw ArgumentError('Invoice $invoiceId does not exist.');
     }
-    if (invoice.isCancelled) {
-      return; // Already cancelled
+    final invoice = Invoice.fromMap(Map<String, dynamic>.from(invoiceMap));
+    if (invoice.isCancelled) return;
+
+    final productsBox = database.productsBox;
+    final originalProducts = <String, Map>{};
+    final updatedProducts = <String, Map<String, dynamic>>{};
+    if (invoice.isIssued) {
+      final returns = <String, double>{};
+      for (final item in invoice.items.where((item) => !item.isService)) {
+        final productId = item.productId;
+        if (productId == null || productId.isEmpty) continue;
+        returns[productId] = (returns[productId] ?? 0) + item.quantity;
+      }
+      for (final entry in returns.entries) {
+        final productMap = productsBox.get(entry.key);
+        if (productMap == null) {
+          throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
+        }
+        final product = Product.fromMap(Map<String, dynamic>.from(productMap));
+        originalProducts[entry.key] = productMap;
+        updatedProducts[entry.key] = product
+            .copyWith(
+              stockQuantity: product.stockQuantity + entry.value,
+              updatedAt: DateTime.now(),
+            )
+            .toMap();
+      }
     }
 
     final cancelled = invoice.copyWith(
@@ -115,8 +225,18 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       cancellationReason: reason.trim(),
       updatedAt: DateTime.now(),
     );
-    await saveInvoice(cancelled);
-  }
+    try {
+      for (final entry in updatedProducts.entries) {
+        await productsBox.put(entry.key, entry.value);
+      }
+      await box.put(invoiceId, cancelled.toMap());
+    } catch (_) {
+      for (final entry in originalProducts.entries) {
+        await productsBox.put(entry.key, entry.value);
+      }
+      rethrow;
+    }
+  });
 
   @override
   Future<void> recordPaymentOnInvoice({
