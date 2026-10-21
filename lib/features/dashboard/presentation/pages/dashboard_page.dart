@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
+import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:fatoura/features/invoices/presentation/pages/create_invoice_page.dart';
@@ -19,10 +22,33 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  StreamSubscription<AppSettingsState>? _settingsSubscription;
+
   @override
   void initState() {
     super.initState();
-    context.read<DashboardCubit>().loadDashboardMetrics();
+    final settingsCubit = context.read<AppSettingsCubit>();
+    context.read<DashboardCubit>().loadDashboardMetrics(
+      settingsCubit.state.defaultCurrency,
+    );
+    _settingsSubscription = settingsCubit.stream.listen((settings) {
+      if (mounted) {
+        context.read<DashboardCubit>().loadDashboardMetrics(
+          settings.defaultCurrency,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _settingsSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadDashboardMetrics() {
+    final currency = context.read<AppSettingsCubit>().state.defaultCurrency;
+    return context.read<DashboardCubit>().loadDashboardMetrics(currency);
   }
 
   void _showAddPartyDialog(BuildContext context, bool isCustomer) {
@@ -95,7 +121,7 @@ class _DashboardPageState extends State<DashboardPage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () =>
-                context.read<DashboardCubit>().loadDashboardMetrics(),
+                _loadDashboardMetrics(),
           ),
         ],
       ),
@@ -119,7 +145,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () =>
-                        context.read<DashboardCubit>().loadDashboardMetrics(),
+                        _loadDashboardMetrics(),
                     child: Text(l10n.applyFilterBtn),
                   ),
                 ],
@@ -131,7 +157,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
             return RefreshIndicator(
               onRefresh: () =>
-                  context.read<DashboardCubit>().loadDashboardMetrics(),
+                  _loadDashboardMetrics(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16.0),
@@ -352,7 +378,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       ),
                                     ),
                                   ).then((_) {
-                                    cubit.loadDashboardMetrics();
+                                    _loadDashboardMetrics();
                                   });
                                 },
                               );
@@ -548,7 +574,7 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               MaterialPageRoute(builder: (_) => const CreateInvoicePage()),
             ).then((_) {
-              cubit.loadDashboardMetrics();
+              _loadDashboardMetrics();
             });
           },
         ),
@@ -568,7 +594,7 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               MaterialPageRoute(builder: (_) => const CreatePurchasePage()),
             ).then((_) {
-              cubit.loadDashboardMetrics();
+              _loadDashboardMetrics();
             });
           },
         ),
