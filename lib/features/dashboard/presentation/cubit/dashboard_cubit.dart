@@ -5,6 +5,7 @@ import 'package:fatoura/features/invoices/domain/repositories/invoice_repository
 import 'package:fatoura/features/parties/domain/repositories/party_repository.dart';
 import 'package:fatoura/features/payments/domain/repositories/payment_repository.dart';
 import 'package:fatoura/features/purchases/domain/repositories/purchase_repository.dart';
+import 'package:fatoura/features/returns/domain/repositories/sales_return_repository.dart';
 
 class DailySalePoint extends Equatable {
   final DateTime date;
@@ -17,7 +18,9 @@ class DailySalePoint extends Equatable {
 }
 
 class DashboardData extends Equatable {
-  final double totalSales;
+  final double totalSales; // Net sales (gross sales - total returns)
+  final double grossSales;
+  final double totalReturns;
   final double totalCollected;
   final double customerDebts;
   final double supplierPayables;
@@ -28,6 +31,8 @@ class DashboardData extends Equatable {
 
   const DashboardData({
     required this.totalSales,
+    this.grossSales = 0.0,
+    this.totalReturns = 0.0,
     required this.totalCollected,
     required this.customerDebts,
     required this.supplierPayables,
@@ -40,6 +45,8 @@ class DashboardData extends Equatable {
   @override
   List<Object?> get props => [
     totalSales,
+    grossSales,
+    totalReturns,
     totalCollected,
     customerDebts,
     supplierPayables,
@@ -83,38 +90,62 @@ class DashboardCubit extends Cubit<DashboardState> {
   final PurchaseRepository purchaseRepository;
   final PaymentRepository paymentRepository;
   final PartyRepository partyRepository;
+  final SalesReturnRepository? returnRepository;
 
   DashboardCubit({
     required this.invoiceRepository,
     required this.purchaseRepository,
     required this.paymentRepository,
     required this.partyRepository,
+    this.returnRepository,
   }) : super(DashboardInitial());
 
   Future<void> loadDashboardMetrics([String defaultCurrency = 'EGP']) async {
     emit(DashboardLoading());
     try {
-      // 1. Fetch issued sales invoices
+      // 1. Fetch issued sales invoices filtered by current currency
       final invoices = await invoiceRepository.getInvoices();
-      final activeInvoices = invoices.where((i) => i.isIssued).toList();
+      final activeInvoices = invoices
+          .where((i) => i.isIssued && i.currency == defaultCurrency)
+          .toList();
 
-      var totalSales = 0.0;
+      var grossSales = 0.0;
       var totalReceivables = 0.0;
       for (final inv in activeInvoices) {
-        totalSales += inv.finalTotal;
+        grossSales += inv.finalTotal;
         totalReceivables += inv.remainingBalance;
       }
 
-      // 2. Fetch customer payments
+      // 2. Fetch sales returns for net sales calculation
+      var totalReturns = 0.0;
+      if (returnRepository != null) {
+        final returns = await returnRepository!.getReturns();
+        for (final ret in returns) {
+          if (ret.currency == defaultCurrency) {
+            totalReturns += ret.totalRefundAmount;
+          }
+        }
+      }
+      final netSales = (grossSales - totalReturns) > 0.0
+          ? (grossSales - totalReturns)
+          : 0.0;
+
+      // 3. Fetch customer payments filtered by currency
       final payments = await paymentRepository.getPayments(
         isCustomerPayment: true,
       );
-      final totalCollected = payments.fold(0.0, (sum, p) => sum + p.amount);
+      final totalCollected = payments
+          .where((p) => p.currency == defaultCurrency)
+          .fold(0.0, (sum, p) => sum + p.amount);
 
-      // 3. Fetch purchases
+      // 4. Fetch purchases filtered by currency
       final purchases = await purchaseRepository.getPurchases();
       final activePurchases = purchases
-          .where((p) => p.documentStatus == DocumentStatus.issued)
+          .where(
+            (p) =>
+                p.documentStatus == DocumentStatus.issued &&
+                p.currency == defaultCurrency,
+          )
           .toList();
       var totalPurchases = 0.0;
       var totalPayables = 0.0;
@@ -123,7 +154,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         totalPayables += pur.remainingPayable;
       }
 
-      // 4. Sales Trend (Last 7 Days)
+      // 5. Sales Trend (Last 7 Days) for current currency
       final now = DateTime.now();
       final trendPoints = <DailySalePoint>[];
       for (int i = 6; i >= 0; i--) {
@@ -152,7 +183,9 @@ class DashboardCubit extends Cubit<DashboardState> {
       emit(
         DashboardLoaded(
           DashboardData(
-            totalSales: totalSales,
+            totalSales: netSales,
+            grossSales: grossSales,
+            totalReturns: totalReturns,
             totalCollected: totalCollected,
             customerDebts: totalReceivables,
             supplierPayables: totalPayables,
