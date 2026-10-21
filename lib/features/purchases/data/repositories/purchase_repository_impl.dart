@@ -382,7 +382,14 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
           throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
         }
         final product = Product.fromMap(Map<String, dynamic>.from(productMap));
-        if (product.trackInventory && product.stockQuantity < entry.value) {
+
+        // Receipt does not mutate stock for products with inventory tracking
+        // disabled, so cancellation must not create a stock reversal either.
+        if (!product.trackInventory) {
+          continue;
+        }
+
+        if (product.stockQuantity < entry.value) {
           throw StateError(
             'المخزون الحالي (${product.stockQuantity}) غير كافٍ لعكس استلام المشتريات (${entry.value}). قد تكون البضاعة بيعت.',
           );
