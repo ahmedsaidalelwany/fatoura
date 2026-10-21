@@ -118,9 +118,7 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
           'لا يمكن تغيير حالة فاتورة صادرة عبر الحفظ العام. استخدم إجراء الإلغاء الموثق.',
         );
       }
-      final existing = Invoice.fromMap(
-        Map<String, dynamic>.from(existingMap!),
-      );
+      final existing = Invoice.fromMap(Map<String, dynamic>.from(existingMap!));
       if (!_issuedInvoiceTermsMatch(existing, invoice)) {
         throw StateError(
           'لا يمكن تعديل بنود أو قيم فاتورة صادرة. سجّل مرتجعًا أو إجراءً تعويضيًا موثقًا.',
@@ -134,7 +132,9 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
         final latest = Invoice.fromMap(Map<String, dynamic>.from(latestMap));
         if (latest.documentStatus != DocumentStatus.issued ||
             !_issuedInvoiceTermsMatch(latest, invoice)) {
-          throw StateError('تغيرت الفاتورة أثناء الحفظ. أعد تحميلها وحاول مجددًا.');
+          throw StateError(
+            'تغيرت الفاتورة أثناء الحفظ. أعد تحميلها وحاول مجددًا.',
+          );
         }
         await box.put(invoice.id, invoice.toMap());
       });
@@ -156,9 +156,7 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       final latestMap = box.get(invoice.id);
       final latestStatus = latestMap?['documentStatus'] as String?;
       if (latestStatus == DocumentStatus.issued.name) {
-        final latest = Invoice.fromMap(
-          Map<String, dynamic>.from(latestMap!),
-        );
+        final latest = Invoice.fromMap(Map<String, dynamic>.from(latestMap!));
         if (!_issuedInvoiceTermsMatch(latest, invoice)) {
           throw StateError(
             'تم اعتماد الفاتورة بالفعل بمحتوى مختلف. أعد تحميل الفاتورة قبل المتابعة.',

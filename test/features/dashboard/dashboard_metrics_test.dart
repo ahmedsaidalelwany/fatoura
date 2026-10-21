@@ -182,7 +182,15 @@ void main() {
         finalTotal: 3500.0,
         remainingPayable: 3500.0,
         currency: 'EGP',
-        items: const [],
+        items: const [
+          PurchaseInvoiceItem(
+            id: 'pur_item_dash_1',
+            description: 'Warehouse Supplies',
+            quantity: 1.0,
+            unitPrice: 3500.0,
+            lineTotal: 3500.0,
+          ),
+        ],
         createdAt: now,
         updatedAt: now,
       );

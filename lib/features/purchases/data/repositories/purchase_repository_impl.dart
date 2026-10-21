@@ -119,7 +119,7 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
           latestMap != null && (latestMap['isStockReceived'] == true);
       if (latestWasStockReceived) {
         final latest = PurchaseInvoice.fromMap(
-          Map<String, dynamic>.from(latestMap!),
+          Map<String, dynamic>.from(latestMap),
         );
         if (!_receivedPurchaseTermsMatch(latest, purchase)) {
           throw StateError(

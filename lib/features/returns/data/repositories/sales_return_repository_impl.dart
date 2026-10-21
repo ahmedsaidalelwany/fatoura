@@ -119,9 +119,7 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
       throw StateError('Cannot process returns against a cancelled invoice.');
     }
     if (salesReturn.currency != originalInvoice.currency) {
-      throw StateError(
-        'عملة المرتجع يجب أن تطابق عملة الفاتورة الأصلية.',
-      );
+      throw StateError('عملة المرتجع يجب أن تطابق عملة الفاتورة الأصلية.');
     }
 
     // Validate item existence, quantities, and refund values against the source invoice.
@@ -129,12 +127,9 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
     var computedTotalRefund = Money.zero(originalInvoice.currency);
     for (final retItem in salesReturn.items) {
       if (!seenInvoiceItemIds.add(retItem.invoiceItemId)) {
-        throw ArgumentError(
-          'يجب دمج الكميات المرتجعة للبند نفسه في سطر واحد.',
-        );
+        throw ArgumentError('يجب دمج الكميات المرتجعة للبند نفسه في سطر واحد.');
       }
-      if (!retItem.returnedQuantity.isFinite ||
-          retItem.returnedQuantity <= 0) {
+      if (!retItem.returnedQuantity.isFinite || retItem.returnedQuantity <= 0) {
         throw ArgumentError(
           'Returned quantity must be greater than zero for item ${retItem.description}.',
         );
@@ -167,22 +162,27 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
         );
       }
 
-      final authoritativeRefund = FinancialCalculator.calculateReturnRefundAmount(
-        returnedQuantity: Decimal.parse(retItem.returnedQuantity.toString()),
-        originalSoldQuantity: Decimal.parse(matchedItem.quantity.toString()),
-        originalLineTotal: Money.fromNum(
-          matchedItem.lineTotal,
-          originalInvoice.currency,
-        ),
-        originalInvoiceSubtotal: Money.fromNum(
-          originalInvoice.subtotal,
-          originalInvoice.currency,
-        ),
-        originalInvoiceFinalTotal: Money.fromNum(
-          originalInvoice.finalTotal,
-          originalInvoice.currency,
-        ),
-      );
+      final authoritativeRefund =
+          FinancialCalculator.calculateReturnRefundAmount(
+            returnedQuantity: Decimal.parse(
+              retItem.returnedQuantity.toString(),
+            ),
+            originalSoldQuantity: Decimal.parse(
+              matchedItem.quantity.toString(),
+            ),
+            originalLineTotal: Money.fromNum(
+              matchedItem.lineTotal,
+              originalInvoice.currency,
+            ),
+            originalInvoiceSubtotal: Money.fromNum(
+              originalInvoice.subtotal,
+              originalInvoice.currency,
+            ),
+            originalInvoiceFinalTotal: Money.fromNum(
+              originalInvoice.finalTotal,
+              originalInvoice.currency,
+            ),
+          );
       final suppliedRefund = Money.fromNum(
         retItem.refundAmount,
         originalInvoice.currency,

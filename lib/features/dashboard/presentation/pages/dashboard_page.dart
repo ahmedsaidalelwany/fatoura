@@ -119,8 +119,7 @@ class _DashboardPageState extends State<DashboardPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                _loadDashboardMetrics(),
+            onPressed: () => _loadDashboardMetrics(),
           ),
         ],
       ),
@@ -143,8 +142,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(state.message),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () =>
-                        _loadDashboardMetrics(),
+                    onPressed: () => _loadDashboardMetrics(),
                     child: Text(l10n.applyFilterBtn),
                   ),
                 ],
@@ -155,8 +153,7 @@ class _DashboardPageState extends State<DashboardPage> {
             final data = state.data;
 
             return RefreshIndicator(
-              onRefresh: () =>
-                  _loadDashboardMetrics(),
+              onRefresh: () => _loadDashboardMetrics(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16.0),
@@ -368,7 +365,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ],
                                 ),
                                 onTap: () {
-                                  final cubit = context.read<DashboardCubit>();
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -568,7 +564,6 @@ class _DashboardPageState extends State<DashboardPage> {
           label: l10n.actionNewInvoice,
           isPrimary: true,
           onPressed: () {
-            final cubit = context.read<DashboardCubit>();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CreateInvoicePage()),
@@ -588,7 +583,6 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.add_shopping_cart,
           label: l10n.actionNewPurchase,
           onPressed: () {
-            final cubit = context.read<DashboardCubit>();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CreatePurchasePage()),

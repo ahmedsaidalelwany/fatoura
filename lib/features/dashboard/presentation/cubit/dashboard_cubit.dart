@@ -191,7 +191,10 @@ class DashboardCubit extends Cubit<DashboardState> {
         );
       }
 
-      final recent = invoices.where((i) => i.currency == defaultCurrency).take(5).toList();
+      final recent = invoices
+          .where((i) => i.currency == defaultCurrency)
+          .take(5)
+          .toList();
 
       emit(
         DashboardLoaded(
