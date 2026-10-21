@@ -511,6 +511,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         isCustomer: true,
                         isSupplier: false,
                         openingReceivable: openBal,
+                        openingReceivableCurrency: _currency,
                       );
 
                       final newParty = Party(
@@ -520,6 +521,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         address: addrCtrl.text.trim(),
                         isCustomer: true,
                         openingReceivable: openBal,
+                        openingReceivableCurrency: _currency,
                         createdAt: now,
                         updatedAt: now,
                       );
@@ -1207,7 +1209,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                                     .openingReceivable >
                                                 0)
                                               Text(
-                                                '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _currency, isArabic: l10n.isArabic)}',
+                                                '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _selectedCustomer!.openingReceivableCurrency, isArabic: l10n.isArabic)}',
                                                 style: const TextStyle(
                                                   fontSize: 12,
                                                   color: AppColors.error,
