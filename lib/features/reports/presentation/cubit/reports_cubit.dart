@@ -343,9 +343,12 @@ class ReportsCubit extends Cubit<ReportsState> {
             partyId: partyId,
             isCustomerPayment: true,
           )).where((payment) => payment.currency == defaultCurrency).toList();
-          final returns = (await returnRepository.getReturns(
-            customerId: partyId,
-          )).where((salesReturn) => salesReturn.currency == defaultCurrency).toList();
+          final returns =
+              (await returnRepository.getReturns(customerId: partyId))
+                  .where(
+                    (salesReturn) => salesReturn.currency == defaultCurrency,
+                  )
+                  .toList();
 
           // Collect all transactions into raw entries
           final rawEntries =
@@ -404,8 +407,8 @@ class ReportsCubit extends Cubit<ReportsState> {
           rawEntries.sort((a, b) => a.date.compareTo(b.date));
 
           final entries = <StatementEntry>[];
-          final openingReceivable = party.openingReceivableCurrency ==
-                  defaultCurrency
+          final openingReceivable =
+              party.openingReceivableCurrency == defaultCurrency
               ? party.openingReceivable
               : 0.0;
           var runningDecimal = Decimal.parse(openingReceivable.toString());

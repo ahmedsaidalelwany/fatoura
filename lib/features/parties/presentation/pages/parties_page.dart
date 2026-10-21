@@ -198,8 +198,7 @@ class _PartiesPageState extends State<PartiesPage>
                       defaultCurrency,
                   openingPayable: isSupplier ? opening : 0.0,
                   openingPayableCurrency:
-                      existingParty?.openingPayableCurrency ??
-                      defaultCurrency,
+                      existingParty?.openingPayableCurrency ?? defaultCurrency,
                 );
                 Navigator.pop(ctx);
                 _loadData();

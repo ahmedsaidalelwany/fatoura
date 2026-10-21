@@ -58,10 +58,7 @@ class PartiesCubit extends Cubit<PartiesState> {
 
   PartiesCubit(this.repository) : super(PartiesInitial());
 
-  Future<void> loadCustomers({
-    String? query,
-    String currency = 'EGP',
-  }) async {
+  Future<void> loadCustomers({String? query, String currency = 'EGP'}) async {
     emit(PartiesLoading());
     try {
       final customers = await repository.getCustomers(query: query);
@@ -74,10 +71,7 @@ class PartiesCubit extends Cubit<PartiesState> {
     }
   }
 
-  Future<void> loadSuppliers({
-    String? query,
-    String currency = 'EGP',
-  }) async {
+  Future<void> loadSuppliers({String? query, String currency = 'EGP'}) async {
     emit(PartiesLoading());
     try {
       final suppliers = await repository.getSuppliers(query: query);

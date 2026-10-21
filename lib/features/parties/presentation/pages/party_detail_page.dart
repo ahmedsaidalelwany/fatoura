@@ -77,9 +77,9 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
         widget.party.id,
         currency: currency,
       );
-      final invs = (await invRepo.getInvoices(
-        customerId: widget.party.id,
-      )).where((invoice) => invoice.currency == currency).toList();
+      final invs = (await invRepo.getInvoices(customerId: widget.party.id))
+          .where((invoice) => invoice.currency == currency)
+          .toList();
       final pays = (await paymentRepo.getPayments(
         partyId: widget.party.id,
         isCustomerPayment: true,
@@ -99,9 +99,9 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
         widget.party.id,
         currency: currency,
       );
-      final purs = (await purRepo.getPurchases(
-        supplierId: widget.party.id,
-      )).where((purchase) => purchase.currency == currency).toList();
+      final purs = (await purRepo.getPurchases(supplierId: widget.party.id))
+          .where((purchase) => purchase.currency == currency)
+          .toList();
       final pays = (await paymentRepo.getPayments(
         partyId: widget.party.id,
         isCustomerPayment: false,
