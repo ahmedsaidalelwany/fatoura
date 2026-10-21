@@ -201,6 +201,63 @@ void main() {
       );
       await returnRepo.saveReturn(creditReturn);
 
+      // A second currency for the same customer must remain in a separate ledger.
+      final usdInvoice = Invoice(
+        id: 'inv_rep_usd_1',
+        invoiceNumber: 'INV-USD-001',
+        issueDate: DateTime(2026, 1, 12),
+        shopName: 'مؤسسة التجارة',
+        customerId: customer.id,
+        customerName: customer.name,
+        currency: 'USD',
+        subtotal: 100.0,
+        taxableBase: 100.0,
+        taxRate: 0.0,
+        taxAmount: 0.0,
+        finalTotal: 100.0,
+        totalPaid: 0.0,
+        remainingBalance: 100.0,
+        documentStatus: DocumentStatus.issued,
+        paymentStatus: PaymentStatus.unpaid,
+        template: InvoiceTemplate.service,
+        items: const [
+          InvoiceItem(
+            id: 'item_rep_usd_1',
+            description: 'USD service',
+            quantity: 1.0,
+            unitPrice: 100.0,
+            lineTotal: 100.0,
+            isService: true,
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 12),
+        updatedAt: DateTime(2026, 1, 12),
+      );
+      await invoiceRepo.saveInvoice(usdInvoice);
+
+      final usdPayment = Payment(
+        id: 'pay_rep_usd_1',
+        amount: 25.0,
+        currency: 'USD',
+        paymentDate: DateTime(2026, 1, 18),
+        partyId: customer.id,
+        partyName: customer.name,
+        isCustomerPayment: true,
+        allocations: [
+          PaymentAllocation(
+            id: 'alloc_rep_usd_1',
+            paymentId: 'pay_rep_usd_1',
+            invoiceId: usdInvoice.id,
+            invoiceNumber: usdInvoice.invoiceNumber,
+            amount: 25.0,
+            allocatedAt: DateTime(2026, 1, 18),
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 18),
+        updatedAt: DateTime(2026, 1, 18),
+      );
+      await paymentRepo.savePayment(usdPayment);
+
       // Generate customer statement
       await reportsCubit.generateReport(
         type: ReportType.customerStatement,
@@ -232,8 +289,40 @@ void main() {
       expect(report.statementEntries[2].credit, 50.0);
       expect(report.statementEntries[2].runningBalance, 100.0);
 
-      // Final net balance must be exactly 100.0
+      // Final EGP net balance must exclude all USD activity.
       expect(report.totalNet, 100.0);
+
+      await reportsCubit.generateReport(
+        type: ReportType.customerStatement,
+        fromDate: DateTime(2026, 1, 1),
+        toDate: DateTime(2026, 1, 31),
+        partyId: customer.id,
+        defaultCurrency: 'USD',
+      );
+      expect(reportsCubit.state, isA<ReportsLoaded>());
+      final usdReport = (reportsCubit.state as ReportsLoaded).data;
+      expect(usdReport.currency, 'USD');
+      expect(usdReport.statementEntries.length, 2);
+      expect(usdReport.statementEntries[0].debit, 100.0);
+      expect(usdReport.statementEntries[0].runningBalance, 100.0);
+      expect(usdReport.statementEntries[1].credit, 25.0);
+      expect(usdReport.statementEntries[1].runningBalance, 75.0);
+      expect(usdReport.totalNet, 75.0);
+
+      expect(
+        await partyRepo.getCustomerReceivableBalance(
+          customer.id,
+          currency: 'EGP',
+        ),
+        100.0,
+      );
+      expect(
+        await partyRepo.getCustomerReceivableBalance(
+          customer.id,
+          currency: 'USD',
+        ),
+        75.0,
+      );
     });
 
     test('Multi-currency Period Sales separates totals by currency', () async {
