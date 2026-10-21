@@ -101,16 +101,46 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final box = database.invoicesBox;
     final existingMap = box.get(invoice.id);
     final existingStatus = existingMap?['documentStatus'] as String?;
+
+    if (existingStatus == DocumentStatus.cancelled.name) {
+      throw StateError('لا يمكن تعديل فاتورة ملغاة أو إعادة تفعيلها.');
+    }
+    if (existingStatus == DocumentStatus.issued.name) {
+      if (!invoice.isIssued) {
+        throw StateError(
+          'لا يمكن تغيير حالة فاتورة صادرة عبر الحفظ العام. استخدم إجراء الإلغاء الموثق.',
+        );
+      }
+      final existing = Invoice.fromMap(
+        Map<String, dynamic>.from(existingMap!),
+      );
+      if (!_issuedInvoiceTermsMatch(existing, invoice)) {
+        throw StateError(
+          'لا يمكن تعديل بنود أو قيم فاتورة صادرة. سجّل مرتجعًا أو إجراءً تعويضيًا موثقًا.',
+        );
+      }
+      await database.runExclusive(() async {
+        final latestMap = box.get(invoice.id);
+        if (latestMap == null) {
+          throw StateError('الفاتورة غير موجودة.');
+        }
+        final latest = Invoice.fromMap(Map<String, dynamic>.from(latestMap));
+        if (latest.documentStatus != DocumentStatus.issued ||
+            !_issuedInvoiceTermsMatch(latest, invoice)) {
+          throw StateError('تغيرت الفاتورة أثناء الحفظ. أعد تحميلها وحاول مجددًا.');
+        }
+        await box.put(invoice.id, invoice.toMap());
+      });
+      return;
+    }
+
     final needsIssueCommit =
         invoice.isIssued &&
         (existingMap == null || existingStatus == DocumentStatus.draft.name);
-    if (invoice.isIssued &&
-        existingMap != null &&
-        existingStatus != DocumentStatus.draft.name &&
-        existingStatus != DocumentStatus.issued.name) {
-      throw StateError('لا يمكن إعادة اعتماد فاتورة ملغاة.');
-    }
     if (!needsIssueCommit) {
+      if (existingMap != null && existingStatus != DocumentStatus.draft.name) {
+        throw StateError('انتقال حالة الفاتورة غير مسموح.');
+      }
       await box.put(invoice.id, invoice.toMap());
       return;
     }
@@ -208,6 +238,40 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
         rethrow;
       }
     });
+  }
+
+  bool _issuedInvoiceTermsMatch(Invoice existing, Invoice incoming) {
+    if (existing.id != incoming.id ||
+        existing.invoiceNumber != incoming.invoiceNumber ||
+        existing.issueDate != incoming.issueDate ||
+        existing.shopName != incoming.shopName ||
+        existing.shopPhone != incoming.shopPhone ||
+        existing.shopAddress != incoming.shopAddress ||
+        existing.shopTaxNumber != incoming.shopTaxNumber ||
+        existing.shopLogoPath != incoming.shopLogoPath ||
+        existing.shopSignaturePath != incoming.shopSignaturePath ||
+        existing.customerId != incoming.customerId ||
+        existing.customerName != incoming.customerName ||
+        existing.customerPhone != incoming.customerPhone ||
+        existing.customerAddress != incoming.customerAddress ||
+        existing.subtotal != incoming.subtotal ||
+        existing.discountType != incoming.discountType ||
+        existing.discountInput != incoming.discountInput ||
+        existing.discountAmount != incoming.discountAmount ||
+        existing.taxableBase != incoming.taxableBase ||
+        existing.taxRate != incoming.taxRate ||
+        existing.taxAmount != incoming.taxAmount ||
+        existing.finalTotal != incoming.finalTotal ||
+        existing.template != incoming.template ||
+        existing.currency != incoming.currency ||
+        existing.notes != incoming.notes ||
+        existing.items.length != incoming.items.length) {
+      return false;
+    }
+    for (var i = 0; i < existing.items.length; i++) {
+      if (existing.items[i] != incoming.items[i]) return false;
+    }
+    return true;
   }
 
   @override
