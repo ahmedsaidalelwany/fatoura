@@ -191,10 +191,10 @@ class ReportsCubit extends Cubit<ReportsState> {
 
           // A missing total in the selected currency is zero. Never fall back
           // to another currency and label its amount with the selected code.
-          final gross =
-              (totalsByCurr[defaultCurrency] ?? Decimal.zero).toDouble();
-          final refunded =
-              (returnsByCurr[defaultCurrency] ?? Decimal.zero).toDouble();
+          final gross = (totalsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
+          final refunded = (returnsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
           final paid = active
               .where((i) => i.currency == defaultCurrency)
               .fold(0.0, (sum, i) => sum + i.totalPaid);
