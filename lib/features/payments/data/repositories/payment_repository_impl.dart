@@ -90,9 +90,20 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @override
-  Future<void> savePayment(Payment payment) async {
+  Future<void> savePayment(Payment payment) => database.runExclusive(() async {
     if (payment.amount <= 0.0) {
       throw ArgumentError('Payment amount must be greater than zero.');
+    }
+
+    final totalAllocated = payment.allocations.fold<Decimal>(
+      Decimal.zero,
+      (sum, a) => sum + Decimal.parse(a.amount.toString()),
+    );
+    final paymentAmountDecimal = Decimal.parse(payment.amount.toString());
+    if (totalAllocated > paymentAmountDecimal) {
+      throw ArgumentError(
+        'Sum of payment allocations ($totalAllocated) cannot exceed payment amount ($paymentAmountDecimal).',
+      );
     }
 
     final box = database.paymentsBox;
@@ -102,74 +113,125 @@ class PaymentRepositoryImpl implements PaymentRepository {
       return;
     }
 
-    // 1. Process allocations to invoices / purchases
+    final invoiceAllocations = <String, double>{};
+    final purchaseAllocations = <String, double>{};
     for (final alloc in payment.allocations) {
       if (alloc.amount > 0) {
         if (payment.isCustomerPayment) {
-          final invoice = await invoiceRepository.getInvoiceById(
+          invoiceAllocations.update(
             alloc.invoiceId,
-          );
-          if (invoice == null) {
-            throw ArgumentError('Invoice ${alloc.invoiceId} does not exist.');
-          }
-          if (alloc.amount > invoice.remainingBalance + 0.0001) {
-            throw ArgumentError(
-              'Allocation amount (${alloc.amount}) exceeds invoice remaining balance (${invoice.remainingBalance}).',
-            );
-          }
-          await invoiceRepository.recordPaymentOnInvoice(
-            invoiceId: alloc.invoiceId,
-            paymentAmount: alloc.amount,
+            (amount) => amount + alloc.amount,
+            ifAbsent: () => alloc.amount,
           );
         } else {
-          // Supplier payment to purchase invoice
-          if (purchaseRepository != null) {
-            final purchase = await purchaseRepository!.getPurchaseById(
-              alloc.invoiceId,
-            );
-            if (purchase != null &&
-                alloc.amount > purchase.remainingPayable + 0.0001) {
-              throw ArgumentError(
-                'Allocation amount (${alloc.amount}) exceeds purchase remaining payable (${purchase.remainingPayable}).',
-              );
-            }
-            await purchaseRepository!.recordPaymentOnPurchase(
-              purchaseId: alloc.invoiceId,
-              paymentAmount: alloc.amount,
-            );
-          } else {
-            final purchaseBox = database.purchasesBox;
-            final purchaseMap = purchaseBox.get(alloc.invoiceId);
-            if (purchaseMap != null) {
-              final currentPaid = Decimal.parse(
-                ((purchaseMap['amountPaid'] as num?)?.toDouble() ?? 0.0)
-                    .toString(),
-              );
-              final allocAmount = Decimal.parse(alloc.amount.toString());
-              final finalTotal = Decimal.parse(
-                ((purchaseMap['finalTotal'] as num?)?.toDouble() ?? 0.0)
-                    .toString(),
-              );
-              final newPaid = currentPaid + allocAmount;
-              final newRemaining = (finalTotal - newPaid) > Decimal.zero
-                  ? (finalTotal - newPaid)
-                  : Decimal.zero;
-              final newStatus = newRemaining == Decimal.zero
-                  ? 'fullyPaid'
-                  : 'partiallyPaid';
-
-              purchaseMap['amountPaid'] = newPaid.toDouble();
-              purchaseMap['remainingPayable'] = newRemaining.toDouble();
-              purchaseMap['paymentStatus'] = newStatus;
-              purchaseMap['updatedAt'] = DateTime.now().toIso8601String();
-              await purchaseBox.put(alloc.invoiceId, purchaseMap);
-            }
-          }
+          purchaseAllocations.update(
+            alloc.invoiceId,
+            (amount) => amount + alloc.amount,
+            ifAbsent: () => alloc.amount,
+          );
         }
       }
     }
 
-    // 2. Persist the payment record
-    await box.put(payment.id, payment.toMap());
-  }
+    final invoiceSnapshots = <String, Map>{};
+    for (final entry in invoiceAllocations.entries) {
+      final invoice = await invoiceRepository.getInvoiceById(entry.key);
+      if (invoice == null) {
+        throw ArgumentError('Invoice ${entry.key} does not exist.');
+      }
+      if (invoice.currency != payment.currency) {
+        throw ArgumentError(
+          'Payment currency (${payment.currency}) does not match invoice currency (${invoice.currency}).',
+        );
+      }
+      if (entry.value > invoice.remainingBalance + 0.0001) {
+        throw ArgumentError(
+          'Allocation amount (${entry.value}) exceeds invoice remaining balance (${invoice.remainingBalance}).',
+        );
+      }
+      invoiceSnapshots[entry.key] = Map<String, dynamic>.from(
+        database.invoicesBox.get(entry.key)!,
+      );
+    }
+
+    final purchaseSnapshots = <String, Map>{};
+    for (final entry in purchaseAllocations.entries) {
+      final purchaseMap = database.purchasesBox.get(entry.key);
+      if (purchaseMap == null) {
+        throw ArgumentError('Purchase ${entry.key} does not exist.');
+      }
+      if (purchaseRepository != null) {
+        final purchase = await purchaseRepository!.getPurchaseById(entry.key);
+        if (purchase == null) {
+          throw ArgumentError('Purchase ${entry.key} does not exist.');
+        }
+        if (purchase.currency != payment.currency) {
+          throw ArgumentError(
+            'Payment currency (${payment.currency}) does not match purchase currency (${purchase.currency}).',
+          );
+        }
+        if (entry.value > purchase.remainingPayable + 0.0001) {
+          throw ArgumentError(
+            'Allocation amount (${entry.value}) exceeds purchase remaining payable (${purchase.remainingPayable}).',
+          );
+        }
+      } else {
+        final purCurrency = purchaseMap['currency'] as String?;
+        if (purCurrency != null && purCurrency != payment.currency) {
+          throw ArgumentError(
+            'Payment currency (${payment.currency}) does not match purchase currency ($purCurrency).',
+          );
+        }
+      }
+      purchaseSnapshots[entry.key] = Map<String, dynamic>.from(purchaseMap);
+    }
+
+    try {
+      for (final entry in invoiceAllocations.entries) {
+        await invoiceRepository.recordPaymentOnInvoice(
+          invoiceId: entry.key,
+          paymentAmount: entry.value,
+        );
+      }
+      for (final entry in purchaseAllocations.entries) {
+        if (purchaseRepository != null) {
+          await purchaseRepository!.recordPaymentOnPurchase(
+            purchaseId: entry.key,
+            paymentAmount: entry.value,
+          );
+        } else {
+          final purchaseMap = database.purchasesBox.get(entry.key)!;
+          final currentPaid = Decimal.parse(
+            ((purchaseMap['amountPaid'] as num?)?.toDouble() ?? 0.0).toString(),
+          );
+          final allocAmount = Decimal.parse(entry.value.toString());
+          final finalTotal = Decimal.parse(
+            ((purchaseMap['finalTotal'] as num?)?.toDouble() ?? 0.0).toString(),
+          );
+          final newPaid = currentPaid + allocAmount;
+          final newRemaining = (finalTotal - newPaid) > Decimal.zero
+              ? (finalTotal - newPaid)
+              : Decimal.zero;
+          purchaseMap['amountPaid'] = newPaid.toDouble();
+          purchaseMap['remainingPayable'] = newRemaining.toDouble();
+          purchaseMap['paymentStatus'] = newRemaining == Decimal.zero
+              ? 'fullyPaid'
+              : 'partiallyPaid';
+          purchaseMap['updatedAt'] = DateTime.now().toIso8601String();
+          await database.purchasesBox.put(entry.key, purchaseMap);
+        }
+      }
+
+      await box.put(payment.id, payment.toMap());
+    } catch (_) {
+      for (final entry in invoiceSnapshots.entries) {
+        await database.invoicesBox.put(entry.key, entry.value);
+      }
+      for (final entry in purchaseSnapshots.entries) {
+        await database.purchasesBox.put(entry.key, entry.value);
+      }
+      await box.delete(payment.id);
+      rethrow;
+    }
+  });
 }

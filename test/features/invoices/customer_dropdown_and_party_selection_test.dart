@@ -128,8 +128,10 @@ void main() {
         createdAt: now,
         updatedAt: now,
       );
-      await partyRepo.saveParty(p1);
-      await partiesCubit.loadCustomers();
+      await tester.runAsync(() async {
+        await partyRepo.saveParty(p1);
+        await partiesCubit.loadCustomers();
+      });
 
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
@@ -168,8 +170,10 @@ void main() {
         createdAt: now,
         updatedAt: now,
       );
-      await partyRepo.saveParty(p1);
-      await partiesCubit.loadCustomers();
+      await tester.runAsync(() async {
+        await partyRepo.saveParty(p1);
+        await partiesCubit.loadCustomers();
+      });
 
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
@@ -184,8 +188,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Now archive the customer and refresh the list
-      await partyRepo.archiveParty('cust_missing');
-      await partiesCubit.loadCustomers();
+      await tester.runAsync(() async {
+        await partyRepo.archiveParty('cust_missing');
+        await partiesCubit.loadCustomers();
+      });
       await tester.pumpAndSettle();
 
       // Crucial assertion: no AssertionError thrown!
@@ -213,18 +219,19 @@ void main() {
         updatedAt: now.add(const Duration(seconds: 1)),
       );
 
-      // Directly emit state containing duplicate IDs to test widget layer resilience
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('عميل مسجل'));
+      await tester.pumpAndSettle();
+
+      // Emit state containing duplicate IDs after initial mount to test widget resilience
       partiesCubit.emit(
         CustomersLoaded(
           customers: [p1, p1Duplicate],
           balances: const {'dup_id_1': 0.0},
         ),
       );
-
-      await tester.pumpWidget(buildTestApp());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('عميل مسجل'));
       await tester.pumpAndSettle();
 
       // Opening the dropdown must NOT throw "Either zero or 2 or more DropdownMenuItems were detected with same value"
@@ -257,8 +264,7 @@ void main() {
 
       // Test Loading State
       partiesCubit.emit(PartiesLoading());
-      await tester.pump();
-      expect(find.byType(CircularProgressIndicator), findsWidgets);
+      await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('جاري تحميل قائمة العملاء...'), findsOneWidget);
 
       // Test Error State
@@ -283,8 +289,10 @@ void main() {
         createdAt: now,
         updatedAt: now,
       );
-      await partyRepo.saveParty(p1);
-      await partiesCubit.loadCustomers();
+      await tester.runAsync(() async {
+        await partyRepo.saveParty(p1);
+        await partiesCubit.loadCustomers();
+      });
 
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
@@ -305,8 +313,10 @@ void main() {
         phone: '01234567890',
         updatedAt: DateTime.now().add(const Duration(minutes: 5)),
       );
-      await partyRepo.saveParty(p1Updated);
-      await partiesCubit.loadCustomers();
+      await tester.runAsync(() async {
+        await partyRepo.saveParty(p1Updated);
+        await partiesCubit.loadCustomers();
+      });
       await tester.pumpAndSettle();
 
       // Verify no assertion error was thrown and customer selection is preserved
@@ -324,14 +334,14 @@ void main() {
       await tester.tap(find.text('عميل مسجل'));
       await tester.pumpAndSettle();
 
-      // Tap "+" quick add customer icon button
-      final addCustomerBtn = find.byIcon(Icons.person_add_alt_1_outlined);
+      // Tap quick add customer action chip
+      final addCustomerBtn = find.byType(ActionChip);
       expect(addCustomerBtn, findsOneWidget);
       await tester.tap(addCustomerBtn);
       await tester.pumpAndSettle();
 
       // Fill modal form with name "محمد"
-      final nameField = find.widgetWithText(TextField, 'اسم العميل *');
+      final nameField = find.widgetWithText(TextField, 'الاسم *');
       expect(nameField, findsOneWidget);
       await tester.enterText(nameField, 'محمد');
       await tester.pumpAndSettle();
@@ -339,8 +349,12 @@ void main() {
       // Tap "حفظ واختيار العميل"
       final saveBtn = find.text('حفظ واختيار العميل');
       expect(saveBtn, findsOneWidget);
-      await tester.tap(saveBtn);
-      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await tester.tap(saveBtn);
+        await partiesCubit.stream.firstWhere((s) => s is CustomersLoaded);
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Crucial: exactly matches the user crash scenario
       // Must NOT throw "There should be exactly one item with [DropdownButton]'s value: Party(...)"

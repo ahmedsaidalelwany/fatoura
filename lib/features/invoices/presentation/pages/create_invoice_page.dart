@@ -1109,90 +1109,98 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                   );
                                 }
 
-                                return DropdownButtonFormField<String?>(
-                                  key: ValueKey(effectiveSelectedId),
-                                  initialValue: effectiveSelectedId,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.customerLabel,
-                                    prefixIcon: const Icon(
-                                      Icons.person_search_outlined,
-                                    ),
-                                  ),
-                                  hint: Text(
-                                    l10n.isArabic
-                                        ? 'اختر العميل من القائمة...'
-                                        : 'Select customer...',
-                                  ),
-                                  items: customers.map((c) {
-                                    return DropdownMenuItem<String>(
-                                      value: c.id,
-                                      child: Text(
-                                        c.phone.isNotEmpty
-                                            ? '${c.name} (${c.phone})'
-                                            : c.name,
-                                        overflow: TextOverflow.ellipsis,
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    DropdownButtonFormField<String?>(
+                                      key: ValueKey(effectiveSelectedId),
+                                      initialValue: effectiveSelectedId,
+                                      isExpanded: true,
+                                      decoration: InputDecoration(
+                                        labelText: l10n.customerLabel,
+                                        prefixIcon: const Icon(
+                                          Icons.person_search_outlined,
+                                        ),
                                       ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (newId) {
-                                    setState(() {
-                                      _selectedCustomerId = newId;
-                                      _selectedCustomer = newId != null
-                                          ? uniqueCustomers[newId]
-                                          : null;
-                                    });
-                                  },
+                                      hint: Text(
+                                        l10n.isArabic
+                                            ? 'اختر العميل من القائمة...'
+                                            : 'Select customer...',
+                                      ),
+                                      items: customers.map((c) {
+                                        return DropdownMenuItem<String>(
+                                          value: c.id,
+                                          child: Text(
+                                            c.phone.isNotEmpty
+                                                ? '${c.name} (${c.phone})'
+                                                : c.name,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newId) {
+                                        setState(() {
+                                          _selectedCustomerId = newId;
+                                          _selectedCustomer = newId != null
+                                              ? uniqueCustomers[newId]
+                                              : null;
+                                        });
+                                      },
+                                    ),
+                                    if (_selectedCustomer != null) ...[
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).cardColor,
+                                          borderRadius: BorderRadius.circular(
+                                            AppDimensions.radiusSmall,
+                                          ),
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .dividerColor
+                                                .withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.account_circle_outlined,
+                                              size: 18,
+                                              color: AppColors.primary,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                '${_selectedCustomer!.name}${_selectedCustomer!.phone.isNotEmpty ? ' • ${_selectedCustomer!.phone}' : ''}',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            if (_selectedCustomer!
+                                                    .openingReceivable >
+                                                0)
+                                              Text(
+                                                '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _currency, isArabic: l10n.isArabic)}',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors.error,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 );
                               },
                             ),
-                            if (_selectedCustomer != null) ...[
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: BorderRadius.circular(
-                                    AppDimensions.radiusSmall,
-                                  ),
-                                  border: Border.all(
-                                    color: Theme.of(context).dividerColor
-                                        .withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.account_circle_outlined,
-                                      size: 18,
-                                      color: AppColors.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        '${_selectedCustomer!.name}${_selectedCustomer!.phone.isNotEmpty ? ' • ${_selectedCustomer!.phone}' : ''}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    if (_selectedCustomer!.openingReceivable >
-                                        0)
-                                      Text(
-                                        '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _currency, isArabic: l10n.isArabic)}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.error,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
                           ],
                         ],
                       ),

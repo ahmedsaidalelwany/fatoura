@@ -4,7 +4,9 @@ import 'package:fatoura/core/precision/money.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
+import 'package:fatoura/features/products/domain/entities/inventory_movement.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
+import 'package:uuid/uuid.dart';
 
 class InvoiceRepositoryImpl implements InvoiceRepository {
   final HiveDatabase database;
@@ -166,14 +168,42 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
             .toMap();
       }
 
+      final createdMovementIds = <String>[];
       try {
         for (final entry in updatedProducts.entries) {
           await productsBox.put(entry.key, entry.value);
+
+          final oldProduct = Product.fromMap(
+            Map<String, dynamic>.from(originalProducts[entry.key]!),
+          );
+          final movement = InventoryMovement(
+            id: const Uuid().v4(),
+            productId: entry.key,
+            productName: oldProduct.name,
+            quantityDelta: -demands[entry.key]!,
+            quantityBefore: oldProduct.stockQuantity,
+            quantityAfter: oldProduct.stockQuantity - demands[entry.key]!,
+            movementType: InventoryMovementType.sale,
+            sourceDocumentType: 'sales_invoice',
+            sourceDocumentId: invoice.id,
+            sourceDocumentNumber: invoice.invoiceNumber,
+            reason: 'Sales invoice: ${invoice.invoiceNumber}',
+            timestamp: DateTime.now(),
+            createdAt: DateTime.now(),
+          );
+          createdMovementIds.add(movement.id);
+          await database.inventoryMovementsBox.put(
+            movement.id,
+            movement.toMap(),
+          );
         }
         await box.put(invoice.id, invoice.toMap());
       } catch (_) {
         for (final entry in originalProducts.entries) {
           await productsBox.put(entry.key, entry.value);
+        }
+        for (final mId in createdMovementIds) {
+          await database.inventoryMovementsBox.delete(mId);
         }
         rethrow;
       }
@@ -196,8 +226,8 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final productsBox = database.productsBox;
     final originalProducts = <String, Map>{};
     final updatedProducts = <String, Map<String, dynamic>>{};
+    final returns = <String, double>{};
     if (invoice.isIssued) {
-      final returns = <String, double>{};
       for (final item in invoice.items.where((item) => !item.isService)) {
         final productId = item.productId;
         if (productId == null || productId.isEmpty) continue;
@@ -225,14 +255,42 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       cancellationReason: reason.trim(),
       updatedAt: DateTime.now(),
     );
+    final createdMovementIds = <String>[];
     try {
       for (final entry in updatedProducts.entries) {
         await productsBox.put(entry.key, entry.value);
+
+        final oldProduct = Product.fromMap(
+          Map<String, dynamic>.from(originalProducts[entry.key]!),
+        );
+        final movement = InventoryMovement(
+          id: const Uuid().v4(),
+          productId: entry.key,
+          productName: oldProduct.name,
+          quantityDelta: returns[entry.key]!,
+          quantityBefore: oldProduct.stockQuantity,
+          quantityAfter: oldProduct.stockQuantity + returns[entry.key]!,
+          movementType: InventoryMovementType.salesCancellation,
+          sourceDocumentType: 'sales_invoice',
+          sourceDocumentId: invoice.id,
+          sourceDocumentNumber: invoice.invoiceNumber,
+          reason: 'Invoice cancelled: ${invoice.invoiceNumber}. ${reason.trim()}',
+          timestamp: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
+        createdMovementIds.add(movement.id);
+        await database.inventoryMovementsBox.put(
+          movement.id,
+          movement.toMap(),
+        );
       }
       await box.put(invoiceId, cancelled.toMap());
     } catch (_) {
       for (final entry in originalProducts.entries) {
         await productsBox.put(entry.key, entry.value);
+      }
+      for (final mId in createdMovementIds) {
+        await database.inventoryMovementsBox.delete(mId);
       }
       rethrow;
     }

@@ -1276,8 +1276,9 @@ class _CreatePurchasePageState extends State<CreatePurchasePage> {
                                 ),
                               ],
                               onChanged: (val) {
-                                if (val != null)
+                                if (val != null) {
                                   setState(() => _paymentMethod = val);
+                                }
                               },
                             ),
                           ],

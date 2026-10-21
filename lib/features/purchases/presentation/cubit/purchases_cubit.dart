@@ -601,59 +601,11 @@ class PurchasesCubit extends Cubit<PurchasesState> {
         return true;
       }
 
-      // 1. Dependency check: Cannot cancel purchase with recorded payments
-      if (paymentRepository != null) {
-        final payments = await paymentRepository!.getPaymentsForInvoice(
-          purchaseId,
-        );
-        if (payments.isNotEmpty || purchase.amountPaid > 0) {
-          emit(
-            const PurchasesError(
-              'لا يمكن إلغاء فاتورة مشتريات مسجل عليها مدفوعات. يجب تسوية أو استرداد المدفوعات أولاً.',
-            ),
-          );
-          return false;
-        }
-      }
-
-      // 2. Inventory check & reversal: If stock was received, reverse stock
-      if (purchase.isStockReceived && productRepository != null) {
-        // First verify that sufficient stock exists to reverse
-        for (final item in purchase.items) {
-          if (item.productId != null && item.productId!.isNotEmpty) {
-            final prod = await productRepository!.getProductById(
-              item.productId!,
-            );
-            if (prod != null &&
-                prod.trackInventory &&
-                prod.stockQuantity < item.quantity) {
-              emit(
-                PurchasesError(
-                  'المخزون الحالي (${prod.stockQuantity}) غير كافٍ لعكس استلام المشتريات (${item.quantity}). قد تكون البضاعة بيعت.',
-                ),
-              );
-              return false;
-            }
-          }
-        }
-
-        // Deduct received stock
-        for (final item in purchase.items) {
-          if (item.productId != null && item.productId!.isNotEmpty) {
-            await productRepository!.adjustStock(
-              item.productId!,
-              delta: -item.quantity,
-              reason: 'Purchase cancelled: ${purchase.purchaseNumber}',
-            );
-          }
-        }
-      }
-
-      // 3. Mark purchase as cancelled
+      // 1. Mark purchase as cancelled with atomic stock reversal & payment dependency checks
       await purchaseRepository.cancelPurchase(purchaseId, reason.trim());
       final updated = await purchaseRepository.getPurchaseById(purchaseId);
 
-      // 4. Audit log
+      // 2. Audit log
       await auditRepository.logAction(
         AuditLog(
           id: const Uuid().v4(),
@@ -675,7 +627,8 @@ class PurchasesCubit extends Cubit<PurchasesState> {
       await loadPurchases();
       return true;
     } catch (e) {
-      emit(PurchasesError(e.toString()));
+      final msg = e is StateError ? e.message : e.toString();
+      emit(PurchasesError(msg));
       return false;
     }
   }

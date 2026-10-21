@@ -1,6 +1,8 @@
 import 'package:fatoura/core/storage/hive_database.dart';
+import 'package:fatoura/features/products/domain/entities/inventory_movement.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
 import 'package:fatoura/features/products/domain/repositories/product_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
   final HiveDatabase database;
@@ -86,8 +88,9 @@ class ProductRepositoryImpl implements ProductRepository {
     String barcode, {
     String? excludeProductId,
   }) async {
-    if (barcode.trim().isEmpty)
+    if (barcode.trim().isEmpty) {
       return true; // Empty is always unique (optional)
+    }
     final box = database.productsBox;
     final normalized = barcode.trim();
 
@@ -106,6 +109,17 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   Future<void> saveProduct(Product product) async {
+    if (product.barcode.trim().isNotEmpty) {
+      final isUnique = await isBarcodeUnique(
+        product.barcode,
+        excludeProductId: product.id,
+      );
+      if (!isUnique) {
+        throw ArgumentError(
+          'الباركود (${product.barcode}) مستخدم بالفعل لمنتج آخر. يجب أن يكون الباركود فريداً لكل منتج.',
+        );
+      }
+    }
     final box = database.productsBox;
     await box.put(product.id, product.toMap());
   }
@@ -144,7 +158,27 @@ class ProductRepositoryImpl implements ProductRepository {
       stockQuantity: newQty,
       updatedAt: DateTime.now(),
     );
-    await saveProduct(updated);
+    final box = database.productsBox;
+    await box.put(updated.id, updated.toMap());
+
+    // Record persistent inventory movement
+    final movement = InventoryMovement(
+      id: const Uuid().v4(),
+      productId: product.id,
+      productName: product.name,
+      quantityDelta: delta,
+      quantityBefore: product.stockQuantity,
+      quantityAfter: newQty,
+      movementType: delta >= 0
+          ? InventoryMovementType.manualAdjustment
+          : InventoryMovementType.manualAdjustment,
+      sourceDocumentType: 'stock_adjustment',
+      reason: reason,
+      timestamp: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+    await database.inventoryMovementsBox.put(movement.id, movement.toMap());
+
     return updated;
   });
 

@@ -262,6 +262,60 @@ void main() {
     expect(payments.first.method, PaymentMethod.bank);
   });
 
+  test(
+    'Failed multi-invoice payment leaves earlier invoice balances unchanged',
+    () async {
+      final invoice = await invoicesCubit.createInvoice(
+        customerId: 'cust_atomic_payment',
+        customerName: 'عميل اختبار الدفع',
+        rawItems: [
+          (
+            productId: null,
+            description: 'خدمة',
+            quantity: 1.0,
+            unitPrice: 100.0,
+            isService: true,
+          ),
+        ],
+      );
+      final now = DateTime.now();
+      final payment = Payment(
+        id: 'payment_partial_failure',
+        amount: 50.0,
+        paymentDate: now,
+        partyId: 'cust_atomic_payment',
+        isCustomerPayment: true,
+        allocations: [
+          PaymentAllocation(
+            id: 'valid_allocation',
+            paymentId: 'payment_partial_failure',
+            invoiceId: invoice!.id,
+            invoiceNumber: invoice.invoiceNumber,
+            amount: 40.0,
+            allocatedAt: now,
+          ),
+          PaymentAllocation(
+            id: 'missing_allocation',
+            paymentId: 'payment_partial_failure',
+            invoiceId: 'missing_invoice',
+            invoiceNumber: 'missing',
+            amount: 10.0,
+            allocatedAt: now,
+          ),
+        ],
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await expectLater(paymentRepo.savePayment(payment), throwsArgumentError);
+
+      final unchangedInvoice = await invoiceRepo.getInvoiceById(invoice.id);
+      expect(unchangedInvoice!.totalPaid, 0.0);
+      expect(unchangedInvoice.remainingBalance, 100.0);
+      expect(await paymentRepo.getPaymentById(payment.id), isNull);
+    },
+  );
+
   test('Tangible product decrements inventory on issuance and restores stock on cancellation', () async {
     final product = Product(
       id: 'prod_physical',
@@ -538,7 +592,16 @@ void main() {
           returnDate: DateTime.now(),
           originalInvoiceId: retInv!.id,
           originalInvoiceNumber: retInv.invoiceNumber,
-          items: const [],
+          items: [
+            SalesReturnItem(
+              id: 'ret_item_1',
+              invoiceItemId: retInv.items.first.id,
+              description: 'سلعة مرتجعة',
+              returnedQuantity: 0.5,
+              unitPrice: 100.0,
+              refundAmount: 50.0,
+            ),
+          ],
           totalRefundAmount: 50.0,
           returnReason: 'تالف',
           createdAt: DateTime.now(),

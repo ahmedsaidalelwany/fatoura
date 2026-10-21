@@ -16,6 +16,7 @@ class HiveBoxes {
   static const String purchases = 'box_purchases';
   static const String auditLogs = 'box_audit_logs';
   static const String sequenceCounters = 'box_sequence_counters';
+  static const String inventoryMovements = 'box_inventory_movements';
 
   static const List<String> allBoxes = [
     shopProfile,
@@ -27,6 +28,7 @@ class HiveBoxes {
     purchases,
     auditLogs,
     sequenceCounters,
+    inventoryMovements,
   ];
 }
 
@@ -89,6 +91,7 @@ class HiveDatabase {
   Box<Map> get purchasesBox => getBox(HiveBoxes.purchases);
   Box<Map> get auditLogsBox => getBox(HiveBoxes.auditLogs);
   Box<Map> get sequenceCountersBox => getBox(HiveBoxes.sequenceCounters);
+  Box<Map> get inventoryMovementsBox => getBox(HiveBoxes.inventoryMovements);
 
   /// Dumps all database boxes into a JSON-serializable Map for backup
   Future<Map<String, dynamic>> exportAllData() async {
@@ -123,7 +126,11 @@ class HiveDatabase {
     }
     for (final boxName in HiveBoxes.allBoxes) {
       if (!tables.containsKey(boxName)) {
-        throw ArgumentError('Malformed backup data: missing table $boxName');
+        if (boxName == HiveBoxes.inventoryMovements) {
+          tables[boxName] = <String, dynamic>{};
+        } else {
+          throw ArgumentError('Malformed backup data: missing table $boxName');
+        }
       }
     }
 

@@ -75,6 +75,8 @@ class PurchaseInvoice extends Equatable {
   final DocumentStatus documentStatus;
   final PaymentStatus paymentStatus;
   final bool isStockReceived;
+  final String cancellationReason;
+  final DateTime? cancelledAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -101,6 +103,8 @@ class PurchaseInvoice extends Equatable {
     this.documentStatus = DocumentStatus.issued,
     this.paymentStatus = PaymentStatus.unpaid,
     this.isStockReceived = false,
+    this.cancellationReason = '',
+    this.cancelledAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -132,6 +136,8 @@ class PurchaseInvoice extends Equatable {
     DocumentStatus? documentStatus,
     PaymentStatus? paymentStatus,
     bool? isStockReceived,
+    String? cancellationReason,
+    DateTime? cancelledAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -158,6 +164,8 @@ class PurchaseInvoice extends Equatable {
       documentStatus: documentStatus ?? this.documentStatus,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       isStockReceived: isStockReceived ?? this.isStockReceived,
+      cancellationReason: cancellationReason ?? this.cancellationReason,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -187,6 +195,8 @@ class PurchaseInvoice extends Equatable {
       'documentStatus': documentStatus.name,
       'paymentStatus': paymentStatus.name,
       'isStockReceived': isStockReceived,
+      'cancellationReason': cancellationReason,
+      'cancelledAt': cancelledAt?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -232,6 +242,10 @@ class PurchaseInvoice extends Equatable {
         orElse: () => PaymentStatus.unpaid,
       ),
       isStockReceived: map['isStockReceived'] as bool? ?? false,
+      cancellationReason: map['cancellationReason'] as String? ?? '',
+      cancelledAt: map['cancelledAt'] != null
+          ? DateTime.tryParse(map['cancelledAt'] as String? ?? '')
+          : null,
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??
           DateTime.now(),
@@ -253,6 +267,8 @@ class PurchaseInvoice extends Equatable {
     documentStatus,
     paymentStatus,
     isStockReceived,
+    cancellationReason,
+    cancelledAt,
     createdAt,
   ];
 }

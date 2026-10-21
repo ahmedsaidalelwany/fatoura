@@ -113,15 +113,6 @@ class BackupService {
           error: 'Backup payload tables must be a map',
         );
       }
-      for (final boxName in HiveBoxes.allBoxes) {
-        if (!tables.containsKey(boxName)) {
-          return RestoreValidationResult(
-            isValid: false,
-            error: 'Backup payload is missing required table $boxName',
-          );
-        }
-      }
-
       final tablesJson = jsonEncode(tables);
       final calculatedChecksum = sha256
           .convert(utf8.encode(tablesJson))
@@ -132,6 +123,20 @@ class BackupService {
           isValid: false,
           error: 'Integrity check failed: checksum mismatch (corrupted data)',
         );
+      }
+
+      for (final boxName in HiveBoxes.allBoxes) {
+        if (!tables.containsKey(boxName)) {
+          if (boxName == HiveBoxes.inventoryMovements) {
+            // Backward-compatibility: auto-initialize newly added ledger box for older backups
+            tables[boxName] = <String, dynamic>{};
+          } else {
+            return RestoreValidationResult(
+              isValid: false,
+              error: 'Backup payload is missing required table $boxName',
+            );
+          }
+        }
       }
 
       return RestoreValidationResult(isValid: true, data: data);
