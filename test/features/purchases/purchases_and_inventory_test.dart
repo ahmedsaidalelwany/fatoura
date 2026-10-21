@@ -379,10 +379,8 @@ void main() {
       expect(reloaded.paymentStatus, PaymentStatus.partiallyPaid);
     });
 
-    test(
-      'Cancelling a received purchase does not change stock for a '
-      'non-inventory product',
-      () async {
+    test('Cancelling a received purchase does not change stock for a '
+        'non-inventory product', () async {
         final product = Product(
           id: 'service_non_inventory',
           name: 'خدمة غير مخزنية',
