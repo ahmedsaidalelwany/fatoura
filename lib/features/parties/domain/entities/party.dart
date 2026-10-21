@@ -12,7 +12,9 @@ class Party extends Equatable {
   final bool isCustomer;
   final bool isSupplier;
   final double openingReceivable; // What the customer owes us initially
+  final String openingReceivableCurrency;
   final double openingPayable; // What we owe the supplier initially
+  final String openingPayableCurrency
   final bool isArchived;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -27,7 +29,9 @@ class Party extends Equatable {
     this.isCustomer = true,
     this.isSupplier = false,
     this.openingReceivable = 0.0,
+    this.openingReceivableCurrency = 'EGP',
     this.openingPayable = 0.0,
+    this.openingPayableCurrency = 'EGP',
     this.isArchived = false,
     required this.createdAt,
     required this.updatedAt,
@@ -43,7 +47,9 @@ class Party extends Equatable {
     bool? isCustomer,
     bool? isSupplier,
     double? openingReceivable,
+    String? openingReceivableCurrency,
     double? openingPayable,
+    String? openingPayableCurrency,
     bool? isArchived,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -58,7 +64,11 @@ class Party extends Equatable {
       isCustomer: isCustomer ?? this.isCustomer,
       isSupplier: isSupplier ?? this.isSupplier,
       openingReceivable: openingReceivable ?? this.openingReceivable,
+      openingReceivableCurrency:
+          openingReceivableCurrency ?? this.openingReceivableCurrency,
       openingPayable: openingPayable ?? this.openingPayable,
+      openingPayableCurrency:
+          openingPayableCurrency ?? this.openingPayableCurrency,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -76,7 +86,9 @@ class Party extends Equatable {
       'isCustomer': isCustomer,
       'isSupplier': isSupplier,
       'openingReceivable': openingReceivable,
+      'openingReceivableCurrency': openingReceivableCurrency,
       'openingPayable': openingPayable,
+      'openingPayableCurrency': openingPayableCurrency,
       'isArchived': isArchived,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -94,7 +106,11 @@ class Party extends Equatable {
       isCustomer: map['isCustomer'] as bool? ?? true,
       isSupplier: map['isSupplier'] as bool? ?? false,
       openingReceivable: (map['openingReceivable'] as num?)?.toDouble() ?? 0.0,
+      openingReceivableCurrency:
+          map['openingReceivableCurrency'] as String? ?? 'EGP',
       openingPayable: (map['openingPayable'] as num?)?.toDouble() ?? 0.0,
+      openingPayableCurrency:
+          map['openingPayableCurrency'] as String? ?? 'EGP',
       isArchived: map['isArchived'] as bool? ?? false,
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??
@@ -116,7 +132,9 @@ class Party extends Equatable {
     isCustomer,
     isSupplier,
     openingReceivable,
+    openingReceivableCurrency,
     openingPayable,
+    openingPayableCurrency,
     isArchived,
     createdAt,
     updatedAt,
