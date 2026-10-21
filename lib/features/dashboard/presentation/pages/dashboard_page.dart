@@ -23,19 +23,18 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   StreamSubscription<AppSettingsState>? _settingsSubscription;
+  late String _dashboardCurrency;
 
   @override
   void initState() {
     super.initState();
     final settingsCubit = context.read<AppSettingsCubit>();
-    context.read<DashboardCubit>().loadDashboardMetrics(
-      settingsCubit.state.defaultCurrency,
-    );
+    _dashboardCurrency = settingsCubit.state.defaultCurrency;
+    context.read<DashboardCubit>().loadDashboardMetrics(_dashboardCurrency);
     _settingsSubscription = settingsCubit.stream.listen((settings) {
-      if (mounted) {
-        context.read<DashboardCubit>().loadDashboardMetrics(
-          settings.defaultCurrency,
-        );
+      if (mounted && settings.defaultCurrency != _dashboardCurrency) {
+        _dashboardCurrency = settings.defaultCurrency;
+        context.read<DashboardCubit>().loadDashboardMetrics(_dashboardCurrency);
       }
     });
   }
