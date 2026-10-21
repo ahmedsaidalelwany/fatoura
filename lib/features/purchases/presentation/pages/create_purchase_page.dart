@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:fatoura/core/widgets/barcode_camera_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -191,6 +192,24 @@ class _CreatePurchasePageState extends State<CreatePurchasePage> {
                 }
               },
             ),
+            if (supportsCameraBarcodeScanning) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: Text(
+                    l10n.isArabic ? 'المسح بالكاميرا' : 'Scan with camera',
+                  ),
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    final code = await showBarcodeCameraDialog(context);
+                    if (!mounted || code == null || code.isEmpty) return;
+                    await _lookupAndAddBarcode(code);
+                  },
+                ),
+              ),
+            ],
           ],
         ),
         actions: [

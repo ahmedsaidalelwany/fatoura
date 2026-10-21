@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -40,11 +42,26 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
   List<PurchaseInvoice> _purchases = [];
   List<Payment> _payments = [];
   bool _isLoading = true;
+  String _loadedCurrency = 'EGP';
+  StreamSubscription<AppSettingsState>? _settingsSubscription;
 
   @override
   void initState() {
     super.initState();
+    final settingsCubit = context.read<AppSettingsCubit>();
+    _loadedCurrency = settingsCubit.state.defaultCurrency;
+    _settingsSubscription = settingsCubit.stream.listen((settings) {
+      if (!mounted || settings.defaultCurrency == _loadedCurrency) return;
+      _loadedCurrency = settings.defaultCurrency;
+      _loadHistory();
+    });
     _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _settingsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadHistory() async {
@@ -55,12 +72,18 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
     final purRepo = context.read<PurchaseRepository>();
 
     if (widget.isCustomer) {
-      final bal = await partyRepo.getCustomerReceivableBalance(widget.party.id);
-      final invs = await invRepo.getInvoices(customerId: widget.party.id);
-      final pays = await paymentRepo.getPayments(
+      final currency = _loadedCurrency;
+      final bal = await partyRepo.getCustomerReceivableBalance(
+        widget.party.id,
+        currency: currency,
+      );
+      final invs = (await invRepo.getInvoices(customerId: widget.party.id))
+          .where((invoice) => invoice.currency == currency)
+          .toList();
+      final pays = (await paymentRepo.getPayments(
         partyId: widget.party.id,
         isCustomerPayment: true,
-      );
+      )).where((payment) => payment.currency == currency).toList();
 
       if (mounted) {
         setState(() {
@@ -71,12 +94,18 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
         });
       }
     } else {
-      final bal = await partyRepo.getSupplierPayableBalance(widget.party.id);
-      final purs = await purRepo.getPurchases(supplierId: widget.party.id);
-      final pays = await paymentRepo.getPayments(
+      final currency = _loadedCurrency;
+      final bal = await partyRepo.getSupplierPayableBalance(
+        widget.party.id,
+        currency: currency,
+      );
+      final purs = (await purRepo.getPurchases(supplierId: widget.party.id))
+          .where((purchase) => purchase.currency == currency)
+          .toList();
+      final pays = (await paymentRepo.getPayments(
         partyId: widget.party.id,
         isCustomerPayment: false,
-      );
+      )).where((payment) => payment.currency == currency).toList();
 
       if (mounted) {
         setState(() {

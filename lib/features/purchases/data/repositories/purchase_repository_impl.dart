@@ -94,7 +94,21 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
     final wasStockReceived =
         existingMap != null && (existingMap['isStockReceived'] == true);
 
-    if (!purchase.isStockReceived || wasStockReceived) {
+    if (wasStockReceived) {
+      final existing = PurchaseInvoice.fromMap(
+        Map<String, dynamic>.from(existingMap),
+      );
+      if (!_receivedPurchaseTermsMatch(existing, purchase)) {
+        throw StateError(
+          'لا يمكن تعديل بنود أو قيمة فاتورة مشتريات بعد استلام المخزون. '
+          'أنشئ مستند تسوية أو إرجاع موثق بدلًا من تعديل السجل الأصلي.',
+        );
+      }
+      await box.put(purchase.id, purchase.toMap());
+      return;
+    }
+
+    if (!purchase.isStockReceived) {
       await box.put(purchase.id, purchase.toMap());
       return;
     }
@@ -104,18 +118,46 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       final latestWasStockReceived =
           latestMap != null && (latestMap['isStockReceived'] == true);
       if (latestWasStockReceived) {
-        await box.put(purchase.id, purchase.toMap());
+        final latest = PurchaseInvoice.fromMap(
+          Map<String, dynamic>.from(latestMap),
+        );
+        if (!_receivedPurchaseTermsMatch(latest, purchase)) {
+          throw StateError(
+            'تم استلام فاتورة المشتريات بالفعل بمحتوى مختلف. أعد تحميلها قبل المتابعة.',
+          );
+        }
         return;
       }
 
+      if (purchase.items.isEmpty) {
+        throw StateError('لا يمكن استلام فاتورة مشتريات دون بنود.');
+      }
+
+      final productsBox = database.productsBox;
       final additions = <String, double>{};
       final itemUnitPrices = <String, double>{};
       for (final item in purchase.items) {
         final productId = item.productId;
-        if (productId == null || productId.isEmpty) continue;
         if (!item.quantity.isFinite || item.quantity <= 0) {
           throw StateError(
-            'يجب أن تكون كمية المنتج في المشتريات أكبر من الصفر.',
+            'يجب أن تكون كمية البند في المشتريات أكبر من الصفر.',
+          );
+        }
+        if (!item.unitPrice.isFinite || item.unitPrice < 0) {
+          throw StateError('سعر شراء البند غير صالح.');
+        }
+
+        // A line without productId is a non-inventory purchase/expense line.
+        // Product lines must always reference an existing catalog product.
+        if (productId == null || productId.trim().isEmpty) {
+          if (item.description.trim().isEmpty) {
+            throw StateError('وصف بند المشتريات مطلوب.');
+          }
+          continue;
+        }
+        if (productsBox.get(productId) == null) {
+          throw StateError(
+            'المنتج المرتبط ببند المشتريات غير موجود في قاعدة البيانات: $productId',
           );
         }
         additions[productId] = (additions[productId] ?? 0.0) + item.quantity;
@@ -123,8 +165,6 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
           itemUnitPrices[productId] = item.unitPrice;
         }
       }
-
-      final productsBox = database.productsBox;
       final originalProducts = <String, Map>{};
       final updatedProducts = <String, Map<String, dynamic>>{};
       final movementsToCreate = <InventoryMovement>[];
@@ -132,7 +172,11 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
 
       for (final entry in additions.entries) {
         final productMap = productsBox.get(entry.key);
-        if (productMap == null) continue;
+        if (productMap == null) {
+          throw StateError(
+            'المنتج المرتبط ببند المشتريات غير موجود في قاعدة البيانات: ${entry.key}',
+          );
+        }
         final product = Product.fromMap(Map<String, dynamic>.from(productMap));
         if (product.trackInventory) {
           originalProducts[entry.key] = productMap;
@@ -186,6 +230,43 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
         rethrow;
       }
     });
+  }
+
+  bool _receivedPurchaseTermsMatch(
+    PurchaseInvoice existing,
+    PurchaseInvoice incoming,
+  ) {
+    if (existing.purchaseNumber != incoming.purchaseNumber ||
+        existing.supplierId != incoming.supplierId ||
+        existing.currency != incoming.currency ||
+        existing.issueDate != incoming.issueDate ||
+        existing.subtotal != incoming.subtotal ||
+        existing.discountType != incoming.discountType ||
+        existing.discountInput != incoming.discountInput ||
+        existing.discountAmount != incoming.discountAmount ||
+        existing.taxableBase != incoming.taxableBase ||
+        existing.taxRate != incoming.taxRate ||
+        existing.taxAmount != incoming.taxAmount ||
+        existing.finalTotal != incoming.finalTotal ||
+        existing.items.length != incoming.items.length) {
+      return false;
+    }
+
+    final existingItems = <String, PurchaseInvoiceItem>{
+      for (final item in existing.items) item.id: item,
+    };
+    for (final item in incoming.items) {
+      final previous = existingItems[item.id];
+      if (previous == null ||
+          previous.productId != item.productId ||
+          previous.description != item.description ||
+          previous.quantity != item.quantity ||
+          previous.unitPrice != item.unitPrice ||
+          previous.lineTotal != item.lineTotal) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -301,7 +382,14 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
           throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
         }
         final product = Product.fromMap(Map<String, dynamic>.from(productMap));
-        if (product.trackInventory && product.stockQuantity < entry.value) {
+
+        // Receipt does not mutate stock for products with inventory tracking
+        // disabled, so cancellation must not create a stock reversal either.
+        if (!product.trackInventory) {
+          continue;
+        }
+
+        if (product.stockQuantity < entry.value) {
           throw StateError(
             'المخزون الحالي (${product.stockQuantity}) غير كافٍ لعكس استلام المشتريات (${entry.value}). قد تكون البضاعة بيعت.',
           );

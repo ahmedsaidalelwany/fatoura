@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,25 +24,50 @@ class _PartiesPageState extends State<PartiesPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
+  StreamSubscription<AppSettingsState>? _settingsSubscription;
+  String? _balanceCurrency;
+  int _lastRequestedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(_handleTabControllerChange);
+    final settingsCubit = context.read<AppSettingsCubit>();
+    _balanceCurrency = settingsCubit.state.defaultCurrency;
+    _settingsSubscription = settingsCubit.stream.listen((settings) {
+      if (!mounted || settings.defaultCurrency == _balanceCurrency) return;
+      _balanceCurrency = settings.defaultCurrency;
+      _loadData();
+    });
     _loadData();
   }
 
   @override
   void dispose() {
+    _settingsSubscription?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
+  void _handleTabControllerChange() {
+    if (_tabController.indexIsChanging) return;
+    final index = _tabController.index;
+    if (index == _lastRequestedTabIndex) return;
+    _lastRequestedTabIndex = index;
+    _loadData();
+  }
+
   void _loadData() {
     final query = _searchController.text.trim();
-    context.read<PartiesCubit>().loadCustomers(query: query);
-    context.read<PartiesCubit>().loadSuppliers(query: query);
+    final currency = context.read<AppSettingsCubit>().state.defaultCurrency;
+    final partiesCubit = context.read<PartiesCubit>();
+    if (_tabController.index == 0) {
+      partiesCubit.loadCustomers(query: query, currency: currency);
+    } else {
+      partiesCubit.loadSuppliers(query: query, currency: currency);
+    }
   }
 
   void _showAddEditPartyDialog(
@@ -49,6 +76,10 @@ class _PartiesPageState extends State<PartiesPage>
     bool isCustomerTab = true,
   }) {
     final l10n = AppLocalizations.of(context);
+    final defaultCurrency = context
+        .read<AppSettingsCubit>()
+        .state
+        .defaultCurrency;
     final nameCtrl = TextEditingController(text: existingParty?.name ?? '');
     final phoneCtrl = TextEditingController(text: existingParty?.phone ?? '');
     final addressCtrl = TextEditingController(
@@ -67,6 +98,11 @@ class _PartiesPageState extends State<PartiesPage>
 
     bool isCustomer = existingParty?.isCustomer ?? isCustomerTab;
     bool isSupplier = existingParty?.isSupplier ?? !isCustomerTab;
+    final openingCurrency = existingParty != null
+        ? (isCustomerTab
+              ? existingParty.openingReceivableCurrency
+              : existingParty.openingPayableCurrency)
+        : defaultCurrency;
 
     showDialog(
       context: context,
@@ -111,7 +147,7 @@ class _PartiesPageState extends State<PartiesPage>
                     decimal: true,
                   ),
                   decoration: InputDecoration(
-                    labelText: l10n.openingBalanceLabel,
+                    labelText: '${l10n.openingBalanceLabel} ($openingCurrency)',
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -157,7 +193,12 @@ class _PartiesPageState extends State<PartiesPage>
                   isCustomer: isCustomer,
                   isSupplier: isSupplier,
                   openingReceivable: isCustomer ? opening : 0.0,
+                  openingReceivableCurrency:
+                      existingParty?.openingReceivableCurrency ??
+                      defaultCurrency,
                   openingPayable: isSupplier ? opening : 0.0,
+                  openingPayableCurrency:
+                      existingParty?.openingPayableCurrency ?? defaultCurrency,
                 );
                 Navigator.pop(ctx);
                 _loadData();

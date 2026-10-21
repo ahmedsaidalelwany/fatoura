@@ -182,7 +182,15 @@ void main() {
         finalTotal: 3500.0,
         remainingPayable: 3500.0,
         currency: 'EGP',
-        items: const [],
+        items: const [
+          PurchaseInvoiceItem(
+            id: 'pur_item_dash_1',
+            description: 'Warehouse Supplies',
+            quantity: 1.0,
+            unitPrice: 3500.0,
+            lineTotal: 3500.0,
+          ),
+        ],
         createdAt: now,
         updatedAt: now,
       );
@@ -196,7 +204,7 @@ void main() {
         customerId: 'cust_1',
         customerName: 'Customer One',
         issueDate: now,
-        documentStatus: DocumentStatus.cancelled,
+        documentStatus: DocumentStatus.issued,
         paymentStatus: PaymentStatus.unpaid,
         subtotal: 10000.0,
         taxableBase: 10000.0,
@@ -209,6 +217,10 @@ void main() {
         updatedAt: now,
       );
       await invoiceRepo.saveInvoice(cancelledInv);
+      await invoiceRepo.cancelInvoice(
+        cancelledInv.id,
+        'Dashboard test fixture cancellation',
+      );
 
       // Load EGP metrics
       await dashboardCubit.loadDashboardMetrics('EGP');

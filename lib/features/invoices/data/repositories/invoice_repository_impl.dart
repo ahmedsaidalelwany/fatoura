@@ -4,8 +4,10 @@ import 'package:fatoura/core/precision/money.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
+import 'package:fatoura/features/payments/domain/entities/payment.dart';
 import 'package:fatoura/features/products/domain/entities/inventory_movement.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
+import 'package:fatoura/features/returns/domain/entities/sales_return.dart';
 import 'package:uuid/uuid.dart';
 
 class InvoiceRepositoryImpl implements InvoiceRepository {
@@ -101,16 +103,51 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final box = database.invoicesBox;
     final existingMap = box.get(invoice.id);
     final existingStatus = existingMap?['documentStatus'] as String?;
+
+    if (existingMap == null && invoice.isCancelled) {
+      throw StateError(
+        'لا يمكن إنشاء فاتورة ملغاة مباشرة. أنشئها ثم ألغها من خلال الإجراء الموثق.',
+      );
+    }
+    if (existingStatus == DocumentStatus.cancelled.name) {
+      throw StateError('لا يمكن تعديل فاتورة ملغاة أو إعادة تفعيلها.');
+    }
+    if (existingStatus == DocumentStatus.issued.name) {
+      if (!invoice.isIssued) {
+        throw StateError(
+          'لا يمكن تغيير حالة فاتورة صادرة عبر الحفظ العام. استخدم إجراء الإلغاء الموثق.',
+        );
+      }
+      final existing = Invoice.fromMap(Map<String, dynamic>.from(existingMap!));
+      if (!_issuedInvoiceTermsMatch(existing, invoice)) {
+        throw StateError(
+          'لا يمكن تعديل بنود أو قيم فاتورة صادرة. سجّل مرتجعًا أو إجراءً تعويضيًا موثقًا.',
+        );
+      }
+      await database.runExclusive(() async {
+        final latestMap = box.get(invoice.id);
+        if (latestMap == null) {
+          throw StateError('الفاتورة غير موجودة.');
+        }
+        final latest = Invoice.fromMap(Map<String, dynamic>.from(latestMap));
+        if (latest.documentStatus != DocumentStatus.issued ||
+            !_issuedInvoiceTermsMatch(latest, invoice)) {
+          throw StateError(
+            'تغيرت الفاتورة أثناء الحفظ. أعد تحميلها وحاول مجددًا.',
+          );
+        }
+        await box.put(invoice.id, invoice.toMap());
+      });
+      return;
+    }
+
     final needsIssueCommit =
         invoice.isIssued &&
         (existingMap == null || existingStatus == DocumentStatus.draft.name);
-    if (invoice.isIssued &&
-        existingMap != null &&
-        existingStatus != DocumentStatus.draft.name &&
-        existingStatus != DocumentStatus.issued.name) {
-      throw StateError('لا يمكن إعادة اعتماد فاتورة ملغاة.');
-    }
     if (!needsIssueCommit) {
+      if (existingMap != null && existingStatus != DocumentStatus.draft.name) {
+        throw StateError('انتقال حالة الفاتورة غير مسموح.');
+      }
       await box.put(invoice.id, invoice.toMap());
       return;
     }
@@ -119,7 +156,12 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       final latestMap = box.get(invoice.id);
       final latestStatus = latestMap?['documentStatus'] as String?;
       if (latestStatus == DocumentStatus.issued.name) {
-        await box.put(invoice.id, invoice.toMap());
+        final latest = Invoice.fromMap(Map<String, dynamic>.from(latestMap!));
+        if (!_issuedInvoiceTermsMatch(latest, invoice)) {
+          throw StateError(
+            'تم اعتماد الفاتورة بالفعل بمحتوى مختلف. أعد تحميل الفاتورة قبل المتابعة.',
+          );
+        }
         return;
       }
       if (latestMap != null && latestStatus != DocumentStatus.draft.name) {
@@ -210,6 +252,40 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     });
   }
 
+  bool _issuedInvoiceTermsMatch(Invoice existing, Invoice incoming) {
+    if (existing.id != incoming.id ||
+        existing.invoiceNumber != incoming.invoiceNumber ||
+        existing.issueDate != incoming.issueDate ||
+        existing.shopName != incoming.shopName ||
+        existing.shopPhone != incoming.shopPhone ||
+        existing.shopAddress != incoming.shopAddress ||
+        existing.shopTaxNumber != incoming.shopTaxNumber ||
+        existing.shopLogoPath != incoming.shopLogoPath ||
+        existing.shopSignaturePath != incoming.shopSignaturePath ||
+        existing.customerId != incoming.customerId ||
+        existing.customerName != incoming.customerName ||
+        existing.customerPhone != incoming.customerPhone ||
+        existing.customerAddress != incoming.customerAddress ||
+        existing.subtotal != incoming.subtotal ||
+        existing.discountType != incoming.discountType ||
+        existing.discountInput != incoming.discountInput ||
+        existing.discountAmount != incoming.discountAmount ||
+        existing.taxableBase != incoming.taxableBase ||
+        existing.taxRate != incoming.taxRate ||
+        existing.taxAmount != incoming.taxAmount ||
+        existing.finalTotal != incoming.finalTotal ||
+        existing.template != incoming.template ||
+        existing.currency != incoming.currency ||
+        existing.notes != incoming.notes ||
+        existing.items.length != incoming.items.length) {
+      return false;
+    }
+    for (var i = 0; i < existing.items.length; i++) {
+      if (existing.items[i] != incoming.items[i]) return false;
+    }
+    return true;
+  }
+
   @override
   Future<void> cancelInvoice(
     String invoiceId,
@@ -223,6 +299,38 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final invoice = Invoice.fromMap(Map<String, dynamic>.from(invoiceMap));
     if (invoice.isCancelled) return;
 
+    if (invoice.totalPaid > 0) {
+      throw StateError(
+        'لا يمكن إلغاء فاتورة عليها مبالغ محصلة قبل تسوية أو رد المدفوعات.',
+      );
+    }
+    for (final key in database.paymentsBox.keys) {
+      final paymentMap = database.paymentsBox.get(key);
+      if (paymentMap == null) continue;
+      final payment = Payment.fromMap(Map<String, dynamic>.from(paymentMap));
+      if (payment.amount > 0 &&
+          payment.allocations.any(
+            (allocation) =>
+                allocation.invoiceId == invoiceId && allocation.amount > 0,
+          )) {
+        throw StateError(
+          'لا يمكن إلغاء فاتورة مرتبطة بمدفوعات. سوِّ المدفوعات أولًا.',
+        );
+      }
+    }
+    for (final key in database.salesReturnsBox.keys) {
+      final returnMap = database.salesReturnsBox.get(key);
+      if (returnMap == null) continue;
+      final salesReturn = SalesReturn.fromMap(
+        Map<String, dynamic>.from(returnMap),
+      );
+      if (salesReturn.originalInvoiceId == invoiceId) {
+        throw StateError(
+          'لا يمكن إلغاء فاتورة لها مرتجعات مسجلة. عالج المرتجعات أولًا.',
+        );
+      }
+    }
+
     final productsBox = database.productsBox;
     final originalProducts = <String, Map>{};
     final updatedProducts = <String, Map<String, dynamic>>{};
@@ -230,7 +338,11 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     if (invoice.isIssued) {
       for (final item in invoice.items.where((item) => !item.isService)) {
         final productId = item.productId;
-        if (productId == null || productId.isEmpty) continue;
+        if (productId == null || productId.isEmpty) {
+          throw StateError(
+            'لا يمكن إلغاء فاتورة تحتوي على بند مخزني دون معرّف منتج صالح.',
+          );
+        }
         returns[productId] = (returns[productId] ?? 0) + item.quantity;
       }
       for (final entry in returns.entries) {
@@ -239,6 +351,7 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
           throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
         }
         final product = Product.fromMap(Map<String, dynamic>.from(productMap));
+        if (!product.trackInventory) continue;
         originalProducts[entry.key] = productMap;
         updatedProducts[entry.key] = product
             .copyWith(

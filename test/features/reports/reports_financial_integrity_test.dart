@@ -201,6 +201,63 @@ void main() {
       );
       await returnRepo.saveReturn(creditReturn);
 
+      // A second currency for the same customer must remain in a separate ledger.
+      final usdInvoice = Invoice(
+        id: 'inv_rep_usd_1',
+        invoiceNumber: 'INV-USD-001',
+        issueDate: DateTime(2026, 1, 12),
+        shopName: 'مؤسسة التجارة',
+        customerId: customer.id,
+        customerName: customer.name,
+        currency: 'USD',
+        subtotal: 100.0,
+        taxableBase: 100.0,
+        taxRate: 0.0,
+        taxAmount: 0.0,
+        finalTotal: 100.0,
+        totalPaid: 0.0,
+        remainingBalance: 100.0,
+        documentStatus: DocumentStatus.issued,
+        paymentStatus: PaymentStatus.unpaid,
+        template: InvoiceTemplate.service,
+        items: const [
+          InvoiceItem(
+            id: 'item_rep_usd_1',
+            description: 'USD service',
+            quantity: 1.0,
+            unitPrice: 100.0,
+            lineTotal: 100.0,
+            isService: true,
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 12),
+        updatedAt: DateTime(2026, 1, 12),
+      );
+      await invoiceRepo.saveInvoice(usdInvoice);
+
+      final usdPayment = Payment(
+        id: 'pay_rep_usd_1',
+        amount: 25.0,
+        currency: 'USD',
+        paymentDate: DateTime(2026, 1, 18),
+        partyId: customer.id,
+        partyName: customer.name,
+        isCustomerPayment: true,
+        allocations: [
+          PaymentAllocation(
+            id: 'alloc_rep_usd_1',
+            paymentId: 'pay_rep_usd_1',
+            invoiceId: usdInvoice.id,
+            invoiceNumber: usdInvoice.invoiceNumber,
+            amount: 25.0,
+            allocatedAt: DateTime(2026, 1, 18),
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 18),
+        updatedAt: DateTime(2026, 1, 18),
+      );
+      await paymentRepo.savePayment(usdPayment);
+
       // Generate customer statement
       await reportsCubit.generateReport(
         type: ReportType.customerStatement,
@@ -232,8 +289,40 @@ void main() {
       expect(report.statementEntries[2].credit, 50.0);
       expect(report.statementEntries[2].runningBalance, 100.0);
 
-      // Final net balance must be exactly 100.0
+      // Final EGP net balance must exclude all USD activity.
       expect(report.totalNet, 100.0);
+
+      await reportsCubit.generateReport(
+        type: ReportType.customerStatement,
+        fromDate: DateTime(2026, 1, 1),
+        toDate: DateTime(2026, 1, 31),
+        partyId: customer.id,
+        defaultCurrency: 'USD',
+      );
+      expect(reportsCubit.state, isA<ReportsLoaded>());
+      final usdReport = (reportsCubit.state as ReportsLoaded).data;
+      expect(usdReport.currency, 'USD');
+      expect(usdReport.statementEntries.length, 2);
+      expect(usdReport.statementEntries[0].debit, 100.0);
+      expect(usdReport.statementEntries[0].runningBalance, 100.0);
+      expect(usdReport.statementEntries[1].credit, 25.0);
+      expect(usdReport.statementEntries[1].runningBalance, 75.0);
+      expect(usdReport.totalNet, 75.0);
+
+      expect(
+        await partyRepo.getCustomerReceivableBalance(
+          customer.id,
+          currency: 'EGP',
+        ),
+        100.0,
+      );
+      expect(
+        await partyRepo.getCustomerReceivableBalance(
+          customer.id,
+          currency: 'USD',
+        ),
+        75.0,
+      );
     });
 
     test('Multi-currency Period Sales separates totals by currency', () async {
@@ -305,6 +394,57 @@ void main() {
       );
       await invoiceRepo.saveInvoice(eurInv);
 
+      // Persist report fixtures directly so this test isolates report aggregation
+      // from the return repository's separate invoice-line validation behavior.
+      final egpReturn = SalesReturn(
+        id: 'ret_egp_period',
+        returnNumber: 'RET-EGP-001',
+        returnDate: DateTime(2026, 2, 5),
+        originalInvoiceId: egpInv.id,
+        originalInvoiceNumber: egpInv.invoiceNumber,
+        items: const [
+          SalesReturnItem(
+            id: 'ret_item_egp_period',
+            invoiceItemId: 'item-egp-period',
+            description: 'EGP item',
+            returnedQuantity: 1.0,
+            unitPrice: 100.0,
+            refundAmount: 100.0,
+          ),
+        ],
+        totalRefundAmount: 100.0,
+        returnReason: 'Report aggregation fixture',
+        refundMethod: RefundMethod.cash,
+        currency: 'EGP',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final usdReturn = SalesReturn(
+        id: 'ret_usd_period',
+        returnNumber: 'RET-USD-001',
+        returnDate: DateTime(2026, 2, 6),
+        originalInvoiceId: usdInv.id,
+        originalInvoiceNumber: usdInv.invoiceNumber,
+        items: const [
+          SalesReturnItem(
+            id: 'ret_item_usd_period',
+            invoiceItemId: 'item-usd-period',
+            description: 'USD item',
+            returnedQuantity: 1.0,
+            unitPrice: 10.0,
+            refundAmount: 10.0,
+          ),
+        ],
+        totalRefundAmount: 10.0,
+        returnReason: 'Report aggregation fixture',
+        refundMethod: RefundMethod.cash,
+        currency: 'USD',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await db.salesReturnsBox.put(egpReturn.id, egpReturn.toMap());
+      await db.salesReturnsBox.put(usdReturn.id, usdReturn.toMap());
+
       await reportsCubit.generateReport(
         type: ReportType.periodSales,
         fromDate: DateTime(2026, 2, 1),
@@ -323,6 +463,35 @@ void main() {
       expect(report.totalsByCurrency['EGP'], 1000.0);
       expect(report.totalsByCurrency['USD'], 50.0);
       expect(report.totalsByCurrency['EUR'], 40.0);
+      expect(report.totalRefunded, 100.0);
+      expect(report.totalNet, 900.0);
+
+      // Return values must remain segregated by currency in the refund report.
+      await reportsCubit.generateReport(
+        type: ReportType.returnsAndRefunds,
+        fromDate: DateTime(2026, 2, 1),
+        toDate: DateTime(2026, 2, 28),
+        defaultCurrency: 'EGP',
+      );
+      expect(reportsCubit.state, isA<ReportsLoaded>());
+      final refundReport = (reportsCubit.state as ReportsLoaded).data;
+      expect(refundReport.totalRefunded, 100.0);
+      expect(refundReport.totalsByCurrency['EGP'], 100.0);
+      expect(refundReport.totalsByCurrency['USD'], 10.0);
+
+      // A currency with no invoices must not receive another currency's total.
+      await reportsCubit.generateReport(
+        type: ReportType.periodSales,
+        fromDate: DateTime(2026, 2, 1),
+        toDate: DateTime(2026, 2, 28),
+        defaultCurrency: 'KWD',
+      );
+      expect(reportsCubit.state, isA<ReportsLoaded>());
+      final emptyCurrencyReport = (reportsCubit.state as ReportsLoaded).data;
+      expect(emptyCurrencyReport.totalGross, 0.0);
+      expect(emptyCurrencyReport.totalRefunded, 0.0);
+      expect(emptyCurrencyReport.totalNet, 0.0);
+      expect(emptyCurrencyReport.currency, 'KWD');
     });
   });
 }

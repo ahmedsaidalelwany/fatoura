@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/precision/currency_formatter.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
+import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:fatoura/features/invoices/presentation/pages/create_invoice_page.dart';
@@ -19,10 +22,32 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  StreamSubscription<AppSettingsState>? _settingsSubscription;
+  late String _dashboardCurrency;
+
   @override
   void initState() {
     super.initState();
-    context.read<DashboardCubit>().loadDashboardMetrics();
+    final settingsCubit = context.read<AppSettingsCubit>();
+    _dashboardCurrency = settingsCubit.state.defaultCurrency;
+    context.read<DashboardCubit>().loadDashboardMetrics(_dashboardCurrency);
+    _settingsSubscription = settingsCubit.stream.listen((settings) {
+      if (mounted && settings.defaultCurrency != _dashboardCurrency) {
+        _dashboardCurrency = settings.defaultCurrency;
+        context.read<DashboardCubit>().loadDashboardMetrics(_dashboardCurrency);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _settingsSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadDashboardMetrics() {
+    final currency = context.read<AppSettingsCubit>().state.defaultCurrency;
+    return context.read<DashboardCubit>().loadDashboardMetrics(currency);
   }
 
   void _showAddPartyDialog(BuildContext context, bool isCustomer) {
@@ -94,8 +119,7 @@ class _DashboardPageState extends State<DashboardPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                context.read<DashboardCubit>().loadDashboardMetrics(),
+            onPressed: () => _loadDashboardMetrics(),
           ),
         ],
       ),
@@ -118,8 +142,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(state.message),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () =>
-                        context.read<DashboardCubit>().loadDashboardMetrics(),
+                    onPressed: () => _loadDashboardMetrics(),
                     child: Text(l10n.applyFilterBtn),
                   ),
                 ],
@@ -130,8 +153,7 @@ class _DashboardPageState extends State<DashboardPage> {
             final data = state.data;
 
             return RefreshIndicator(
-              onRefresh: () =>
-                  context.read<DashboardCubit>().loadDashboardMetrics(),
+              onRefresh: () => _loadDashboardMetrics(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16.0),
@@ -343,7 +365,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ],
                                 ),
                                 onTap: () {
-                                  final cubit = context.read<DashboardCubit>();
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -352,7 +373,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       ),
                                     ),
                                   ).then((_) {
-                                    cubit.loadDashboardMetrics();
+                                    _loadDashboardMetrics();
                                   });
                                 },
                               );
@@ -543,12 +564,11 @@ class _DashboardPageState extends State<DashboardPage> {
           label: l10n.actionNewInvoice,
           isPrimary: true,
           onPressed: () {
-            final cubit = context.read<DashboardCubit>();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CreateInvoicePage()),
             ).then((_) {
-              cubit.loadDashboardMetrics();
+              _loadDashboardMetrics();
             });
           },
         ),
@@ -563,12 +583,11 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.add_shopping_cart,
           label: l10n.actionNewPurchase,
           onPressed: () {
-            final cubit = context.read<DashboardCubit>();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CreatePurchasePage()),
             ).then((_) {
-              cubit.loadDashboardMetrics();
+              _loadDashboardMetrics();
             });
           },
         ),

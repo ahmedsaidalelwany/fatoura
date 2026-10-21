@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:fatoura/core/widgets/barcode_camera_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -222,6 +223,24 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 }
               },
             ),
+            if (supportsCameraBarcodeScanning) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: Text(
+                    l10n.isArabic ? 'المسح بالكاميرا' : 'Scan with camera',
+                  ),
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    final code = await showBarcodeCameraDialog(context);
+                    if (!mounted || code == null || code.isEmpty) return;
+                    await _lookupAndAddBarcode(code);
+                  },
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -492,6 +511,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         isCustomer: true,
                         isSupplier: false,
                         openingReceivable: openBal,
+                        openingReceivableCurrency: _currency,
                       );
 
                       final newParty = Party(
@@ -501,6 +521,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         address: addrCtrl.text.trim(),
                         isCustomer: true,
                         openingReceivable: openBal,
+                        openingReceivableCurrency: _currency,
                         createdAt: now,
                         updatedAt: now,
                       );
@@ -1188,7 +1209,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                                     .openingReceivable >
                                                 0)
                                               Text(
-                                                '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _currency, isArabic: l10n.isArabic)}',
+                                                '${l10n.openingBalanceLabel}: ${CurrencyFormatter.format(_selectedCustomer!.openingReceivable, currency: _selectedCustomer!.openingReceivableCurrency, isArabic: l10n.isArabic)}',
                                                 style: const TextStyle(
                                                   fontSize: 12,
                                                   color: AppColors.error,

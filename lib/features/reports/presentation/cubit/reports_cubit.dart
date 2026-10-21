@@ -178,12 +178,23 @@ class ReportsCubit extends Cubit<ReportsState> {
                 prev + Decimal.parse(inv.finalTotal.toString());
           }
 
-          final defCurrDecimal =
-              totalsByCurr[defaultCurrency] ??
-              (totalsByCurr.isNotEmpty
-                  ? totalsByCurr.values.first
-                  : Decimal.zero);
-          final gross = defCurrDecimal.toDouble();
+          final returns = await returnRepository.getReturns(
+            fromDate: start,
+            toDate: end,
+          );
+          final returnsByCurr = <String, Decimal>{};
+          for (final ret in returns) {
+            final previous = returnsByCurr[ret.currency] ?? Decimal.zero;
+            returnsByCurr[ret.currency] =
+                previous + Decimal.parse(ret.totalRefundAmount.toString());
+          }
+
+          // A missing total in the selected currency is zero. Never fall back
+          // to another currency and label its amount with the selected code.
+          final gross = (totalsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
+          final refunded = (returnsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
           final paid = active
               .where((i) => i.currency == defaultCurrency)
               .fold(0.0, (sum, i) => sum + i.totalPaid);
@@ -195,8 +206,9 @@ class ReportsCubit extends Cubit<ReportsState> {
                 fromDate: start,
                 toDate: end,
                 totalGross: gross,
-                totalNet: gross,
+                totalNet: gross - refunded,
                 totalCollected: paid,
+                totalRefunded: refunded,
                 totalsByCurrency: totalsByCurr.map(
                   (k, v) => MapEntry(k, v.toDouble()),
                 ),
@@ -282,10 +294,14 @@ class ReportsCubit extends Cubit<ReportsState> {
             fromDate: start,
             toDate: end,
           );
-          final refunded = returns.fold(
-            0.0,
-            (sum, r) => sum + r.totalRefundAmount,
-          );
+          final refundedByCurrency = <String, Decimal>{};
+          for (final ret in returns) {
+            final previous = refundedByCurrency[ret.currency] ?? Decimal.zero;
+            refundedByCurrency[ret.currency] =
+                previous + Decimal.parse(ret.totalRefundAmount.toString());
+          }
+          final refunded = (refundedByCurrency[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
 
           emit(
             ReportsLoaded(
@@ -294,6 +310,9 @@ class ReportsCubit extends Cubit<ReportsState> {
                 fromDate: start,
                 toDate: end,
                 totalRefunded: refunded,
+                totalsByCurrency: refundedByCurrency.map(
+                  (currency, amount) => MapEntry(currency, amount.toDouble()),
+                ),
                 returns: returns,
                 currency: defaultCurrency,
               ),
@@ -316,17 +335,20 @@ class ReportsCubit extends Cubit<ReportsState> {
             return;
           }
 
-          final invoices = await invoiceRepository.getInvoices(
+          final invoices = (await invoiceRepository.getInvoices(
             customerId: partyId,
             documentStatus: DocumentStatus.issued,
-          );
-          final payments = await paymentRepository.getPayments(
+          )).where((invoice) => invoice.currency == defaultCurrency).toList();
+          final payments = (await paymentRepository.getPayments(
             partyId: partyId,
             isCustomerPayment: true,
-          );
-          final returns = await returnRepository.getReturns(
-            customerId: partyId,
-          );
+          )).where((payment) => payment.currency == defaultCurrency).toList();
+          final returns =
+              (await returnRepository.getReturns(customerId: partyId))
+                  .where(
+                    (salesReturn) => salesReturn.currency == defaultCurrency,
+                  )
+                  .toList();
 
           // Collect all transactions into raw entries
           final rawEntries =
@@ -385,9 +407,11 @@ class ReportsCubit extends Cubit<ReportsState> {
           rawEntries.sort((a, b) => a.date.compareTo(b.date));
 
           final entries = <StatementEntry>[];
-          var runningDecimal = Decimal.parse(
-            party.openingReceivable.toString(),
-          );
+          final openingReceivable =
+              party.openingReceivableCurrency == defaultCurrency
+              ? party.openingReceivable
+              : 0.0;
+          var runningDecimal = Decimal.parse(openingReceivable.toString());
 
           for (final item in rawEntries) {
             final debitDecimal = Decimal.parse(item.debit.toString());
@@ -437,14 +461,14 @@ class ReportsCubit extends Cubit<ReportsState> {
             return;
           }
 
-          final purchases = await purchaseRepository.getPurchases(
+          final purchases = (await purchaseRepository.getPurchases(
             supplierId: partyId,
             documentStatus: DocumentStatus.issued,
-          );
-          final payments = await paymentRepository.getPayments(
+          )).where((purchase) => purchase.currency == defaultCurrency).toList();
+          final payments = (await paymentRepository.getPayments(
             partyId: partyId,
             isCustomerPayment: false,
-          );
+          )).where((payment) => payment.currency == defaultCurrency).toList();
 
           final rawEntries =
               <
@@ -486,7 +510,10 @@ class ReportsCubit extends Cubit<ReportsState> {
           rawEntries.sort((a, b) => a.date.compareTo(b.date));
 
           final entries = <StatementEntry>[];
-          var runningDecimal = Decimal.parse(party.openingPayable.toString());
+          final openingPayable = party.openingPayableCurrency == defaultCurrency
+              ? party.openingPayable
+              : 0.0;
+          var runningDecimal = Decimal.parse(openingPayable.toString());
 
           for (final item in rawEntries) {
             final debitDecimal = Decimal.parse(item.debit.toString());

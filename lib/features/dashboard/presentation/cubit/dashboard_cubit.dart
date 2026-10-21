@@ -5,6 +5,7 @@ import 'package:fatoura/features/invoices/domain/repositories/invoice_repository
 import 'package:fatoura/features/parties/domain/repositories/party_repository.dart';
 import 'package:fatoura/features/payments/domain/repositories/payment_repository.dart';
 import 'package:fatoura/features/purchases/domain/repositories/purchase_repository.dart';
+import 'package:fatoura/features/returns/domain/entities/sales_return.dart';
 import 'package:fatoura/features/returns/domain/repositories/sales_return_repository.dart';
 
 class DailySalePoint extends Equatable {
@@ -116,16 +117,17 @@ class DashboardCubit extends Cubit<DashboardState> {
         totalReceivables += inv.remainingBalance;
       }
 
-      // 2. Fetch sales returns for net sales calculation
-      var totalReturns = 0.0;
-      if (returnRepository != null) {
-        final returns = await returnRepository!.getReturns();
-        for (final ret in returns) {
-          if (ret.currency == defaultCurrency) {
-            totalReturns += ret.totalRefundAmount;
-          }
-        }
-      }
+      // 2. Fetch returns in the selected currency for consistent net metrics.
+      final allReturns = returnRepository == null
+          ? <SalesReturn>[]
+          : await returnRepository!.getReturns();
+      final currencyReturns = allReturns
+          .where((ret) => ret.currency == defaultCurrency)
+          .toList();
+      final totalReturns = currencyReturns.fold(
+        0.0,
+        (sum, ret) => sum + ret.totalRefundAmount,
+      );
       final netSales = (grossSales - totalReturns) > 0.0
           ? (grossSales - totalReturns)
           : 0.0;
@@ -174,11 +176,25 @@ class DashboardCubit extends Cubit<DashboardState> {
                   inv.issueDate.isBefore(nextDay),
             )
             .fold(0.0, (sum, inv) => sum + inv.finalTotal);
+        final dayReturns = currencyReturns
+            .where(
+              (ret) =>
+                  ret.returnDate.isAfter(
+                    day.subtract(const Duration(seconds: 1)),
+                  ) &&
+                  ret.returnDate.isBefore(nextDay),
+            )
+            .fold(0.0, (sum, ret) => sum + ret.totalRefundAmount);
 
-        trendPoints.add(DailySalePoint(date: day, amount: daySales));
+        trendPoints.add(
+          DailySalePoint(date: day, amount: daySales - dayReturns),
+        );
       }
 
-      final recent = invoices.take(5).toList();
+      final recent = invoices
+          .where((i) => i.currency == defaultCurrency)
+          .take(5)
+          .toList();
 
       emit(
         DashboardLoaded(
