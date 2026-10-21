@@ -133,7 +133,8 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
           'يجب دمج الكميات المرتجعة للبند نفسه في سطر واحد.',
         );
       }
-      if (retItem.returnedQuantity <= 0) {
+      if (!retItem.returnedQuantity.isFinite ||
+          retItem.returnedQuantity <= 0) {
         throw ArgumentError(
           'Returned quantity must be greater than zero for item ${retItem.description}.',
         );
@@ -147,6 +148,12 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
         );
       }
 
+      if (!matchedItem.isService &&
+          (matchedItem.productId == null || matchedItem.productId!.isEmpty)) {
+        throw StateError(
+          'بند المنتج في الفاتورة الأصلية لا يرتبط بمعرّف مخزون صالح.',
+        );
+      }
       final alreadyReturned = await getReturnedQuantityForItem(
         retItem.invoiceItemId,
       );
