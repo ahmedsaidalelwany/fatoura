@@ -6,7 +6,6 @@ on:
     branches:
       - master
       - main
-      - "fix/**"
   workflow_dispatch:
 
 permissions:
