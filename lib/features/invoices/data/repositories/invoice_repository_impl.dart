@@ -102,6 +102,11 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     final existingMap = box.get(invoice.id);
     final existingStatus = existingMap?['documentStatus'] as String?;
 
+    if (existingMap == null && invoice.isCancelled) {
+      throw StateError(
+        'لا يمكن إنشاء فاتورة ملغاة مباشرة. أنشئها ثم ألغها من خلال الإجراء الموثق.',
+      );
+    }
     if (existingStatus == DocumentStatus.cancelled.name) {
       throw StateError('لا يمكن تعديل فاتورة ملغاة أو إعادة تفعيلها.');
     }
