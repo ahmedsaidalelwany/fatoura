@@ -49,6 +49,10 @@ class _PartiesPageState extends State<PartiesPage>
     bool isCustomerTab = true,
   }) {
     final l10n = AppLocalizations.of(context);
+    final defaultCurrency = context
+        .read<AppSettingsCubit>()
+        .state
+        .defaultCurrency;
     final nameCtrl = TextEditingController(text: existingParty?.name ?? '');
     final phoneCtrl = TextEditingController(text: existingParty?.phone ?? '');
     final addressCtrl = TextEditingController(
@@ -157,7 +161,13 @@ class _PartiesPageState extends State<PartiesPage>
                   isCustomer: isCustomer,
                   isSupplier: isSupplier,
                   openingReceivable: isCustomer ? opening : 0.0,
+                  openingReceivableCurrency:
+                      existingParty?.openingReceivableCurrency ??
+                      defaultCurrency,
                   openingPayable: isSupplier ? opening : 0.0,
+                  openingPayableCurrency:
+                      existingParty?.openingPayableCurrency ??
+                      defaultCurrency,
                 );
                 Navigator.pop(ctx);
                 _loadData();
