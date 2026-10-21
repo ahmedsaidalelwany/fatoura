@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
+import 'package:fatoura/core/settings/app_settings_cubit.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
 import 'package:fatoura/features/parties/domain/entities/party.dart';
 import 'package:fatoura/features/parties/presentation/cubit/parties_cubit.dart';
@@ -24,6 +27,8 @@ class _ReportsPageState extends State<ReportsPage> {
   DateTime _fromDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _toDate = DateTime.now();
   String? _selectedPartyId;
+  String _reportCurrency = 'EGP';
+  StreamSubscription<AppSettingsState>? _settingsSubscription;
 
   @override
   void initState() {
@@ -31,10 +36,24 @@ class _ReportsPageState extends State<ReportsPage> {
     _selectedReport = widget.initialReportType ?? ReportType.periodSales;
     _selectedPartyId = widget.initialPartyId;
 
+    final settingsCubit = context.read<AppSettingsCubit>();
+    _reportCurrency = settingsCubit.state.defaultCurrency;
+    _settingsSubscription = settingsCubit.stream.listen((settings) {
+      if (!mounted || settings.defaultCurrency == _reportCurrency) return;
+      setState(() => _reportCurrency = settings.defaultCurrency);
+      _generate();
+    });
+
     context.read<PartiesCubit>().loadCustomers();
     context.read<PartiesCubit>().loadSuppliers();
 
     _generate();
+  }
+
+  @override
+  void dispose() {
+    _settingsSubscription?.cancel();
+    super.dispose();
   }
 
   void _generate() {
@@ -43,6 +62,7 @@ class _ReportsPageState extends State<ReportsPage> {
       fromDate: _fromDate,
       toDate: _toDate,
       partyId: _selectedPartyId,
+      defaultCurrency: _reportCurrency,
     );
   }
 
