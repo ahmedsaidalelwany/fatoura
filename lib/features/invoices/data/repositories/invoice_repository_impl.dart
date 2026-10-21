@@ -149,7 +149,14 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       final latestMap = box.get(invoice.id);
       final latestStatus = latestMap?['documentStatus'] as String?;
       if (latestStatus == DocumentStatus.issued.name) {
-        await box.put(invoice.id, invoice.toMap());
+        final latest = Invoice.fromMap(
+          Map<String, dynamic>.from(latestMap!),
+        );
+        if (!_issuedInvoiceTermsMatch(latest, invoice)) {
+          throw StateError(
+            'تم اعتماد الفاتورة بالفعل بمحتوى مختلف. أعد تحميل الفاتورة قبل المتابعة.',
+          );
+        }
         return;
       }
       if (latestMap != null && latestStatus != DocumentStatus.draft.name) {
@@ -294,7 +301,11 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     if (invoice.isIssued) {
       for (final item in invoice.items.where((item) => !item.isService)) {
         final productId = item.productId;
-        if (productId == null || productId.isEmpty) continue;
+        if (productId == null || productId.isEmpty) {
+          throw StateError(
+            'لا يمكن إلغاء فاتورة تحتوي على بند مخزني دون معرّف منتج صالح.',
+          );
+        }
         returns[productId] = (returns[productId] ?? 0) + item.quantity;
       }
       for (final entry in returns.entries) {
@@ -303,6 +314,7 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
           throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
         }
         final product = Product.fromMap(Map<String, dynamic>.from(productMap));
+        if (!product.trackInventory) continue;
         originalProducts[entry.key] = productMap;
         updatedProducts[entry.key] = product
             .copyWith(
