@@ -97,11 +97,15 @@ class PartyRepositoryImpl implements PartyRepository {
   }
 
   @override
-  Future<double> getCustomerReceivableBalance(String customerId) async {
+  Future<double> getCustomerReceivableBalance(
+    String customerId, {
+    String currency = 'EGP',
+  }) async {
     final party = await getPartyById(customerId);
-    var balanceDecimal = Decimal.parse(
-      (party?.openingReceivable ?? 0.0).toString(),
-    );
+    final openingBalance = party?.openingReceivableCurrency == currency
+        ? party!.openingReceivable
+        : 0.0;
+    var balanceDecimal = Decimal.parse(openingBalance.toString());
 
     // 1. Add remaining balance of all issued invoices for this customer
     final invoiceBox = database.invoicesBox;
@@ -109,7 +113,9 @@ class PartyRepositoryImpl implements PartyRepository {
       final map = invoiceBox.get(key);
       if (map != null) {
         final invoice = Invoice.fromMap(Map<String, dynamic>.from(map));
-        if (invoice.customerId == customerId && invoice.isIssued) {
+        if (invoice.customerId == customerId &&
+            invoice.isIssued &&
+            invoice.currency == currency) {
           balanceDecimal += Decimal.parse(invoice.remainingBalance.toString());
         }
       }
@@ -121,7 +127,9 @@ class PartyRepositoryImpl implements PartyRepository {
       final map = paymentsBox.get(key);
       if (map != null) {
         final payment = Payment.fromMap(Map<String, dynamic>.from(map));
-        if (payment.partyId == customerId && payment.isCustomerPayment) {
+        if (payment.partyId == customerId &&
+            payment.isCustomerPayment &&
+            payment.currency == currency) {
           final totalPayment = Decimal.parse(payment.amount.toString());
           final totalAllocated = payment.allocations.fold<Decimal>(
             Decimal.zero,
@@ -140,11 +148,15 @@ class PartyRepositoryImpl implements PartyRepository {
   }
 
   @override
-  Future<double> getSupplierPayableBalance(String supplierId) async {
+  Future<double> getSupplierPayableBalance(
+    String supplierId, {
+    String currency = 'EGP',
+  }) async {
     final party = await getPartyById(supplierId);
-    var balanceDecimal = Decimal.parse(
-      (party?.openingPayable ?? 0.0).toString(),
-    );
+    final openingBalance = party?.openingPayableCurrency == currency
+        ? party!.openingPayable
+        : 0.0;
+    var balanceDecimal = Decimal.parse(openingBalance.toString());
 
     // 1. Add remaining payable of all issued purchases for this supplier
     final purchaseBox = database.purchasesBox;
@@ -153,7 +165,8 @@ class PartyRepositoryImpl implements PartyRepository {
       if (map != null) {
         final doc = map;
         if (doc['supplierId'] == supplierId &&
-            doc['documentStatus'] == 'issued') {
+            doc['documentStatus'] == 'issued' &&
+            (doc['currency'] as String? ?? 'EGP') == currency) {
           final remaining =
               (doc['remainingPayable'] as num?)?.toDouble() ?? 0.0;
           balanceDecimal += Decimal.parse(remaining.toString());
@@ -167,7 +180,9 @@ class PartyRepositoryImpl implements PartyRepository {
       final map = paymentsBox.get(key);
       if (map != null) {
         final payment = Payment.fromMap(Map<String, dynamic>.from(map));
-        if (payment.partyId == supplierId && !payment.isCustomerPayment) {
+        if (payment.partyId == supplierId &&
+            !payment.isCustomerPayment &&
+            payment.currency == currency) {
           final totalPayment = Decimal.parse(payment.amount.toString());
           final totalAllocated = payment.allocations.fold<Decimal>(
             Decimal.zero,
@@ -186,11 +201,16 @@ class PartyRepositoryImpl implements PartyRepository {
   }
 
   @override
-  Future<Map<String, double>> getAllCustomerReceivableBalances() async {
+  Future<Map<String, double>> getAllCustomerReceivableBalances({
+    String currency = 'EGP',
+  }) async {
     final customers = await getCustomers(includeArchived: true);
     final balances = <String, Decimal>{};
     for (final c in customers) {
-      balances[c.id] = Decimal.parse(c.openingReceivable.toString());
+      final openingBalance = c.openingReceivableCurrency == currency
+          ? c.openingReceivable
+          : 0.0;
+      balances[c.id] = Decimal.parse(openingBalance.toString());
     }
 
     final invoiceBox = database.invoicesBox;
@@ -198,7 +218,9 @@ class PartyRepositoryImpl implements PartyRepository {
       final map = invoiceBox.get(key);
       if (map != null) {
         final invoice = Invoice.fromMap(Map<String, dynamic>.from(map));
-        if (invoice.customerId != null && invoice.isIssued) {
+        if (invoice.customerId != null &&
+            invoice.isIssued &&
+            invoice.currency == currency) {
           final custId = invoice.customerId!;
           final rem = Decimal.parse(invoice.remainingBalance.toString());
           balances[custId] = (balances[custId] ?? Decimal.zero) + rem;
@@ -212,6 +234,7 @@ class PartyRepositoryImpl implements PartyRepository {
       if (map != null) {
         final payment = Payment.fromMap(Map<String, dynamic>.from(map));
         if (payment.isCustomerPayment &&
+            payment.currency == currency &&
             payment.partyId != null &&
             payment.partyId!.isNotEmpty) {
           final custId = payment.partyId!;
@@ -235,11 +258,16 @@ class PartyRepositoryImpl implements PartyRepository {
   }
 
   @override
-  Future<Map<String, double>> getAllSupplierPayableBalances() async {
+  Future<Map<String, double>> getAllSupplierPayableBalances({
+    String currency = 'EGP',
+  }) async {
     final suppliers = await getSuppliers(includeArchived: true);
     final balances = <String, Decimal>{};
     for (final s in suppliers) {
-      balances[s.id] = Decimal.parse(s.openingPayable.toString());
+      final openingBalance = s.openingPayableCurrency == currency
+          ? s.openingPayable
+          : 0.0;
+      balances[s.id] = Decimal.parse(openingBalance.toString());
     }
 
     final purchaseBox = database.purchasesBox;
@@ -247,7 +275,9 @@ class PartyRepositoryImpl implements PartyRepository {
       final map = purchaseBox.get(key);
       if (map != null) {
         final doc = map;
-        if (doc['documentStatus'] == 'issued' && doc['supplierId'] != null) {
+        if (doc['documentStatus'] == 'issued' &&
+            (doc['currency'] as String? ?? 'EGP') == currency &&
+            doc['supplierId'] != null) {
           final suppId = doc['supplierId'] as String;
           final remaining =
               (doc['remainingPayable'] as num?)?.toDouble() ?? 0.0;
@@ -264,6 +294,7 @@ class PartyRepositoryImpl implements PartyRepository {
       if (map != null) {
         final payment = Payment.fromMap(Map<String, dynamic>.from(map));
         if (!payment.isCustomerPayment &&
+            payment.currency == currency &&
             payment.partyId != null &&
             payment.partyId!.isNotEmpty) {
           final suppId = payment.partyId!;
