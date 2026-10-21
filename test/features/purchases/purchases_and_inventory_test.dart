@@ -379,6 +379,63 @@ void main() {
       expect(reloaded.paymentStatus, PaymentStatus.partiallyPaid);
     });
 
+    test(
+      'Cancelling a received purchase does not change stock for a non-inventory product',
+      () async {
+        final product = Product(
+          id: 'service_non_inventory',
+          name: 'خدمة غير مخزنية',
+          defaultUnitPrice: 75.0,
+          costPrice: 50.0,
+          trackInventory: false,
+          stockQuantity: 0.0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await productRepo.saveProduct(product);
+
+        final purchase = await purchasesCubit.createPurchase(
+          supplierId: 'supp_al_ahram',
+          supplierName: 'شركة الأهرام للتوريدات',
+          rawItems: [
+            (
+              productId: 'service_non_inventory',
+              description: 'خدمة صيانة',
+              quantity: 3.0,
+              unitPrice: 50.0,
+            ),
+          ],
+          isDraft: false,
+          initialPaymentStatus: PaymentStatus.unpaid,
+        );
+
+        expect(purchase, isNotNull);
+        expect(purchase!.isStockReceived, isTrue);
+
+        final afterReceipt = await productRepo.getProductById(
+          'service_non_inventory',
+        );
+        expect(afterReceipt, isNotNull);
+        expect(afterReceipt!.stockQuantity, 0.0);
+
+        final cancelled = await purchasesCubit.cancelPurchase(
+          purchase.id,
+          'إلغاء شراء خدمة غير مخزنية',
+        );
+        expect(cancelled, isTrue);
+
+        final afterCancellation = await productRepo.getProductById(
+          'service_non_inventory',
+        );
+        expect(afterCancellation, isNotNull);
+        expect(afterCancellation!.stockQuantity, 0.0);
+        expect(
+          (await purchaseRepo.getPurchaseById(purchase.id))!.documentStatus,
+          DocumentStatus.cancelled,
+        );
+      },
+    );
+
     test('Purchase cancellation reverses stock and rejects cancellation if payments exist', () async {
       final product = Product(
         id: 'prod_reversal',
