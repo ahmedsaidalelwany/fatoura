@@ -1,3 +1,6 @@
+import 'package:decimal/decimal.dart';
+import 'package:fatoura/core/precision/financial_calculator.dart';
+import 'package:fatoura/core/precision/money.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
 import 'package:fatoura/features/products/domain/entities/inventory_movement.dart';
@@ -115,9 +118,21 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
     if (originalInvoice.isCancelled) {
       throw StateError('Cannot process returns against a cancelled invoice.');
     }
+    if (salesReturn.currency != originalInvoice.currency) {
+      throw StateError(
+        'عملة المرتجع يجب أن تطابق عملة الفاتورة الأصلية.',
+      );
+    }
 
-    // Validate item existence and remaining returnable quantity at persistence boundary
+    // Validate item existence, quantities, and refund values against the source invoice.
+    final seenInvoiceItemIds = <String>{};
+    var computedTotalRefund = Money.zero(originalInvoice.currency);
     for (final retItem in salesReturn.items) {
+      if (!seenInvoiceItemIds.add(retItem.invoiceItemId)) {
+        throw ArgumentError(
+          'يجب دمج الكميات المرتجعة للبند نفسه في سطر واحد.',
+        );
+      }
       if (retItem.returnedQuantity <= 0) {
         throw ArgumentError(
           'Returned quantity must be greater than zero for item ${retItem.description}.',
@@ -136,12 +151,52 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
         retItem.invoiceItemId,
       );
       final maxReturnable = matchedItem.quantity - alreadyReturned;
-      if (retItem.returnedQuantity > maxReturnable + 0.0001) {
+      if (!retItem.returnedQuantity.isFinite ||
+          retItem.returnedQuantity <= 0 ||
+          retItem.returnedQuantity > maxReturnable + 0.0001) {
         throw ArgumentError(
           'Cannot return ${retItem.returnedQuantity} of "${matchedItem.description}". '
           'Maximum returnable quantity is $maxReturnable (Already returned: $alreadyReturned).',
         );
       }
+
+      final authoritativeRefund = FinancialCalculator.calculateReturnRefundAmount(
+        returnedQuantity: Decimal.parse(retItem.returnedQuantity.toString()),
+        originalSoldQuantity: Decimal.parse(matchedItem.quantity.toString()),
+        originalLineTotal: Money.fromNum(
+          matchedItem.lineTotal,
+          originalInvoice.currency,
+        ),
+        originalInvoiceSubtotal: Money.fromNum(
+          originalInvoice.subtotal,
+          originalInvoice.currency,
+        ),
+        originalInvoiceFinalTotal: Money.fromNum(
+          originalInvoice.finalTotal,
+          originalInvoice.currency,
+        ),
+      );
+      final suppliedRefund = Money.fromNum(
+        retItem.refundAmount,
+        originalInvoice.currency,
+      ).round();
+      if (suppliedRefund.toMinorUnits() != authoritativeRefund.toMinorUnits() ||
+          retItem.unitPrice != matchedItem.unitPrice) {
+        throw StateError(
+          'قيمة استرداد البند لا تطابق قيمة الفاتورة الأصلية. أعد حساب المرتجع من الفاتورة.',
+        );
+      }
+      computedTotalRefund = computedTotalRefund + authoritativeRefund;
+    }
+
+    if (Money.fromNum(
+          salesReturn.totalRefundAmount,
+          originalInvoice.currency,
+        ).round().toMinorUnits() !=
+        computedTotalRefund.round().toMinorUnits()) {
+      throw StateError(
+        'إجمالي الاسترداد لا يطابق مجموع بنود المرتجع المحسوب من الفاتورة الأصلية.',
+      );
     }
 
     // Pre-mutation snapshots for atomic rollback
@@ -159,11 +214,14 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
           matchedItem.productId != null &&
           matchedItem.productId!.isNotEmpty) {
         final pMap = database.productsBox.get(matchedItem.productId!);
-        if (pMap != null) {
-          productSnapshots[matchedItem.productId!] = Map<String, dynamic>.from(
-            pMap,
+        if (pMap == null) {
+          throw StateError(
+            'المنتج المرتبط بالفاتورة الأصلية غير موجود في المخزون: ${matchedItem.productId}',
           );
         }
+        productSnapshots[matchedItem.productId!] = Map<String, dynamic>.from(
+          pMap,
+        );
       }
     }
 
@@ -186,8 +244,13 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
             matchedItem.productId!.isNotEmpty) {
           final prodId = matchedItem.productId!;
           final pMap = database.productsBox.get(prodId);
-          if (pMap != null) {
-            final product = Product.fromMap(Map<String, dynamic>.from(pMap));
+          if (pMap == null) {
+            throw StateError(
+              'المنتج المرتبط بالفاتورة الأصلية غير موجود في المخزون: $prodId',
+            );
+          }
+          final product = Product.fromMap(Map<String, dynamic>.from(pMap));
+          if (product.trackInventory) {
             final newStock = product.stockQuantity + retItem.returnedQuantity;
             final updatedProduct = product.copyWith(
               stockQuantity: newStock,
@@ -195,7 +258,6 @@ class SalesReturnRepositoryImpl implements SalesReturnRepository {
             );
             await database.productsBox.put(prodId, updatedProduct.toMap());
 
-            // Record persistent inventory movement
             final movement = InventoryMovement(
               id: const Uuid().v4(),
               productId: prodId,
