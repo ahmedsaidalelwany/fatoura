@@ -109,8 +109,7 @@ class Party extends Equatable {
       openingReceivableCurrency:
           map['openingReceivableCurrency'] as String? ?? 'EGP',
       openingPayable: (map['openingPayable'] as num?)?.toDouble() ?? 0.0,
-      openingPayableCurrency:
-          map['openingPayableCurrency'] as String? ?? 'EGP',
+      openingPayableCurrency: map['openingPayableCurrency'] as String? ?? 'EGP',
       isArchived: map['isArchived'] as bool? ?? false,
       createdAt:
           DateTime.tryParse(map['createdAt'] as String? ?? '') ??
