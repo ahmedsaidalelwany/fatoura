@@ -14,7 +14,7 @@ class Party extends Equatable {
   final double openingReceivable; // What the customer owes us initially
   final String openingReceivableCurrency;
   final double openingPayable; // What we owe the supplier initially
-  final String openingPayableCurrency
+  final String openingPayableCurrency;
   final bool isArchived;
   final DateTime createdAt;
   final DateTime updatedAt;
