@@ -26,11 +26,13 @@ class _PartiesPageState extends State<PartiesPage>
   final _searchController = TextEditingController();
   StreamSubscription<AppSettingsState>? _settingsSubscription;
   String? _balanceCurrency;
+  int _lastRequestedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(_handleTabControllerChange);
     final settingsCubit = context.read<AppSettingsCubit>();
     _balanceCurrency = settingsCubit.state.defaultCurrency;
     _settingsSubscription = settingsCubit.stream.listen((settings) {
@@ -49,17 +51,23 @@ class _PartiesPageState extends State<PartiesPage>
     super.dispose();
   }
 
+  void _handleTabControllerChange() {
+    if (_tabController.indexIsChanging) return;
+    final index = _tabController.index;
+    if (index == _lastRequestedTabIndex) return;
+    _lastRequestedTabIndex = index;
+    _loadData();
+  }
+
   void _loadData() {
     final query = _searchController.text.trim();
     final currency = context.read<AppSettingsCubit>().state.defaultCurrency;
-    context.read<PartiesCubit>().loadCustomers(
-      query: query,
-      currency: currency,
-    );
-    context.read<PartiesCubit>().loadSuppliers(
-      query: query,
-      currency: currency,
-    );
+    final partiesCubit = context.read<PartiesCubit>();
+    if (_tabController.index == 0) {
+      partiesCubit.loadCustomers(query: query, currency: currency);
+    } else {
+      partiesCubit.loadSuppliers(query: query, currency: currency);
+    }
   }
 
   void _showAddEditPartyDialog(
