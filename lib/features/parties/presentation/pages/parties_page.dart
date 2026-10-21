@@ -90,6 +90,11 @@ class _PartiesPageState extends State<PartiesPage>
 
     bool isCustomer = existingParty?.isCustomer ?? isCustomerTab;
     bool isSupplier = existingParty?.isSupplier ?? !isCustomerTab;
+    final openingCurrency = existingParty != null
+        ? (isCustomerTab
+              ? existingParty.openingReceivableCurrency
+              : existingParty.openingPayableCurrency)
+        : defaultCurrency;
 
     showDialog(
       context: context,
@@ -134,7 +139,7 @@ class _PartiesPageState extends State<PartiesPage>
                     decimal: true,
                   ),
                   decoration: InputDecoration(
-                    labelText: l10n.openingBalanceLabel,
+                    labelText: '${l10n.openingBalanceLabel} ($openingCurrency)',
                   ),
                 ),
                 const SizedBox(height: 12),
