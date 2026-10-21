@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,16 +24,26 @@ class _PartiesPageState extends State<PartiesPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
+  StreamSubscription<AppSettingsState>? _settingsSubscription;
+  String? _balanceCurrency;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    final settingsCubit = context.read<AppSettingsCubit>();
+    _balanceCurrency = settingsCubit.state.defaultCurrency;
+    _settingsSubscription = settingsCubit.stream.listen((settings) {
+      if (!mounted || settings.defaultCurrency == _balanceCurrency) return;
+      _balanceCurrency = settings.defaultCurrency;
+      _loadData();
+    });
     _loadData();
   }
 
   @override
   void dispose() {
+    _settingsSubscription?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -39,8 +51,15 @@ class _PartiesPageState extends State<PartiesPage>
 
   void _loadData() {
     final query = _searchController.text.trim();
-    context.read<PartiesCubit>().loadCustomers(query: query);
-    context.read<PartiesCubit>().loadSuppliers(query: query);
+    final currency = context.read<AppSettingsCubit>().state.defaultCurrency;
+    context.read<PartiesCubit>().loadCustomers(
+      query: query,
+      currency: currency,
+    );
+    context.read<PartiesCubit>().loadSuppliers(
+      query: query,
+      currency: currency,
+    );
   }
 
   void _showAddEditPartyDialog(
