@@ -90,7 +90,102 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
   @override
   Future<void> savePurchase(PurchaseInvoice purchase) async {
     final box = database.purchasesBox;
-    await box.put(purchase.id, purchase.toMap());
+    final existingMap = box.get(purchase.id);
+    final wasStockReceived =
+        existingMap != null && (existingMap['isStockReceived'] == true);
+
+    if (!purchase.isStockReceived || wasStockReceived) {
+      await box.put(purchase.id, purchase.toMap());
+      return;
+    }
+
+    await database.runExclusive(() async {
+      final latestMap = box.get(purchase.id);
+      final latestWasStockReceived =
+          latestMap != null && (latestMap['isStockReceived'] == true);
+      if (latestWasStockReceived) {
+        await box.put(purchase.id, purchase.toMap());
+        return;
+      }
+
+      final additions = <String, double>{};
+      final itemUnitPrices = <String, double>{};
+      for (final item in purchase.items) {
+        final productId = item.productId;
+        if (productId == null || productId.isEmpty) continue;
+        if (!item.quantity.isFinite || item.quantity <= 0) {
+          throw StateError(
+            'يجب أن تكون كمية المنتج في المشتريات أكبر من الصفر.',
+          );
+        }
+        additions[productId] = (additions[productId] ?? 0.0) + item.quantity;
+        if (item.unitPrice > 0) {
+          itemUnitPrices[productId] = item.unitPrice;
+        }
+      }
+
+      final productsBox = database.productsBox;
+      final originalProducts = <String, Map>{};
+      final updatedProducts = <String, Map<String, dynamic>>{};
+      final movementsToCreate = <InventoryMovement>[];
+      final now = DateTime.now();
+
+      for (final entry in additions.entries) {
+        final productMap = productsBox.get(entry.key);
+        if (productMap == null) continue;
+        final product = Product.fromMap(Map<String, dynamic>.from(productMap));
+        if (product.trackInventory) {
+          originalProducts[entry.key] = productMap;
+          final oldQty = product.stockQuantity;
+          final newQty = oldQty + entry.value;
+          final newCost = itemUnitPrices[entry.key] ?? product.costPrice;
+          final updated = product.copyWith(
+            stockQuantity: newQty,
+            costPrice: newCost,
+            updatedAt: now,
+          );
+          updatedProducts[entry.key] = updated.toMap();
+
+          movementsToCreate.add(
+            InventoryMovement(
+              id: const Uuid().v4(),
+              productId: product.id,
+              productName: product.name,
+              quantityDelta: entry.value,
+              quantityBefore: oldQty,
+              quantityAfter: newQty,
+              movementType: InventoryMovementType.purchaseReceipt,
+              sourceDocumentType: 'purchase_invoice',
+              sourceDocumentId: purchase.id,
+              sourceDocumentNumber: purchase.purchaseNumber,
+              reason: 'Purchase receipt: ${purchase.purchaseNumber}',
+              timestamp: now,
+              createdAt: now,
+            ),
+          );
+        }
+      }
+
+      final createdMovementIds = <String>[];
+      try {
+        for (final entry in updatedProducts.entries) {
+          await productsBox.put(entry.key, entry.value);
+        }
+        for (final m in movementsToCreate) {
+          await database.inventoryMovementsBox.put(m.id, m.toMap());
+          createdMovementIds.add(m.id);
+        }
+        await box.put(purchase.id, purchase.toMap());
+      } catch (_) {
+        for (final entry in originalProducts.entries) {
+          await productsBox.put(entry.key, entry.value);
+        }
+        for (final mId in createdMovementIds) {
+          await database.inventoryMovementsBox.delete(mId);
+        }
+        rethrow;
+      }
+    });
   }
 
   @override
@@ -110,8 +205,8 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
 
     final newRemainingDecimal =
         (finalTotalDecimal - newPaidDecimal) > Decimal.zero
-            ? finalTotalDecimal - newPaidDecimal
-            : Decimal.zero;
+        ? finalTotalDecimal - newPaidDecimal
+        : Decimal.zero;
 
     final PaymentStatus newStatus;
     if (newRemainingDecimal == Decimal.zero) {
@@ -146,135 +241,124 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
   }
 
   @override
-  Future<void> cancelPurchase(String purchaseId, String reason) =>
-      database.runExclusive(() async {
-        final box = database.purchasesBox;
-        final map = box.get(purchaseId);
-        if (map == null) {
-          throw ArgumentError('Purchase $purchaseId does not exist.');
-        }
-        final purchase = PurchaseInvoice.fromMap(
-          Map<String, dynamic>.from(map),
-        );
-        if (purchase.isCancelled) {
-          return;
-        }
+  Future<void> cancelPurchase(
+    String purchaseId,
+    String reason,
+  ) => database.runExclusive(() async {
+    final box = database.purchasesBox;
+    final map = box.get(purchaseId);
+    if (map == null) {
+      throw ArgumentError('Purchase $purchaseId does not exist.');
+    }
+    final purchase = PurchaseInvoice.fromMap(Map<String, dynamic>.from(map));
+    if (purchase.isCancelled) {
+      return;
+    }
 
-        // 1. Dependency check: Cannot cancel purchase with recorded payments
-        if (purchase.amountPaid > 0) {
+    // 1. Dependency check: Cannot cancel purchase with recorded payments
+    if (purchase.amountPaid > 0) {
+      throw StateError(
+        'لا يمكن إلغاء فاتورة مشتريات مسجل عليها مدفوعات. يجب تسوية أو استرداد المدفوعات أولاً.',
+      );
+    }
+
+    // Also check if any payment in paymentsBox is allocated to this purchase
+    final paymentsBox = database.paymentsBox;
+    for (final key in paymentsBox.keys) {
+      final pMap = paymentsBox.get(key);
+      if (pMap != null) {
+        final payment = Payment.fromMap(Map<String, dynamic>.from(pMap));
+        final hasAlloc = payment.allocations.any(
+          (a) => a.invoiceId == purchaseId,
+        );
+        if (hasAlloc && payment.amount > 0) {
           throw StateError(
             'لا يمكن إلغاء فاتورة مشتريات مسجل عليها مدفوعات. يجب تسوية أو استرداد المدفوعات أولاً.',
           );
         }
+      }
+    }
 
-        // Also check if any payment in paymentsBox is allocated to this purchase
-        final paymentsBox = database.paymentsBox;
-        for (final key in paymentsBox.keys) {
-          final pMap = paymentsBox.get(key);
-          if (pMap != null) {
-            final payment = Payment.fromMap(Map<String, dynamic>.from(pMap));
-            final hasAlloc = payment.allocations.any(
-              (a) => a.invoiceId == purchaseId,
-            );
-            if (hasAlloc && payment.amount > 0) {
-              throw StateError(
-                'لا يمكن إلغاء فاتورة مشتريات مسجل عليها مدفوعات. يجب تسوية أو استرداد المدفوعات أولاً.',
-              );
-            }
-          }
+    final productsBox = database.productsBox;
+    final originalProducts = <String, Map>{};
+    final updatedProducts = <String, Map<String, dynamic>>{};
+    final movementsToCreate = <InventoryMovement>[];
+    final now = DateTime.now();
+
+    // 2. Inventory reversal if stock was received
+    if (purchase.isStockReceived) {
+      final demands = <String, double>{};
+      for (final item in purchase.items) {
+        final productId = item.productId;
+        if (productId == null || productId.isEmpty) continue;
+        demands[productId] = (demands[productId] ?? 0.0) + item.quantity;
+      }
+
+      // Pre-validate stock availability to prevent negative stock
+      for (final entry in demands.entries) {
+        final productMap = productsBox.get(entry.key);
+        if (productMap == null) {
+          throw StateError('المنتج غير موجود في قاعدة البيانات: ${entry.key}');
         }
-
-        final productsBox = database.productsBox;
-        final originalProducts = <String, Map>{};
-        final updatedProducts = <String, Map<String, dynamic>>{};
-        final movementsToCreate = <InventoryMovement>[];
-        final now = DateTime.now();
-
-        // 2. Inventory reversal if stock was received
-        if (purchase.isStockReceived) {
-          final demands = <String, double>{};
-          for (final item in purchase.items) {
-            final productId = item.productId;
-            if (productId == null || productId.isEmpty) continue;
-            demands[productId] = (demands[productId] ?? 0.0) + item.quantity;
-          }
-
-          // Pre-validate stock availability to prevent negative stock
-          for (final entry in demands.entries) {
-            final productMap = productsBox.get(entry.key);
-            if (productMap == null) {
-              throw StateError(
-                'المنتج غير موجود في قاعدة البيانات: ${entry.key}',
-              );
-            }
-            final product = Product.fromMap(
-              Map<String, dynamic>.from(productMap),
-            );
-            if (product.trackInventory &&
-                product.stockQuantity < entry.value) {
-              throw StateError(
-                'المخزون الحالي (${product.stockQuantity}) غير كافٍ لعكس استلام المشتريات (${entry.value}). قد تكون البضاعة بيعت.',
-              );
-            }
-            originalProducts[entry.key] = productMap;
-            final newQty = product.stockQuantity - entry.value;
-            updatedProducts[entry.key] = product
-                .copyWith(
-                  stockQuantity: newQty,
-                  updatedAt: now,
-                )
-                .toMap();
-
-            movementsToCreate.add(
-              InventoryMovement(
-                id: const Uuid().v4(),
-                productId: entry.key,
-                productName: product.name,
-                quantityDelta: -entry.value,
-                quantityBefore: product.stockQuantity,
-                quantityAfter: newQty,
-                movementType: InventoryMovementType.purchaseCancellation,
-                sourceDocumentType: 'purchase_invoice',
-                sourceDocumentId: purchase.id,
-                sourceDocumentNumber: purchase.purchaseNumber,
-                reason:
-                    'Purchase cancellation: ${purchase.purchaseNumber} - $reason',
-                timestamp: now,
-                createdAt: now,
-              ),
-            );
-          }
+        final product = Product.fromMap(Map<String, dynamic>.from(productMap));
+        if (product.trackInventory && product.stockQuantity < entry.value) {
+          throw StateError(
+            'المخزون الحالي (${product.stockQuantity}) غير كافٍ لعكس استلام المشتريات (${entry.value}). قد تكون البضاعة بيعت.',
+          );
         }
+        originalProducts[entry.key] = productMap;
+        final newQty = product.stockQuantity - entry.value;
+        updatedProducts[entry.key] = product
+            .copyWith(stockQuantity: newQty, updatedAt: now)
+            .toMap();
 
-        final cancelled = purchase.copyWith(
-          documentStatus: DocumentStatus.cancelled,
-          cancellationReason: reason,
-          cancelledAt: now,
-          updatedAt: now,
+        movementsToCreate.add(
+          InventoryMovement(
+            id: const Uuid().v4(),
+            productId: entry.key,
+            productName: product.name,
+            quantityDelta: -entry.value,
+            quantityBefore: product.stockQuantity,
+            quantityAfter: newQty,
+            movementType: InventoryMovementType.purchaseCancellation,
+            sourceDocumentType: 'purchase_invoice',
+            sourceDocumentId: purchase.id,
+            sourceDocumentNumber: purchase.purchaseNumber,
+            reason:
+                'Purchase cancellation: ${purchase.purchaseNumber} - $reason',
+            timestamp: now,
+            createdAt: now,
+          ),
         );
+      }
+    }
 
-        // Apply mutations with snapshot rollback
-        final createdMovementIds = <String>[];
-        try {
-          for (final entry in updatedProducts.entries) {
-            await productsBox.put(entry.key, entry.value);
-          }
-          for (final movement in movementsToCreate) {
-            createdMovementIds.add(movement.id);
-            await database.inventoryMovementsBox.put(
-              movement.id,
-              movement.toMap(),
-            );
-          }
-          await box.put(cancelled.id, cancelled.toMap());
-        } catch (_) {
-          for (final entry in originalProducts.entries) {
-            await productsBox.put(entry.key, entry.value);
-          }
-          for (final mId in createdMovementIds) {
-            await database.inventoryMovementsBox.delete(mId);
-          }
-          rethrow;
-        }
-      });
+    final cancelled = purchase.copyWith(
+      documentStatus: DocumentStatus.cancelled,
+      cancellationReason: reason,
+      cancelledAt: now,
+      updatedAt: now,
+    );
+
+    // Apply mutations with snapshot rollback
+    final createdMovementIds = <String>[];
+    try {
+      for (final entry in updatedProducts.entries) {
+        await productsBox.put(entry.key, entry.value);
+      }
+      for (final movement in movementsToCreate) {
+        createdMovementIds.add(movement.id);
+        await database.inventoryMovementsBox.put(movement.id, movement.toMap());
+      }
+      await box.put(cancelled.id, cancelled.toMap());
+    } catch (_) {
+      for (final entry in originalProducts.entries) {
+        await productsBox.put(entry.key, entry.value);
+      }
+      for (final mId in createdMovementIds) {
+        await database.inventoryMovementsBox.delete(mId);
+      }
+      rethrow;
+    }
+  });
 }

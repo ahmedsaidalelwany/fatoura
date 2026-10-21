@@ -80,21 +80,25 @@ class InventoryMovement extends Equatable {
       sourceDocumentId: map['sourceDocumentId'] as String? ?? '',
       sourceDocumentNumber: map['sourceDocumentNumber'] as String? ?? '',
       reason: map['reason'] as String? ?? '',
-      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now(),
-      createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ?? DateTime.now(),
+      timestamp:
+          DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+          DateTime.now(),
+      createdAt:
+          DateTime.tryParse(map['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        productId,
-        quantityDelta,
-        quantityBefore,
-        quantityAfter,
-        movementType,
-        sourceDocumentType,
-        sourceDocumentId,
-        timestamp,
-      ];
+    id,
+    productId,
+    quantityDelta,
+    quantityBefore,
+    quantityAfter,
+    movementType,
+    sourceDocumentType,
+    sourceDocumentId,
+    timestamp,
+  ];
 }

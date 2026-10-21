@@ -96,15 +96,139 @@ class _CreatePurchasePageState extends State<CreatePurchasePage> {
 
   void _addItem([Product? product]) {
     setState(() {
+      final price = product != null
+          ? (product.costPrice > 0
+                ? product.costPrice
+                : product.defaultUnitPrice)
+          : 0.0;
       _items.add(
         _PurchaseItemRow(
           productId: product?.id,
           description: product?.name ?? '',
           quantity: '1',
-          unitPrice: product?.costPrice.toString() ?? '0.0',
+          unitPrice: price.toString(),
         ),
       );
     });
+  }
+
+  void _addOrIncrementProduct(Product product) {
+    final existingIdx = _items.indexWhere((it) => it.productId == product.id);
+    if (existingIdx != -1) {
+      final currentQty =
+          double.tryParse(_items[existingIdx].qtyCtrl.text.trim()) ?? 1.0;
+      _items[existingIdx].qtyCtrl.text = (currentQty + 1).toString();
+      setState(() {});
+    } else {
+      if (_items.length == 1 &&
+          _items[0].descCtrl.text.trim().isEmpty &&
+          _items[0].productId == null) {
+        _items[0].productId = product.id;
+        _items[0].descCtrl.text = product.name;
+        _items[0].qtyCtrl.text = '1';
+        _items[0].priceCtrl.text =
+            (product.costPrice > 0
+                    ? product.costPrice
+                    : product.defaultUnitPrice)
+                .toString();
+        setState(() {});
+      } else {
+        _addItem(product);
+      }
+    }
+  }
+
+  void _showBarcodeScannerDialog() {
+    final l10n = AppLocalizations.of(context);
+    final barcodeCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(l10n.scanBarcodeBtn),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.isArabic
+                  ? 'قم بمسح الباركود باستخدام القارئ (HID) أو اكتب الرمز واضغط إدخال:'
+                  : 'Scan barcode with barcode scanner or enter code and press Enter:',
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: barcodeCtrl,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: l10n.barcodeLabel,
+                prefixIcon: const Icon(Icons.qr_code),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.check),
+                  onPressed: () async {
+                    final code = barcodeCtrl.text.trim();
+                    if (code.isNotEmpty) {
+                      Navigator.pop(ctx);
+                      await _lookupAndAddBarcode(code);
+                    }
+                  },
+                ),
+              ),
+              onSubmitted: (code) async {
+                final trimmed = code.trim();
+                if (trimmed.isNotEmpty) {
+                  Navigator.pop(ctx);
+                  await _lookupAndAddBarcode(trimmed);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancelBtn),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _lookupAndAddBarcode(String code) async {
+    final l10n = AppLocalizations.of(context);
+    final product = await context.read<ProductsCubit>().findByBarcode(code);
+    if (!mounted) return;
+
+    if (product != null) {
+      _addOrIncrementProduct(product);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.isArabic
+                ? 'تمت إضافة: ${product.name}'
+                : 'Added: ${product.name}',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.productNotFound} ($code)'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _removeItem(int index) {
@@ -618,7 +742,9 @@ class _CreatePurchasePageState extends State<CreatePurchasePage> {
                                             .read<PartiesCubit>()
                                             .loadSuppliers(),
                                         child: Text(
-                                          l10n.isArabic ? 'إعادة المحاولة' : 'Retry',
+                                          l10n.isArabic
+                                              ? 'إعادة المحاولة'
+                                              : 'Retry',
                                         ),
                                       ),
                                     ],
@@ -787,10 +913,23 @@ class _CreatePurchasePageState extends State<CreatePurchasePage> {
                                   fontSize: 15,
                                 ),
                               ),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.add, size: 18),
-                                label: Text(l10n.addItemBtn),
-                                onPressed: () => _addItem(),
+                              Row(
+                                children: [
+                                  IconButton.filledTonal(
+                                    icon: const Icon(
+                                      Icons.qr_code_scanner,
+                                      size: 20,
+                                    ),
+                                    tooltip: l10n.scanBarcodeBtn,
+                                    onPressed: _showBarcodeScannerDialog,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: Text(l10n.addItemBtn),
+                                    onPressed: () => _addItem(),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

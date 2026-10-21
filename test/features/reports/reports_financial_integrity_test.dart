@@ -64,180 +64,177 @@ void main() {
   });
 
   group('Reports & Statements Financial Correctness (FAT-007 & FAT-008)', () {
-    test(
-      'Customer Statement calculates running balances chronologically and distinguishes cash vs credit refunds',
-      () async {
-        final now = DateTime(2026, 1, 1);
-        final customer = Party(
-          id: 'cust_chronological',
-          name: 'شركة النور',
-          isCustomer: true,
-          openingReceivable: 100.0, // Opening balance: 100.0
-          createdAt: now,
-          updatedAt: now,
-        );
-        await partyRepo.saveParty(customer);
+    test('Customer Statement calculates running balances chronologically and distinguishes cash vs credit refunds', () async {
+      final now = DateTime(2026, 1, 1);
+      final customer = Party(
+        id: 'cust_chronological',
+        name: 'شركة النور',
+        isCustomer: true,
+        openingReceivable: 100.0, // Opening balance: 100.0
+        createdAt: now,
+        updatedAt: now,
+      );
+      await partyRepo.saveParty(customer);
 
-        final product = Product(
-          id: 'prod_reports_1',
-          name: 'بضاعة تجريبية',
-          defaultUnitPrice: 50.0,
-          costPrice: 30.0,
-          stockQuantity: 100.0,
-          trackInventory: true,
-          createdAt: now,
-          updatedAt: now,
-        );
-        await productRepo.saveProduct(product);
+      final product = Product(
+        id: 'prod_reports_1',
+        name: 'بضاعة تجريبية',
+        defaultUnitPrice: 50.0,
+        costPrice: 30.0,
+        stockQuantity: 100.0,
+        trackInventory: true,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await productRepo.saveProduct(product);
 
-        // Transaction 1: Invoice on 2026-01-05 for 200.0 (Running balance should be 100 + 200 = 300)
-        final inv = Invoice(
-          id: 'inv_rep_1',
-          invoiceNumber: 'INV-001',
-          issueDate: DateTime(2026, 1, 5),
-          shopName: 'مؤسسة التجارة',
-          customerId: customer.id,
-          customerName: customer.name,
-          currency: 'EGP',
-          subtotal: 200.0,
-          taxableBase: 200.0,
-          taxRate: 0.0,
-          taxAmount: 0.0,
-          finalTotal: 200.0,
-          totalPaid: 0.0,
-          remainingBalance: 200.0,
-          documentStatus: DocumentStatus.issued,
-          paymentStatus: PaymentStatus.unpaid,
-          items: [
-            InvoiceItem(
-              id: 'item_rep_1',
-              productId: product.id,
-              description: product.name,
-              quantity: 4.0,
-              unitPrice: 50.0,
-              lineTotal: 200.0,
-            ),
-          ],
-          createdAt: DateTime(2026, 1, 5),
-          updatedAt: DateTime(2026, 1, 5),
-        );
-        await invoiceRepo.saveInvoice(inv);
+      // Transaction 1: Invoice on 2026-01-05 for 200.0 (Running balance should be 100 + 200 = 300)
+      final inv = Invoice(
+        id: 'inv_rep_1',
+        invoiceNumber: 'INV-001',
+        issueDate: DateTime(2026, 1, 5),
+        shopName: 'مؤسسة التجارة',
+        customerId: customer.id,
+        customerName: customer.name,
+        currency: 'EGP',
+        subtotal: 200.0,
+        taxableBase: 200.0,
+        taxRate: 0.0,
+        taxAmount: 0.0,
+        finalTotal: 200.0,
+        totalPaid: 0.0,
+        remainingBalance: 200.0,
+        documentStatus: DocumentStatus.issued,
+        paymentStatus: PaymentStatus.unpaid,
+        items: [
+          InvoiceItem(
+            id: 'item_rep_1',
+            productId: product.id,
+            description: product.name,
+            quantity: 4.0,
+            unitPrice: 50.0,
+            lineTotal: 200.0,
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 5),
+        updatedAt: DateTime(2026, 1, 5),
+      );
+      await invoiceRepo.saveInvoice(inv);
 
-        // Transaction 2: Payment on 2026-01-10 for 150.0 (Running balance should be 300 - 150 = 150)
-        final payment = Payment(
-          id: 'pay_rep_1',
-          amount: 150.0,
-          currency: 'EGP',
-          paymentDate: DateTime(2026, 1, 10),
-          partyId: customer.id,
-          partyName: customer.name,
-          isCustomerPayment: true,
-          allocations: [
-            PaymentAllocation(
-              id: 'alloc_rep_1',
-              paymentId: 'pay_rep_1',
-              invoiceId: inv.id,
-              invoiceNumber: inv.invoiceNumber,
-              amount: 150.0,
-              allocatedAt: DateTime(2026, 1, 10),
-            ),
-          ],
-          createdAt: DateTime(2026, 1, 10),
-          updatedAt: DateTime(2026, 1, 10),
-        );
-        await paymentRepo.savePayment(payment);
+      // Transaction 2: Payment on 2026-01-10 for 150.0 (Running balance should be 300 - 150 = 150)
+      final payment = Payment(
+        id: 'pay_rep_1',
+        amount: 150.0,
+        currency: 'EGP',
+        paymentDate: DateTime(2026, 1, 10),
+        partyId: customer.id,
+        partyName: customer.name,
+        isCustomerPayment: true,
+        allocations: [
+          PaymentAllocation(
+            id: 'alloc_rep_1',
+            paymentId: 'pay_rep_1',
+            invoiceId: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            amount: 150.0,
+            allocatedAt: DateTime(2026, 1, 10),
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 10),
+        updatedAt: DateTime(2026, 1, 10),
+      );
+      await paymentRepo.savePayment(payment);
 
-        // Transaction 3: Cash refund return on 2026-01-15 for 50.0
-        // Because customer received cash, customer's account debt DOES NOT DECREASE!
-        final cashReturn = SalesReturn(
-          id: 'ret_cash_1',
-          returnNumber: 'RET-001',
-          returnDate: DateTime(2026, 1, 15),
-          originalInvoiceId: inv.id,
-          originalInvoiceNumber: inv.invoiceNumber,
-          customerId: customer.id,
-          customerName: customer.name,
-          refundMethod: RefundMethod.cash,
-          totalRefundAmount: 50.0,
-          returnReason: 'بضاعة معيبة تم استردادها نقداً',
-          items: [
-            SalesReturnItem(
-              id: 'ret_item_cash_1',
-              invoiceItemId: 'item_rep_1',
-              description: product.name,
-              returnedQuantity: 1.0,
-              unitPrice: 50.0,
-              refundAmount: 50.0,
-            ),
-          ],
-          createdAt: DateTime(2026, 1, 15),
-          updatedAt: DateTime(2026, 1, 15),
-        );
-        await returnRepo.saveReturn(cashReturn);
+      // Transaction 3: Cash refund return on 2026-01-15 for 50.0
+      // Because customer received cash, customer's account debt DOES NOT DECREASE!
+      final cashReturn = SalesReturn(
+        id: 'ret_cash_1',
+        returnNumber: 'RET-001',
+        returnDate: DateTime(2026, 1, 15),
+        originalInvoiceId: inv.id,
+        originalInvoiceNumber: inv.invoiceNumber,
+        customerId: customer.id,
+        customerName: customer.name,
+        refundMethod: RefundMethod.cash,
+        totalRefundAmount: 50.0,
+        returnReason: 'بضاعة معيبة تم استردادها نقداً',
+        items: [
+          SalesReturnItem(
+            id: 'ret_item_cash_1',
+            invoiceItemId: 'item_rep_1',
+            description: product.name,
+            returnedQuantity: 1.0,
+            unitPrice: 50.0,
+            refundAmount: 50.0,
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 15),
+        updatedAt: DateTime(2026, 1, 15),
+      );
+      await returnRepo.saveReturn(cashReturn);
 
-        // Transaction 4: Credit return on 2026-01-20 for 50.0
-        // Because it is a store credit, customer's account debt DECREASES: 150 - 50 = 100!
-        final creditReturn = SalesReturn(
-          id: 'ret_credit_1',
-          returnNumber: 'RET-002',
-          returnDate: DateTime(2026, 1, 20),
-          originalInvoiceId: inv.id,
-          originalInvoiceNumber: inv.invoiceNumber,
-          customerId: customer.id,
-          customerName: customer.name,
-          refundMethod: RefundMethod.credit,
-          totalRefundAmount: 50.0,
-          returnReason: 'بضاعة معيبة تم إرجاعها كرصيد دائن',
-          items: [
-            SalesReturnItem(
-              id: 'ret_item_credit_1',
-              invoiceItemId: 'item_rep_1',
-              description: product.name,
-              returnedQuantity: 1.0,
-              unitPrice: 50.0,
-              refundAmount: 50.0,
-            ),
-          ],
-          createdAt: DateTime(2026, 1, 20),
-          updatedAt: DateTime(2026, 1, 20),
-        );
-        await returnRepo.saveReturn(creditReturn);
+      // Transaction 4: Credit return on 2026-01-20 for 50.0
+      // Because it is a store credit, customer's account debt DECREASES: 150 - 50 = 100!
+      final creditReturn = SalesReturn(
+        id: 'ret_credit_1',
+        returnNumber: 'RET-002',
+        returnDate: DateTime(2026, 1, 20),
+        originalInvoiceId: inv.id,
+        originalInvoiceNumber: inv.invoiceNumber,
+        customerId: customer.id,
+        customerName: customer.name,
+        refundMethod: RefundMethod.credit,
+        totalRefundAmount: 50.0,
+        returnReason: 'بضاعة معيبة تم إرجاعها كرصيد دائن',
+        items: [
+          SalesReturnItem(
+            id: 'ret_item_credit_1',
+            invoiceItemId: 'item_rep_1',
+            description: product.name,
+            returnedQuantity: 1.0,
+            unitPrice: 50.0,
+            refundAmount: 50.0,
+          ),
+        ],
+        createdAt: DateTime(2026, 1, 20),
+        updatedAt: DateTime(2026, 1, 20),
+      );
+      await returnRepo.saveReturn(creditReturn);
 
-        // Generate customer statement
-        await reportsCubit.generateReport(
-          type: ReportType.customerStatement,
-          fromDate: DateTime(2026, 1, 1),
-          toDate: DateTime(2026, 1, 31),
-          partyId: customer.id,
-          defaultCurrency: 'EGP',
-        );
+      // Generate customer statement
+      await reportsCubit.generateReport(
+        type: ReportType.customerStatement,
+        fromDate: DateTime(2026, 1, 1),
+        toDate: DateTime(2026, 1, 31),
+        partyId: customer.id,
+        defaultCurrency: 'EGP',
+      );
 
-        expect(reportsCubit.state, isA<ReportsLoaded>());
-        final report = (reportsCubit.state as ReportsLoaded).data;
+      expect(reportsCubit.state, isA<ReportsLoaded>());
+      final report = (reportsCubit.state as ReportsLoaded).data;
 
-        // Verify that Cash return was NOT deducted from customer's receivable ledger
-        // Transactions included in ledger: Invoice (+200), Payment (-150), Credit Return (-50)
-        expect(report.statementEntries.length, 3);
+      // Verify that Cash return was NOT deducted from customer's receivable ledger
+      // Transactions included in ledger: Invoice (+200), Payment (-150), Credit Return (-50)
+      expect(report.statementEntries.length, 3);
 
-        // Entry 1: Invoice (2026-01-05) -> running balance = 100 + 200 = 300.0
-        expect(report.statementEntries[0].documentType, 'Sales Invoice');
-        expect(report.statementEntries[0].debit, 200.0);
-        expect(report.statementEntries[0].runningBalance, 300.0);
+      // Entry 1: Invoice (2026-01-05) -> running balance = 100 + 200 = 300.0
+      expect(report.statementEntries[0].documentType, 'Sales Invoice');
+      expect(report.statementEntries[0].debit, 200.0);
+      expect(report.statementEntries[0].runningBalance, 300.0);
 
-        // Entry 2: Payment (2026-01-10) -> running balance = 300 - 150 = 150.0
-        expect(report.statementEntries[1].documentType, 'Payment Received');
-        expect(report.statementEntries[1].credit, 150.0);
-        expect(report.statementEntries[1].runningBalance, 150.0);
+      // Entry 2: Payment (2026-01-10) -> running balance = 300 - 150 = 150.0
+      expect(report.statementEntries[1].documentType, 'Payment Received');
+      expect(report.statementEntries[1].credit, 150.0);
+      expect(report.statementEntries[1].runningBalance, 150.0);
 
-        // Entry 3: Credit Return (2026-01-20) -> running balance = 150 - 50 = 100.0
-        expect(report.statementEntries[2].documentType, 'Sales Return');
-        expect(report.statementEntries[2].credit, 50.0);
-        expect(report.statementEntries[2].runningBalance, 100.0);
+      // Entry 3: Credit Return (2026-01-20) -> running balance = 150 - 50 = 100.0
+      expect(report.statementEntries[2].documentType, 'Sales Return');
+      expect(report.statementEntries[2].credit, 50.0);
+      expect(report.statementEntries[2].runningBalance, 100.0);
 
-        // Final net balance must be exactly 100.0
-        expect(report.totalNet, 100.0);
-      },
-    );
+      // Final net balance must be exactly 100.0
+      expect(report.totalNet, 100.0);
+    });
 
     test('Multi-currency Period Sales separates totals by currency', () async {
       final now = DateTime(2026, 2, 1);

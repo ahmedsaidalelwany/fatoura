@@ -1027,7 +1027,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                     uniqueCustomers[c.id] = c;
                                   }
                                 }
-                                final customers = uniqueCustomers.values.toList();
+                                final customers = uniqueCustomers.values
+                                    .toList();
 
                                 final bool isSelectionInList =
                                     _selectedCustomerId != null &&
@@ -1087,8 +1088,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                         const Icon(
                                           Icons.people_outline,
                                           size: 20,
-                                          color:
-                                              AppColors.textSecondaryLight,
+                                          color: AppColors.textSecondaryLight,
                                         ),
                                         const SizedBox(width: 10),
                                         Expanded(
@@ -1100,7 +1100,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                               fontSize: 12,
                                               color: isDark
                                                   ? AppColors.textSecondaryDark
-                                                  : AppColors.textSecondaryLight,
+                                                  : AppColors
+                                                        .textSecondaryLight,
                                             ),
                                           ),
                                         ),

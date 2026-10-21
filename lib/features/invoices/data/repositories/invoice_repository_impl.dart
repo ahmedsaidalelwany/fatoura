@@ -274,15 +274,13 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
           sourceDocumentType: 'sales_invoice',
           sourceDocumentId: invoice.id,
           sourceDocumentNumber: invoice.invoiceNumber,
-          reason: 'Invoice cancelled: ${invoice.invoiceNumber}. ${reason.trim()}',
+          reason:
+              'Invoice cancelled: ${invoice.invoiceNumber}. ${reason.trim()}',
           timestamp: DateTime.now(),
           createdAt: DateTime.now(),
         );
         createdMovementIds.add(movement.id);
-        await database.inventoryMovementsBox.put(
-          movement.id,
-          movement.toMap(),
-        );
+        await database.inventoryMovementsBox.put(movement.id, movement.toMap());
       }
       await box.put(invoiceId, cancelled.toMap());
     } catch (_) {

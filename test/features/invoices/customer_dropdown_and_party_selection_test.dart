@@ -116,132 +116,135 @@ void main() {
   }
 
   group('Part A — Dropdown Crash & Party Selection Regression Tests', () {
-    testWidgets('1. A valid selected Party renders correctly in existing customer mode', (
-      tester,
-    ) async {
-      final now = DateTime.now();
-      final p1 = Party(
-        id: 'cust_01',
-        name: 'محمد عبد الله',
-        phone: '01012345678',
-        isCustomer: true,
-        createdAt: now,
-        updatedAt: now,
-      );
-      await tester.runAsync(() async {
-        await partyRepo.saveParty(p1);
-        await partiesCubit.loadCustomers();
-      });
+    testWidgets(
+      '1. A valid selected Party renders correctly in existing customer mode',
+      (tester) async {
+        final now = DateTime.now();
+        final p1 = Party(
+          id: 'cust_01',
+          name: 'محمد عبد الله',
+          phone: '01012345678',
+          isCustomer: true,
+          createdAt: now,
+          updatedAt: now,
+        );
+        await tester.runAsync(() async {
+          await partyRepo.saveParty(p1);
+          await partiesCubit.loadCustomers();
+        });
 
-      await tester.pumpWidget(buildTestApp());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestApp());
+        await tester.pumpAndSettle();
 
-      // Switch to Existing Customer mode
-      final existingChip = find.text('عميل مسجل');
-      expect(existingChip, findsOneWidget);
-      await tester.tap(existingChip);
-      await tester.pumpAndSettle();
+        // Switch to Existing Customer mode
+        final existingChip = find.text('عميل مسجل');
+        expect(existingChip, findsOneWidget);
+        await tester.tap(existingChip);
+        await tester.pumpAndSettle();
 
-      // Verify dropdown is present
-      final dropdownFinder = find.byType(DropdownButtonFormField<String?>);
-      expect(dropdownFinder, findsOneWidget);
+        // Verify dropdown is present
+        final dropdownFinder = find.byType(DropdownButtonFormField<String?>);
+        expect(dropdownFinder, findsOneWidget);
 
-      // Open dropdown and select the customer
-      await tester.tap(dropdownFinder);
-      await tester.pumpAndSettle();
+        // Open dropdown and select the customer
+        await tester.tap(dropdownFinder);
+        await tester.pumpAndSettle();
 
-      final customerItem = find.text('محمد عبد الله (01012345678)').last;
-      expect(customerItem, findsOneWidget);
-      await tester.tap(customerItem);
-      await tester.pumpAndSettle();
+        final customerItem = find.text('محمد عبد الله (01012345678)').last;
+        expect(customerItem, findsOneWidget);
+        await tester.tap(customerItem);
+        await tester.pumpAndSettle();
 
-      // Verify customer info card is rendered without errors
-      expect(find.text('محمد عبد الله • 01012345678'), findsOneWidget);
-    });
+        // Verify customer info card is rendered without errors
+        expect(find.text('محمد عبد الله • 01012345678'), findsOneWidget);
+      },
+    );
 
-    testWidgets('2. A selected Party missing from latest list does not crash the page', (
-      tester,
-    ) async {
-      final now = DateTime.now();
-      final p1 = Party(
-        id: 'cust_missing',
-        name: 'عميل سيتم حذفه',
-        isCustomer: true,
-        createdAt: now,
-        updatedAt: now,
-      );
-      await tester.runAsync(() async {
-        await partyRepo.saveParty(p1);
-        await partiesCubit.loadCustomers();
-      });
+    testWidgets(
+      '2. A selected Party missing from latest list does not crash the page',
+      (tester) async {
+        final now = DateTime.now();
+        final p1 = Party(
+          id: 'cust_missing',
+          name: 'عميل سيتم حذفه',
+          isCustomer: true,
+          createdAt: now,
+          updatedAt: now,
+        );
+        await tester.runAsync(() async {
+          await partyRepo.saveParty(p1);
+          await partiesCubit.loadCustomers();
+        });
 
-      await tester.pumpWidget(buildTestApp());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestApp());
+        await tester.pumpAndSettle();
 
-      // Select existing customer
-      await tester.tap(find.text('عميل مسجل'));
-      await tester.pumpAndSettle();
+        // Select existing customer
+        await tester.tap(find.text('عميل مسجل'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(DropdownButtonFormField<String?>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('عميل سيتم حذفه').last);
-      await tester.pumpAndSettle();
+        await tester.tap(find.byType(DropdownButtonFormField<String?>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('عميل سيتم حذفه').last);
+        await tester.pumpAndSettle();
 
-      // Now archive the customer and refresh the list
-      await tester.runAsync(() async {
-        await partyRepo.archiveParty('cust_missing');
-        await partiesCubit.loadCustomers();
-      });
-      await tester.pumpAndSettle();
+        // Now archive the customer and refresh the list
+        await tester.runAsync(() async {
+          await partyRepo.archiveParty('cust_missing');
+          await partiesCubit.loadCustomers();
+        });
+        await tester.pumpAndSettle();
 
-      // Crucial assertion: no AssertionError thrown!
-      expect(tester.takeException(), isNull);
-      // Empty state or hint rendered safely
-      expect(find.byType(CreateInvoicePage), findsOneWidget);
-    });
+        // Crucial assertion: no AssertionError thrown!
+        expect(tester.takeException(), isNull);
+        // Empty state or hint rendered safely
+        expect(find.byType(CreateInvoicePage), findsOneWidget);
+      },
+    );
 
-    testWidgets('3. Duplicate Party IDs are handled safely without duplicate dropdown values', (
-      tester,
-    ) async {
-      final now = DateTime.now();
-      final p1 = Party(
-        id: 'dup_id_1',
-        name: 'عميل مكرر أ',
-        isCustomer: true,
-        createdAt: now,
-        updatedAt: now,
-      );
-      final p1Duplicate = Party(
-        id: 'dup_id_1',
-        name: 'عميل مكرر ب',
-        isCustomer: true,
-        createdAt: now.add(const Duration(seconds: 1)),
-        updatedAt: now.add(const Duration(seconds: 1)),
-      );
+    testWidgets(
+      '3. Duplicate Party IDs are handled safely without duplicate dropdown values',
+      (tester) async {
+        final now = DateTime.now();
+        final p1 = Party(
+          id: 'dup_id_1',
+          name: 'عميل مكرر أ',
+          isCustomer: true,
+          createdAt: now,
+          updatedAt: now,
+        );
+        final p1Duplicate = Party(
+          id: 'dup_id_1',
+          name: 'عميل مكرر ب',
+          isCustomer: true,
+          createdAt: now.add(const Duration(seconds: 1)),
+          updatedAt: now.add(const Duration(seconds: 1)),
+        );
 
-      await tester.pumpWidget(buildTestApp());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestApp());
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('عميل مسجل'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('عميل مسجل'));
+        await tester.pumpAndSettle();
 
-      // Emit state containing duplicate IDs after initial mount to test widget resilience
-      partiesCubit.emit(
-        CustomersLoaded(
-          customers: [p1, p1Duplicate],
-          balances: const {'dup_id_1': 0.0},
-        ),
-      );
-      await tester.pumpAndSettle();
+        // Emit state containing duplicate IDs after initial mount to test widget resilience
+        partiesCubit.emit(
+          CustomersLoaded(
+            customers: [p1, p1Duplicate],
+            balances: const {'dup_id_1': 0.0},
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Opening the dropdown must NOT throw "Either zero or 2 or more DropdownMenuItems were detected with same value"
-      final dropdown = find.byType(DropdownButtonFormField<String?>);
-      expect(dropdown, findsOneWidget);
-      await tester.tap(dropdown);
-      await tester.pumpAndSettle();
+        // Opening the dropdown must NOT throw "Either zero or 2 or more DropdownMenuItems were detected with same value"
+        final dropdown = find.byType(DropdownButtonFormField<String?>);
+        expect(dropdown, findsOneWidget);
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
-    });
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('4. Loading, empty, and error states render gracefully', (
       tester,
@@ -253,9 +256,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Test Empty State
-      partiesCubit.emit(
-        const CustomersLoaded(customers: [], balances: {}),
-      );
+      partiesCubit.emit(const CustomersLoaded(customers: [], balances: {}));
       await tester.pumpAndSettle();
       expect(
         find.textContaining('لا يوجد عملاء مسجلين حالياً'),
@@ -324,42 +325,43 @@ void main() {
       expect(find.text('محمد • 01234567890'), findsOneWidget);
     });
 
-    testWidgets('6. Quick Add Customer flow does not trigger reported runtime exception', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildTestApp());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '6. Quick Add Customer flow does not trigger reported runtime exception',
+      (tester) async {
+        await tester.pumpWidget(buildTestApp());
+        await tester.pumpAndSettle();
 
-      // Switch to Existing Customer mode
-      await tester.tap(find.text('عميل مسجل'));
-      await tester.pumpAndSettle();
+        // Switch to Existing Customer mode
+        await tester.tap(find.text('عميل مسجل'));
+        await tester.pumpAndSettle();
 
-      // Tap quick add customer action chip
-      final addCustomerBtn = find.byType(ActionChip);
-      expect(addCustomerBtn, findsOneWidget);
-      await tester.tap(addCustomerBtn);
-      await tester.pumpAndSettle();
+        // Tap quick add customer action chip
+        final addCustomerBtn = find.byType(ActionChip);
+        expect(addCustomerBtn, findsOneWidget);
+        await tester.tap(addCustomerBtn);
+        await tester.pumpAndSettle();
 
-      // Fill modal form with name "محمد"
-      final nameField = find.widgetWithText(TextField, 'الاسم *');
-      expect(nameField, findsOneWidget);
-      await tester.enterText(nameField, 'محمد');
-      await tester.pumpAndSettle();
+        // Fill modal form with name "محمد"
+        final nameField = find.widgetWithText(TextField, 'الاسم *');
+        expect(nameField, findsOneWidget);
+        await tester.enterText(nameField, 'محمد');
+        await tester.pumpAndSettle();
 
-      // Tap "حفظ واختيار العميل"
-      final saveBtn = find.text('حفظ واختيار العميل');
-      expect(saveBtn, findsOneWidget);
-      await tester.runAsync(() async {
-        await tester.tap(saveBtn);
-        await partiesCubit.stream.firstWhere((s) => s is CustomersLoaded);
-      });
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        // Tap "حفظ واختيار العميل"
+        final saveBtn = find.text('حفظ واختيار العميل');
+        expect(saveBtn, findsOneWidget);
+        await tester.runAsync(() async {
+          await tester.tap(saveBtn);
+          await partiesCubit.stream.firstWhere((s) => s is CustomersLoaded);
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      // Crucial: exactly matches the user crash scenario
-      // Must NOT throw "There should be exactly one item with [DropdownButton]'s value: Party(...)"
-      expect(tester.takeException(), isNull);
-      expect(find.text('محمد'), findsWidgets);
-    });
+        // Crucial: exactly matches the user crash scenario
+        // Must NOT throw "There should be exactly one item with [DropdownButton]'s value: Party(...)"
+        expect(tester.takeException(), isNull);
+        expect(find.text('محمد'), findsWidgets);
+      },
+    );
   });
 }

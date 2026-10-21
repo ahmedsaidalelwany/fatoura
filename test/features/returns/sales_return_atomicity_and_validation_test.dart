@@ -59,151 +59,153 @@ void main() {
   });
 
   group('P0 Data Integrity & Financial Invariants', () {
-    test(
-      'FAT-001 & FAT-004: Sales return rejects quantity exceeding original invoice and records inventory movements',
-      () async {
-        final now = DateTime.now();
-        final product = Product(
-          id: 'prod_ret_guard',
-          name: 'شاشة سامسونج',
-          defaultUnitPrice: 1000.0,
-          costPrice: 800.0,
-          stockQuantity: 10.0,
-          trackInventory: true,
-          createdAt: now,
-          updatedAt: now,
-        );
-        await productRepo.saveProduct(product);
+    test('FAT-001 & FAT-004: Sales return rejects quantity exceeding original invoice and records inventory movements', () async {
+      final now = DateTime.now();
+      final product = Product(
+        id: 'prod_ret_guard',
+        name: 'شاشة سامسونج',
+        defaultUnitPrice: 1000.0,
+        costPrice: 800.0,
+        stockQuantity: 10.0,
+        trackInventory: true,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await productRepo.saveProduct(product);
 
-        // Issue invoice for 2 units (stock becomes 10 - 2 = 8)
-        final inv = Invoice(
-          id: 'inv_ret_guard',
-          invoiceNumber: 'INV-RET-01',
-          issueDate: now,
-          shopName: 'متجر التكنولوجيا',
-          currency: 'EGP',
-          subtotal: 2000.0,
-          taxableBase: 2000.0,
-          taxRate: 0.0,
-          taxAmount: 0.0,
-          finalTotal: 2000.0,
-          totalPaid: 2000.0,
-          remainingBalance: 0.0,
-          documentStatus: DocumentStatus.issued,
-          paymentStatus: PaymentStatus.fullyPaid,
-          items: [
-            InvoiceItem(
-              id: 'item_ret_guard',
-              productId: product.id,
-              description: product.name,
-              quantity: 2.0,
-              unitPrice: 1000.0,
-              lineTotal: 2000.0,
-            ),
-          ],
-          createdAt: now,
-          updatedAt: now,
-        );
-        await invoiceRepo.saveInvoice(inv);
+      // Issue invoice for 2 units (stock becomes 10 - 2 = 8)
+      final inv = Invoice(
+        id: 'inv_ret_guard',
+        invoiceNumber: 'INV-RET-01',
+        issueDate: now,
+        shopName: 'متجر التكنولوجيا',
+        currency: 'EGP',
+        subtotal: 2000.0,
+        taxableBase: 2000.0,
+        taxRate: 0.0,
+        taxAmount: 0.0,
+        finalTotal: 2000.0,
+        totalPaid: 2000.0,
+        remainingBalance: 0.0,
+        documentStatus: DocumentStatus.issued,
+        paymentStatus: PaymentStatus.fullyPaid,
+        items: [
+          InvoiceItem(
+            id: 'item_ret_guard',
+            productId: product.id,
+            description: product.name,
+            quantity: 2.0,
+            unitPrice: 1000.0,
+            lineTotal: 2000.0,
+          ),
+        ],
+        createdAt: now,
+        updatedAt: now,
+      );
+      await invoiceRepo.saveInvoice(inv);
 
-        var p = await productRepo.getProductById(product.id);
-        expect(p!.stockQuantity, 8.0);
+      var p = await productRepo.getProductById(product.id);
+      expect(p!.stockQuantity, 8.0);
 
-        // Attempt return of 3 units (more than invoice's 2 units) -> MUST THROW StateError
-        final invalidReturn = SalesReturn(
-          id: 'ret_invalid_qty',
-          returnNumber: 'RET-001',
-          returnDate: now,
-          originalInvoiceId: inv.id,
-          originalInvoiceNumber: inv.invoiceNumber,
-          refundMethod: RefundMethod.cash,
-          totalRefundAmount: 3000.0,
-          returnReason: 'طلب إرجاع أكثر من المباع',
-          items: [
-            SalesReturnItem(
-              id: 'ret_item_inv',
-              invoiceItemId: 'item_ret_guard',
-              description: product.name,
-              returnedQuantity: 3.0, // Exceeds 2.0!
-              unitPrice: 1000.0,
-              refundAmount: 3000.0,
-            ),
-          ],
-          createdAt: now,
-          updatedAt: now,
-        );
+      // Attempt return of 3 units (more than invoice's 2 units) -> MUST THROW StateError
+      final invalidReturn = SalesReturn(
+        id: 'ret_invalid_qty',
+        returnNumber: 'RET-001',
+        returnDate: now,
+        originalInvoiceId: inv.id,
+        originalInvoiceNumber: inv.invoiceNumber,
+        refundMethod: RefundMethod.cash,
+        totalRefundAmount: 3000.0,
+        returnReason: 'طلب إرجاع أكثر من المباع',
+        items: [
+          SalesReturnItem(
+            id: 'ret_item_inv',
+            invoiceItemId: 'item_ret_guard',
+            description: product.name,
+            returnedQuantity: 3.0, // Exceeds 2.0!
+            unitPrice: 1000.0,
+            refundAmount: 3000.0,
+          ),
+        ],
+        createdAt: now,
+        updatedAt: now,
+      );
 
-        expect(
-          () => returnRepo.saveReturn(invalidReturn),
-          throwsA(isA<ArgumentError>()),
-        );
+      expect(
+        () => returnRepo.saveReturn(invalidReturn),
+        throwsA(isA<ArgumentError>()),
+      );
 
-        // Verify stock remained unchanged at 8.0
-        p = await productRepo.getProductById(product.id);
-        expect(p!.stockQuantity, 8.0);
+      // Verify stock remained unchanged at 8.0
+      p = await productRepo.getProductById(product.id);
+      expect(p!.stockQuantity, 8.0);
 
-        // Valid return of 1 unit -> must succeed, restore stock to 9.0, and record movement
-        final validReturn = SalesReturn(
-          id: 'ret_valid_qty',
-          returnNumber: 'RET-002',
-          returnDate: now,
-          originalInvoiceId: inv.id,
-          originalInvoiceNumber: inv.invoiceNumber,
-          refundMethod: RefundMethod.cash,
-          totalRefundAmount: 1000.0,
-          returnReason: 'إرجاع وحدة واحدة',
-          items: [
-            SalesReturnItem(
-              id: 'ret_item_valid',
-              invoiceItemId: 'item_ret_guard',
-              description: product.name,
-              returnedQuantity: 1.0,
-              unitPrice: 1000.0,
-              refundAmount: 1000.0,
-            ),
-          ],
-          createdAt: now,
-          updatedAt: now,
-        );
-        await returnRepo.saveReturn(validReturn);
+      // Valid return of 1 unit -> must succeed, restore stock to 9.0, and record movement
+      final validReturn = SalesReturn(
+        id: 'ret_valid_qty',
+        returnNumber: 'RET-002',
+        returnDate: now,
+        originalInvoiceId: inv.id,
+        originalInvoiceNumber: inv.invoiceNumber,
+        refundMethod: RefundMethod.cash,
+        totalRefundAmount: 1000.0,
+        returnReason: 'إرجاع وحدة واحدة',
+        items: [
+          SalesReturnItem(
+            id: 'ret_item_valid',
+            invoiceItemId: 'item_ret_guard',
+            description: product.name,
+            returnedQuantity: 1.0,
+            unitPrice: 1000.0,
+            refundAmount: 1000.0,
+          ),
+        ],
+        createdAt: now,
+        updatedAt: now,
+      );
+      await returnRepo.saveReturn(validReturn);
 
-        p = await productRepo.getProductById(product.id);
-        expect(p!.stockQuantity, 9.0);
+      p = await productRepo.getProductById(product.id);
+      expect(p!.stockQuantity, 9.0);
 
-        // Check inventory movement ledger
-        final movements = await movementRepo.getMovements(productId: product.id);
-        expect(movements.any((m) => m.movementType == InventoryMovementType.customerReturn), isTrue);
+      // Check inventory movement ledger
+      final movements = await movementRepo.getMovements(productId: product.id);
+      expect(
+        movements.any(
+          (m) => m.movementType == InventoryMovementType.customerReturn,
+        ),
+        isTrue,
+      );
 
-        // Now attempt another return of 2 units (remaining returnable is only 1.0!) -> MUST THROW
-        final secondOverReturn = SalesReturn(
-          id: 'ret_second_over',
-          returnNumber: 'RET-003',
-          returnDate: now,
-          originalInvoiceId: inv.id,
-          originalInvoiceNumber: inv.invoiceNumber,
-          refundMethod: RefundMethod.cash,
-          totalRefundAmount: 2000.0,
-          returnReason: 'محاولة إرجاع المتبقي بزيادة',
-          items: [
-            SalesReturnItem(
-              id: 'ret_item_over2',
-              invoiceItemId: 'item_ret_guard',
-              description: product.name,
-              returnedQuantity: 2.0, // Remaining is only 1.0!
-              unitPrice: 1000.0,
-              refundAmount: 2000.0,
-            ),
-          ],
-          createdAt: now,
-          updatedAt: now,
-        );
+      // Now attempt another return of 2 units (remaining returnable is only 1.0!) -> MUST THROW
+      final secondOverReturn = SalesReturn(
+        id: 'ret_second_over',
+        returnNumber: 'RET-003',
+        returnDate: now,
+        originalInvoiceId: inv.id,
+        originalInvoiceNumber: inv.invoiceNumber,
+        refundMethod: RefundMethod.cash,
+        totalRefundAmount: 2000.0,
+        returnReason: 'محاولة إرجاع المتبقي بزيادة',
+        items: [
+          SalesReturnItem(
+            id: 'ret_item_over2',
+            invoiceItemId: 'item_ret_guard',
+            description: product.name,
+            returnedQuantity: 2.0, // Remaining is only 1.0!
+            unitPrice: 1000.0,
+            refundAmount: 2000.0,
+          ),
+        ],
+        createdAt: now,
+        updatedAt: now,
+      );
 
-        expect(
-          () => returnRepo.saveReturn(secondOverReturn),
-          throwsA(isA<ArgumentError>()),
-        );
-      },
-    );
+      expect(
+        () => returnRepo.saveReturn(secondOverReturn),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
 
     test('FAT-005 & FAT-011: Barcode uniqueness is strictly enforced at repository boundary', () async {
       final now = DateTime.now();
@@ -362,34 +364,60 @@ void main() {
       );
       await purchaseRepo.savePurchase(purchase);
 
-      // Cancelling this purchase requires reversing 10 units, but only 5 are in stock!
+      // Stock is now 5.0 (opening) + 10.0 (received) = 15.0.
+      // Simulate selling 11 units so only 4 units remain in stock.
+      await productRepo.adjustStock(
+        prod.id,
+        delta: -11.0,
+        reason: 'مبيعات نقدية',
+      );
+
+      // Cancelling this 10-unit purchase requires reversing 10 units, but only 4 are in stock!
       // Must throw StateError preventing negative stock!
       expect(
-        () => purchaseRepo.cancelPurchase(purchase.id, 'إلغاء غير مسموح بنقص المخزون'),
+        () => purchaseRepo.cancelPurchase(
+          purchase.id,
+          'إلغاء غير مسموح بنقص المخزون',
+        ),
         throwsA(isA<StateError>()),
       );
 
-      // Verify stock remained unchanged at 5.0
+      // Verify stock remained unchanged at 4.0
       var currentProd = await productRepo.getProductById(prod.id);
-      expect(currentProd!.stockQuantity, 5.0);
+      expect(currentProd!.stockQuantity, 4.0);
 
-      // Add stock so 15 units are available
-      await productRepo.adjustStock(prod.id, delta: 10.0, reason: 'إمداد إضافي');
+      // Add stock so 15 units are available (4 + 11 = 15)
+      await productRepo.adjustStock(
+        prod.id,
+        delta: 11.0,
+        reason: 'إمداد إضافي',
+      );
       currentProd = await productRepo.getProductById(prod.id);
       expect(currentProd!.stockQuantity, 15.0);
 
       // Now cancel purchase: succeeds, reverses 10 units (15 - 10 = 5), and records movement
-      await purchaseRepo.cancelPurchase(purchase.id, 'إلغاء ناجح بعد توفر المخزون');
+      await purchaseRepo.cancelPurchase(
+        purchase.id,
+        'إلغاء ناجح بعد توفر المخزون',
+      );
 
       currentProd = await productRepo.getProductById(prod.id);
       expect(currentProd!.stockQuantity, 5.0);
 
       final movements = await movementRepo.getMovements(productId: prod.id);
-      expect(movements.any((m) => m.movementType == InventoryMovementType.purchaseCancellation), isTrue);
+      expect(
+        movements.any(
+          (m) => m.movementType == InventoryMovementType.purchaseCancellation,
+        ),
+        isTrue,
+      );
 
       final reloadedPurchase = await purchaseRepo.getPurchaseById(purchase.id);
       expect(reloadedPurchase!.documentStatus, DocumentStatus.cancelled);
-      expect(reloadedPurchase.cancellationReason, 'إلغاء ناجح بعد توفر المخزون');
+      expect(
+        reloadedPurchase.cancellationReason,
+        'إلغاء ناجح بعد توفر المخزون',
+      );
     });
 
     test('FAT-009: Backup created with schema version 1 without box_inventory_movements restores cleanly', () async {
@@ -423,9 +451,7 @@ void main() {
         'schemaVersion': 1,
         'createdAt': DateTime.now().toIso8601String(),
         'checksum': checksum,
-        'data': {
-          'tables': tables,
-        },
+        'data': {'tables': tables},
       });
 
       // Restore legacy backup
@@ -437,7 +463,9 @@ void main() {
       expect(prod, isNotNull);
       expect(prod!.name, 'منتج قديم');
 
-      final movements = await movementRepo.getMovements(productId: 'prod_legacy');
+      final movements = await movementRepo.getMovements(
+        productId: 'prod_legacy',
+      );
       expect(movements, isEmpty);
     });
   });

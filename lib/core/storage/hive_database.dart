@@ -42,11 +42,18 @@ class HiveDatabase {
 
   bool get isInitialized => _isInitialized;
 
+  static const Symbol _exclusiveZoneKey = #hiveDatabaseExclusiveZone;
+
   Future<T> runExclusive<T>(Future<T> Function() action) {
+    if (Zone.current[_exclusiveZoneKey] == true) {
+      return action();
+    }
     final previous = _operationLock;
     final completer = Completer<void>();
     _operationLock = completer.future;
-    return previous.then((_) => action()).whenComplete(completer.complete);
+    return previous
+        .then((_) => runZoned(action, zoneValues: {_exclusiveZoneKey: true}))
+        .whenComplete(completer.complete);
   }
 
   Future<void> init({String? customPath}) async {

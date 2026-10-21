@@ -232,29 +232,6 @@ class PurchasesCubit extends Cubit<PurchasesState> {
 
       await purchaseRepository.savePurchase(purchase);
 
-      // 1. Stock receipt integration: Drafts MUST NOT increase stock.
-      // Confirmed receipt increases stock for catalog items and updates valuation.
-      if (!isDraft && productRepository != null) {
-        for (final item in rawItems) {
-          if (item.productId != null && item.productId!.isNotEmpty) {
-            await productRepository!.adjustStock(
-              item.productId!,
-              delta: item.quantity,
-              reason: 'Purchase receipt: $purchaseNumber',
-            );
-            // Update cost price on the product
-            final prod = await productRepository!.getProductById(
-              item.productId!,
-            );
-            if (prod != null) {
-              await productRepository!.saveProduct(
-                prod.copyWith(costPrice: item.unitPrice, updatedAt: now),
-              );
-            }
-          }
-        }
-      }
-
       // 2. Payment recording integration: If payment is made, log in PaymentRepository
       if (shouldRecordRepoPayment) {
         final paymentId = const Uuid().v4();
@@ -340,26 +317,6 @@ class PurchasesCubit extends Cubit<PurchasesState> {
       }
 
       final now = DateTime.now();
-      if (productRepository != null) {
-        for (final item in purchase.items) {
-          if (item.productId != null && item.productId!.isNotEmpty) {
-            await productRepository!.adjustStock(
-              item.productId!,
-              delta: item.quantity,
-              reason: 'Confirmed purchase receipt: ${purchase.purchaseNumber}',
-            );
-            final prod = await productRepository!.getProductById(
-              item.productId!,
-            );
-            if (prod != null) {
-              await productRepository!.saveProduct(
-                prod.copyWith(costPrice: item.unitPrice, updatedAt: now),
-              );
-            }
-          }
-        }
-      }
-
       final updated = purchase.copyWith(
         isStockReceived: true,
         documentStatus: DocumentStatus.issued,

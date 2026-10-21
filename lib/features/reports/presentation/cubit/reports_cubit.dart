@@ -178,8 +178,11 @@ class ReportsCubit extends Cubit<ReportsState> {
                 prev + Decimal.parse(inv.finalTotal.toString());
           }
 
-          final defCurrDecimal = totalsByCurr[defaultCurrency] ??
-              (totalsByCurr.isNotEmpty ? totalsByCurr.values.first : Decimal.zero);
+          final defCurrDecimal =
+              totalsByCurr[defaultCurrency] ??
+              (totalsByCurr.isNotEmpty
+                  ? totalsByCurr.values.first
+                  : Decimal.zero);
           final gross = defCurrDecimal.toDouble();
           final paid = active
               .where((i) => i.currency == defaultCurrency)
@@ -216,7 +219,8 @@ class ReportsCubit extends Cubit<ReportsState> {
             totalsByCurr[inv.currency] =
                 prev + Decimal.parse(inv.finalTotal.toString());
           }
-          final gross = (totalsByCurr[defaultCurrency] ?? Decimal.zero).toDouble();
+          final gross = (totalsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
 
           emit(
             ReportsLoaded(
@@ -249,7 +253,8 @@ class ReportsCubit extends Cubit<ReportsState> {
             totalsByCurr[pur.currency] =
                 prev + Decimal.parse(pur.finalTotal.toString());
           }
-          final gross = (totalsByCurr[defaultCurrency] ?? Decimal.zero).toDouble();
+          final gross = (totalsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
           final paid = active
               .where((p) => p.currency == defaultCurrency)
               .fold(0.0, (sum, p) => sum + p.amountPaid);
@@ -324,14 +329,17 @@ class ReportsCubit extends Cubit<ReportsState> {
           );
 
           // Collect all transactions into raw entries
-          final rawEntries = <({
-            DateTime date,
-            String documentType,
-            String documentNumber,
-            double debit,
-            double credit,
-            String notes,
-          })>[];
+          final rawEntries =
+              <
+                ({
+                  DateTime date,
+                  String documentType,
+                  String documentNumber,
+                  double debit,
+                  double credit,
+                  String notes,
+                })
+              >[];
 
           for (final inv in invoices) {
             rawEntries.add((
@@ -377,8 +385,9 @@ class ReportsCubit extends Cubit<ReportsState> {
           rawEntries.sort((a, b) => a.date.compareTo(b.date));
 
           final entries = <StatementEntry>[];
-          var runningDecimal =
-              Decimal.parse(party.openingReceivable.toString());
+          var runningDecimal = Decimal.parse(
+            party.openingReceivable.toString(),
+          );
 
           for (final item in rawEntries) {
             final debitDecimal = Decimal.parse(item.debit.toString());
@@ -437,14 +446,17 @@ class ReportsCubit extends Cubit<ReportsState> {
             isCustomerPayment: false,
           );
 
-          final rawEntries = <({
-            DateTime date,
-            String documentType,
-            String documentNumber,
-            double debit,
-            double credit,
-            String notes,
-          })>[];
+          final rawEntries =
+              <
+                ({
+                  DateTime date,
+                  String documentType,
+                  String documentNumber,
+                  double debit,
+                  double credit,
+                  String notes,
+                })
+              >[];
 
           for (final pur in purchases) {
             rawEntries.add((
@@ -537,12 +549,14 @@ class ReportsCubit extends Cubit<ReportsState> {
                 prev + Decimal.parse(p.remainingPayable.toString());
           }
 
-          final totalDebts =
-              (debtsByCurr[defaultCurrency] ?? Decimal.zero).toDouble();
+          final totalDebts = (debtsByCurr[defaultCurrency] ?? Decimal.zero)
+              .toDouble();
           final totalPayables =
               (payablesByCurr[defaultCurrency] ?? Decimal.zero).toDouble();
           final totalColl = allPayments
-              .where((p) => p.isCustomerPayment && p.currency == defaultCurrency)
+              .where(
+                (p) => p.isCustomerPayment && p.currency == defaultCurrency,
+              )
               .fold(0.0, (sum, p) => sum + p.amount);
 
           emit(

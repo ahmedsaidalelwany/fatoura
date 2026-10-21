@@ -26,7 +26,9 @@ class InventoryMovementRepositoryImpl implements InventoryMovementRepository {
     for (final key in box.keys) {
       final map = box.get(key);
       if (map != null) {
-        final movement = InventoryMovement.fromMap(Map<String, dynamic>.from(map));
+        final movement = InventoryMovement.fromMap(
+          Map<String, dynamic>.from(map),
+        );
 
         if (productId != null && movement.productId != productId) {
           continue;
