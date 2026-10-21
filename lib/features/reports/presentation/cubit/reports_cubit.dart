@@ -335,17 +335,17 @@ class ReportsCubit extends Cubit<ReportsState> {
             return;
           }
 
-          final invoices = await invoiceRepository.getInvoices(
+          final invoices = (await invoiceRepository.getInvoices(
             customerId: partyId,
             documentStatus: DocumentStatus.issued,
-          );
-          final payments = await paymentRepository.getPayments(
+          )).where((invoice) => invoice.currency == defaultCurrency).toList();
+          final payments = (await paymentRepository.getPayments(
             partyId: partyId,
             isCustomerPayment: true,
-          );
-          final returns = await returnRepository.getReturns(
+          )).where((payment) => payment.currency == defaultCurrency).toList();
+          final returns = (await returnRepository.getReturns(
             customerId: partyId,
-          );
+          )).where((salesReturn) => salesReturn.currency == defaultCurrency).toList();
 
           // Collect all transactions into raw entries
           final rawEntries =
@@ -404,9 +404,11 @@ class ReportsCubit extends Cubit<ReportsState> {
           rawEntries.sort((a, b) => a.date.compareTo(b.date));
 
           final entries = <StatementEntry>[];
-          var runningDecimal = Decimal.parse(
-            party.openingReceivable.toString(),
-          );
+          final openingReceivable = party.openingReceivableCurrency ==
+                  defaultCurrency
+              ? party.openingReceivable
+              : 0.0;
+          var runningDecimal = Decimal.parse(openingReceivable.toString());
 
           for (final item in rawEntries) {
             final debitDecimal = Decimal.parse(item.debit.toString());
@@ -456,14 +458,14 @@ class ReportsCubit extends Cubit<ReportsState> {
             return;
           }
 
-          final purchases = await purchaseRepository.getPurchases(
+          final purchases = (await purchaseRepository.getPurchases(
             supplierId: partyId,
             documentStatus: DocumentStatus.issued,
-          );
-          final payments = await paymentRepository.getPayments(
+          )).where((purchase) => purchase.currency == defaultCurrency).toList();
+          final payments = (await paymentRepository.getPayments(
             partyId: partyId,
             isCustomerPayment: false,
-          );
+          )).where((payment) => payment.currency == defaultCurrency).toList();
 
           final rawEntries =
               <
@@ -505,7 +507,10 @@ class ReportsCubit extends Cubit<ReportsState> {
           rawEntries.sort((a, b) => a.date.compareTo(b.date));
 
           final entries = <StatementEntry>[];
-          var runningDecimal = Decimal.parse(party.openingPayable.toString());
+          final openingPayable = party.openingPayableCurrency == defaultCurrency
+              ? party.openingPayable
+              : 0.0;
+          var runningDecimal = Decimal.parse(openingPayable.toString());
 
           for (final item in rawEntries) {
             final debitDecimal = Decimal.parse(item.debit.toString());
