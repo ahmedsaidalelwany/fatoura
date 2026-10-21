@@ -90,7 +90,9 @@ class PartiesCubit extends Cubit<PartiesState> {
     required bool isCustomer,
     required bool isSupplier,
     double openingReceivable = 0.0,
+    String openingReceivableCurrency = 'EGP',
     double openingPayable = 0.0,
+    String openingPayableCurrency = 'EGP',
   }) async {
     if (name.trim().isEmpty) {
       emit(const PartiesError('Party name cannot be empty.'));
@@ -112,7 +114,9 @@ class PartiesCubit extends Cubit<PartiesState> {
         isCustomer: isCustomer,
         isSupplier: isSupplier,
         openingReceivable: openingReceivable,
+        openingReceivableCurrency: openingReceivableCurrency,
         openingPayable: openingPayable,
+        openingPayableCurrency: openingPayableCurrency,
         createdAt: now,
         updatedAt: now,
       );
