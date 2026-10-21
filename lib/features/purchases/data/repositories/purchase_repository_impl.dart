@@ -118,7 +118,14 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       final latestWasStockReceived =
           latestMap != null && (latestMap['isStockReceived'] == true);
       if (latestWasStockReceived) {
-        await box.put(purchase.id, purchase.toMap());
+        final latest = PurchaseInvoice.fromMap(
+          Map<String, dynamic>.from(latestMap!),
+        );
+        if (!_receivedPurchaseTermsMatch(latest, purchase)) {
+          throw StateError(
+            'تم استلام فاتورة المشتريات بالفعل بمحتوى مختلف. أعد تحميلها قبل المتابعة.',
+          );
+        }
         return;
       }
 
