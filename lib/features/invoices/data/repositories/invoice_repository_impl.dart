@@ -4,8 +4,10 @@ import 'package:fatoura/core/precision/money.dart';
 import 'package:fatoura/core/storage/hive_database.dart';
 import 'package:fatoura/features/invoices/domain/entities/invoice.dart';
 import 'package:fatoura/features/invoices/domain/repositories/invoice_repository.dart';
+import 'package:fatoura/features/payments/domain/entities/payment.dart';
 import 'package:fatoura/features/products/domain/entities/inventory_movement.dart';
 import 'package:fatoura/features/products/domain/entities/product.dart';
+import 'package:fatoura/features/returns/domain/entities/sales_return.dart';
 import 'package:uuid/uuid.dart';
 
 class InvoiceRepositoryImpl implements InvoiceRepository {
@@ -298,6 +300,38 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
     }
     final invoice = Invoice.fromMap(Map<String, dynamic>.from(invoiceMap));
     if (invoice.isCancelled) return;
+
+    if (invoice.totalPaid > 0) {
+      throw StateError(
+        'لا يمكن إلغاء فاتورة عليها مبالغ محصلة قبل تسوية أو رد المدفوعات.',
+      );
+    }
+    for (final key in database.paymentsBox.keys) {
+      final paymentMap = database.paymentsBox.get(key);
+      if (paymentMap == null) continue;
+      final payment = Payment.fromMap(Map<String, dynamic>.from(paymentMap));
+      if (payment.amount > 0 &&
+          payment.allocations.any(
+            (allocation) =>
+                allocation.invoiceId == invoiceId && allocation.amount > 0,
+          )) {
+        throw StateError(
+          'لا يمكن إلغاء فاتورة مرتبطة بمدفوعات. سوِّ المدفوعات أولًا.',
+        );
+      }
+    }
+    for (final key in database.salesReturnsBox.keys) {
+      final returnMap = database.salesReturnsBox.get(key);
+      if (returnMap == null) continue;
+      final salesReturn = SalesReturn.fromMap(
+        Map<String, dynamic>.from(returnMap),
+      );
+      if (salesReturn.originalInvoiceId == invoiceId) {
+        throw StateError(
+          'لا يمكن إلغاء فاتورة لها مرتجعات مسجلة. عالج المرتجعات أولًا.',
+        );
+      }
+    }
 
     final productsBox = database.productsBox;
     final originalProducts = <String, Map>{};
