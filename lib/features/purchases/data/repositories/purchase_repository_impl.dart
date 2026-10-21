@@ -138,18 +138,22 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       final itemUnitPrices = <String, double>{};
       for (final item in purchase.items) {
         final productId = item.productId;
-        if (productId == null || productId.trim().isEmpty) {
-          throw StateError(
-            'كل بند في فاتورة المشتريات المستلمة يجب أن يرتبط بمنتج مسجل بالمخزون.',
-          );
-        }
         if (!item.quantity.isFinite || item.quantity <= 0) {
           throw StateError(
-            'يجب أن تكون كمية المنتج في المشتريات أكبر من الصفر.',
+            'يجب أن تكون كمية البند في المشتريات أكبر من الصفر.',
           );
         }
         if (!item.unitPrice.isFinite || item.unitPrice < 0) {
-          throw StateError('سعر شراء المنتج غير صالح.');
+          throw StateError('سعر شراء البند غير صالح.');
+        }
+
+        // A line without productId is a non-inventory purchase/expense line.
+        // Product lines must always reference an existing catalog product.
+        if (productId == null || productId.trim().isEmpty) {
+          if (item.description.trim().isEmpty) {
+            throw StateError('وصف بند المشتريات مطلوب.');
+          }
+          continue;
         }
         if (productsBox.get(productId) == null) {
           throw StateError(
