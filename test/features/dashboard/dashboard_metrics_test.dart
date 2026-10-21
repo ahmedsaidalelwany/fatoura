@@ -196,7 +196,7 @@ void main() {
         customerId: 'cust_1',
         customerName: 'Customer One',
         issueDate: now,
-        documentStatus: DocumentStatus.cancelled,
+        documentStatus: DocumentStatus.issued,
         paymentStatus: PaymentStatus.unpaid,
         subtotal: 10000.0,
         taxableBase: 10000.0,
@@ -209,6 +209,10 @@ void main() {
         updatedAt: now,
       );
       await invoiceRepo.saveInvoice(cancelledInv);
+      await invoiceRepo.cancelInvoice(
+        cancelledInv.id,
+        'Dashboard test fixture cancellation',
+      );
 
       // Load EGP metrics
       await dashboardCubit.loadDashboardMetrics('EGP');
