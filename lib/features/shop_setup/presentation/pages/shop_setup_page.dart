@@ -292,7 +292,7 @@ class _ShopSetupPageState extends State<ShopSetupPage> {
                                         fit: BoxFit.contain,
                                       )
                                     : Image.asset(
-                                        'assets/images/logo.png',
+                                        'assets/images/app_logo.png',
                                         fit: BoxFit.contain,
                                         errorBuilder:
                                             (context, error, stackTrace) =>

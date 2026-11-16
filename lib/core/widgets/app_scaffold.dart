@@ -14,6 +14,7 @@ import 'package:fatoura/features/settings/presentation/pages/settings_page.dart'
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
+import 'package:fatoura/core/widgets/app_logo.dart';
 
 class AppScaffold extends StatefulWidget {
   final int initialIndex;
@@ -103,28 +104,8 @@ class AppScaffoldState extends State<AppScaffold> {
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Column(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.asset(
-                                  'assets/images/logo.png',
-                                  width: 44,
-                                  height: 44,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.receipt_long,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                ),
+                              const AppLogo(
+                                size: 44,
                               ),
                               const SizedBox(height: 6),
                               Text(
@@ -223,26 +204,8 @@ class AppScaffoldState extends State<AppScaffold> {
               ),
               child: Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 48,
-                      height: 48,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.receipt_long,
-                          color: Colors.white,
-                          size: 26,
-                        ),
-                      ),
-                    ),
+                  const AppLogo(
+                    size: 48,
                   ),
                   const SizedBox(width: 14),
                   Expanded(

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 class HiveBoxes {
@@ -60,22 +62,69 @@ class HiveDatabase {
     if (_isInitialized) return;
 
     if (customPath != null) {
+      final customDir = Directory(customPath);
+      if (!await customDir.exists()) {
+        await customDir.create(recursive: true);
+      }
       Hive.init(customPath);
     } else {
       if (!kIsWeb) {
-        final appDocDir = await getApplicationDocumentsDirectory();
-        final path = '${appDocDir.path}/fatoura_data';
-        await Hive.initFlutter(path);
+        Directory appDir;
+        try {
+          appDir = await getApplicationSupportDirectory();
+        } catch (_) {
+          appDir = await getApplicationDocumentsDirectory();
+        }
+
+        final targetDir = Directory(p.join(appDir.path, 'fatoura_data'));
+        if (!await targetDir.exists()) {
+          await targetDir.create(recursive: true);
+        }
+
+        // Migrate any readable existing data from legacy documents folder to app support directory
+        try {
+          final docDir = await getApplicationDocumentsDirectory();
+          final legacyDir = Directory(p.join(docDir.path, 'fatoura_data'));
+          if (await legacyDir.exists()) {
+            final targetFiles = await targetDir.list().toList();
+            if (targetFiles.isEmpty) {
+              await for (final entity in legacyDir.list()) {
+                if (entity is File && entity.path.endsWith('.hive')) {
+                  final dest = File(p.join(targetDir.path, p.basename(entity.path)));
+                  try {
+                    await entity.copy(dest.path);
+                  } catch (_) {}
+                }
+              }
+            }
+          }
+        } catch (_) {}
+
+        Hive.init(targetDir.path);
       } else {
         await Hive.initFlutter();
       }
     }
 
-    // Open all core boxes concurrently in parallel
+    // Open all core boxes safely with recovery fallback
     final unopenedBoxes = HiveBoxes.allBoxes.where((b) => !Hive.isBoxOpen(b));
-    await Future.wait(
-      unopenedBoxes.map((boxName) => Hive.openBox<Map>(boxName)),
-    );
+    for (final boxName in unopenedBoxes) {
+      try {
+        await Hive.openBox<Map>(boxName);
+      } catch (e, stack) {
+        debugPrint(
+          'Warning: Error opening Hive box "$boxName": $e\n$stack. Attempting crash recovery...',
+        );
+        try {
+          await Hive.openBox<Map>(boxName, crashRecovery: true);
+        } catch (recoveryError, recoveryStack) {
+          debugPrint(
+            'CRITICAL: Failed to open or recover box "$boxName": $recoveryError\n$recoveryStack',
+          );
+          rethrow;
+        }
+      }
+    }
 
     _isInitialized = true;
   }

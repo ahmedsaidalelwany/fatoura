@@ -57,13 +57,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
-    - assets/fonts/
+    - assets/images/app_logo.png
 
   fonts:
     - family: AppFont
@@ -71,4 +73,35 @@ flutter:
         - asset: assets/fonts/AppFont-Regular.ttf
         - asset: assets/fonts/AppFont-Bold.ttf
           weight: 700
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/app_logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/app_logo.png"
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    image_path: "assets/images/app_logo.png"
+    icon_size: 48
+  web:
+    generate: true
+    image_path: "assets/images/app_logo.png"
+    background_color: "#FFFFFF"
+    theme_color: "#0F172A"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  color_dark: "#0F172A"
+  image: "assets/images/app_logo.png"
+  image_dark: "assets/images/app_logo.png"
+  android: true
+  ios: true
+  android_12:
+    color: "#FFFFFF"
+    color_dark: "#0F172A"
+    image: "assets/images/app_logo.png"
+    image_dark: "assets/images/app_logo.png"
 

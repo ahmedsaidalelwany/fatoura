@@ -7,6 +7,7 @@ import 'core/localization/app_localizations.dart';
 import 'core/settings/app_settings_cubit.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/app_scaffold.dart';
+import 'core/widgets/splash_screen.dart';
 import 'features/backup/presentation/cubit/backup_cubit.dart';
 import 'features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'features/invoices/presentation/cubit/invoices_cubit.dart';
@@ -128,9 +129,7 @@ class FatouraApp extends StatelessWidget {
                 future: dependencies.shopProfileRepository.hasCompletedSetup(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Scaffold(
-                      body: Center(child: CircularProgressIndicator()),
-                    );
+                    return const SplashScreen(showProgress: true);
                   }
                   final hasCompleted = snapshot.data ?? false;
                   if (hasCompleted) {

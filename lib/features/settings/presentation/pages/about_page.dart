@@ -4,6 +4,7 @@ import 'package:fatoura/core/constants/developer_config.dart';
 import 'package:fatoura/core/localization/app_localizations.dart';
 import 'package:fatoura/core/responsive/responsive_layout.dart';
 import 'package:fatoura/core/theme/app_colors.dart';
+import 'package:fatoura/core/widgets/app_logo.dart';
 
 import 'developer_info_page.dart';
 
@@ -26,37 +27,8 @@ class AboutPage extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.surfaceSubtleDark
-                          : AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusCard,
-                      ),
-                      border: Border.all(
-                        color: Theme.of(context).dividerColor,
-                        width: 0.8,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: AppColors.primary,
-                          child: const Icon(
-                            Icons.receipt_long,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                    ),
+                  const AppLogo(
+                    size: 88,
                   ),
                   const SizedBox(height: 16),
                   Text(

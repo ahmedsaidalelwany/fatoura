@@ -8,14 +8,20 @@
 #include <iostream>
 
 void CreateAndAttachConsole() {
-  if (::AllocConsole()) {
+  bool attached = false;
+  // Try attaching to the parent console (e.g. CMD, PowerShell, or bash terminal)
+  if (::AttachConsole(ATTACH_PARENT_PROCESS)) {
+    attached = true;
+  } else if (::IsDebuggerPresent() && ::AllocConsole()) {
+    // If running under a debugger without a parent console, allocate one
+    attached = true;
+  }
+
+  if (attached) {
     FILE *unused;
-    if (freopen_s(&unused, "CONOUT$", "w", stdout)) {
-      _dup2(_fileno(stdout), 1);
-    }
-    if (freopen_s(&unused, "CONOUT$", "w", stderr)) {
-      _dup2(_fileno(stdout), 2);
-    }
+    freopen_s(&unused, "CONOUT$", "w", stdout);
+    freopen_s(&unused, "CONOUT$", "w", stderr);
+    freopen_s(&unused, "CONIN$", "r", stdin);
     std::ios::sync_with_stdio();
     FlutterDesktopResyncOutputStreams();
   }
